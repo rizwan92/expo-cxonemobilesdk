@@ -1,0 +1,9 @@
+{
+  "platforms": ["apple", "android", "web"],
+  "apple": {
+    "modules": ["ExpoCxonemobilesdkModule"]
+  },
+  "android": {
+    "modules": ["expo.modules.cxonemobilesdk.ExpoCxonemobilesdkModule"]
+  }
+}
