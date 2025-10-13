@@ -1,48 +1,54 @@
 import ExpoModulesCore
+import CXoneChatSDK
 
 public class ExpoCxonemobilesdkModule: Module {
+    
   // Each module class must implement the definition function. The definition consists of components
   // that describes the module's functionality and behavior.
   // See https://docs.expo.dev/modules/module-api for more details about available components.
   public func definition() -> ModuleDefinition {
-    // Sets the name of the module that JavaScript code will use to refer to the module. Takes a string as an argument.
-    // Can be inferred from module's class name, but it's recommended to set it explicitly for clarity.
-    // The module will be accessible from `requireNativeModule('ExpoCxonemobilesdk')` in JavaScript.
+    // Sets the name of the module that JavaScript code will use to refer to the module.
     Name("ExpoCxonemobilesdk")
 
-    // Defines constant property on the module.
-    Constant("PI") {
-      Double.pi
+    // Example sync function removed per request.
+
+    Function("disconnect") {
+      NSLog("[ExpoCxonemobilesdk] disconnect() called")
+      CXoneChat.shared.connection.disconnect()
+      NSLog("[ExpoCxonemobilesdk] disconnect() completed")
     }
 
-    // Defines event names that the module can send to JavaScript.
-    Events("onChange")
-
-    // Defines a JavaScript synchronous function that runs the native code on the JavaScript thread.
-    Function("hello") {
-      return "Hello world! 👋"
-    }
-
-    // Defines a JavaScript function that always returns a Promise and whose native code
-    // is by default dispatched on the different thread than the JavaScript runtime runs on.
-    AsyncFunction("setValueAsync") { (value: String) in
-      // Send an event to JavaScript.
-      self.sendEvent("onChange", [
-        "value": value
-      ])
-    }
-
-    // Enables the module to be used as a native view. Definition components that are accepted as part of the
-    // view definition: Prop, Events.
-    View(ExpoCxonemobilesdkView.self) {
-      // Defines a setter for the `url` prop.
-      Prop("url") { (view: ExpoCxonemobilesdkView, url: URL) in
-        if view.webView.url != url {
-          view.webView.load(URLRequest(url: url))
-        }
+    AsyncFunction("prepare") { (env: String, brandId: Int, channelId: String) async throws in
+      NSLog("[ExpoCxonemobilesdk] prepare(env:\(env), brandId:\(brandId), channelId:\(channelId)) called")
+      guard let environment = Environment(rawValue: env.uppercased()) else {
+        let err = NSError(
+          domain: "ExpoCxonemobilesdk",
+          code: -2,
+          userInfo: [NSLocalizedDescriptionKey: "Unsupported CXone environment '\(env)'"]
+        )
+        NSLog("[ExpoCxonemobilesdk] prepare failed: \(err)")
+        throw err
       }
-
-      Events("onLoad")
+      do {
+        try await CXoneChat.shared.connection.prepare(environment: environment, brandId: brandId, channelId: channelId)
+        NSLog("[ExpoCxonemobilesdk] prepare completed successfully")
+      } catch {
+        NSLog("[ExpoCxonemobilesdk] prepare error: \(error)")
+        throw error
+      }
     }
+
+    AsyncFunction("connect") { () async throws in
+      NSLog("[ExpoCxonemobilesdk] connect() called")
+      do {
+        try await CXoneChat.shared.connection.connect()
+        NSLog("[ExpoCxonemobilesdk] connect() completed successfully")
+      } catch {
+        NSLog("[ExpoCxonemobilesdk] connect() error: \(error)")
+        throw error
+      }
+    }
+
+
   }
 }

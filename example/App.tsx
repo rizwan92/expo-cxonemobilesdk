@@ -1,38 +1,56 @@
-import { useEvent } from 'expo';
-import ExpoCxonemobilesdk, { ExpoCxonemobilesdkView } from 'expo-cxonemobilesdk';
-import { Button, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import ExpoCxonemobilesdk from "expo-cxonemobilesdk";
+import { Button, SafeAreaView, ScrollView, Text, View } from "react-native";
 
 export default function App() {
-  const onChangePayload = useEvent(ExpoCxonemobilesdk, 'onChange');
+  const TAG = "[ExpoCxonemobilesdkExample]";
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView style={styles.container}>
         <Text style={styles.header}>Module API Example</Text>
-        <Group name="Constants">
-          <Text>{ExpoCxonemobilesdk.PI}</Text>
-        </Group>
-        <Group name="Functions">
-          <Text>{ExpoCxonemobilesdk.hello()}</Text>
-        </Group>
-        <Group name="Async functions">
+        <Group name="Prepare/Connect/Disconnect">
+          <Text>Call native methods with logs</Text>
           <Button
-            title="Set value"
+            title="prepare (env=NA1, brandId=123, channel=demo)"
             onPress={async () => {
-              await ExpoCxonemobilesdk.setValueAsync('Hello from JS!');
+              console.log(`${TAG} prepare pressed`);
+              try {
+                await ExpoCxonemobilesdk.prepare("NA1", 123, "demo");
+                console.log(`${TAG} prepare resolved`);
+              } catch (e) {
+                console.error(`${TAG} prepare failed`, e);
+              }
+            }}
+          />
+          <View style={{ height: 8 }} />
+          <Button
+            title="connect"
+            onPress={async () => {
+              console.log(`${TAG} connect pressed`);
+              try {
+                await ExpoCxonemobilesdk.connect();
+                console.log(`${TAG} connect resolved`);
+              } catch (e) {
+                console.error(`${TAG} connect failed`, e);
+              }
+            }}
+          />
+          <View style={{ height: 8 }} />
+          <Button
+            title="disconnect"
+            onPress={() => {
+              console.log(`${TAG} disconnect pressed`);
+              try {
+                ExpoCxonemobilesdk.disconnect();
+                console.log(`${TAG} disconnect completed`);
+              } catch (e) {
+                console.error(`${TAG} disconnect failed`, e);
+              }
             }}
           />
         </Group>
-        <Group name="Events">
-          <Text>{onChangePayload?.value}</Text>
-        </Group>
-        <Group name="Views">
-          <ExpoCxonemobilesdkView
-            url="https://www.example.com"
-            onLoad={({ nativeEvent: { url } }) => console.log(`Loaded: ${url}`)}
-            style={styles.view}
-          />
-        </Group>
+        {/* Removed setValueAsync and events usage */}
+        {/* View example removed */}
       </ScrollView>
     </SafeAreaView>
   );
@@ -58,13 +76,13 @@ const styles = {
   },
   group: {
     margin: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 10,
     padding: 20,
   },
   container: {
     flex: 1,
-    backgroundColor: '#eee',
+    backgroundColor: "#eee",
   },
   view: {
     flex: 1,

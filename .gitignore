@@ -55,3 +55,6 @@ yarn-error.log
 
 # Expo
 .expo/*
+nice-cxone-mobile-sdk-ios
+ios/.module-cache/*
+

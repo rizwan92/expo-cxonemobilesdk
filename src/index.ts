@@ -1,5 +1,3 @@
-// Reexport the native module. On web, it will be resolved to ExpoCxonemobilesdkModule.web.ts
-// and on native platforms to ExpoCxonemobilesdkModule.ts
+// Reexport the native module (native platforms only in this package)
 export { default } from './ExpoCxonemobilesdkModule';
-export { default as ExpoCxonemobilesdkView } from './ExpoCxonemobilesdkView';
-export * from  './ExpoCxonemobilesdk.types';
+export * from './ExpoCxonemobilesdk.types';

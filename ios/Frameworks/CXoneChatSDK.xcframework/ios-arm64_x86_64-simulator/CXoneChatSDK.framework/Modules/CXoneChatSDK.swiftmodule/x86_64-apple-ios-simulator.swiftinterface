@@ -1,0 +1,525 @@
+// swift-interface-format-version: 1.0
+// swift-compiler-version: Apple Swift version 6.0.3 effective-5.10 (swiftlang-6.0.3.1.10 clang-1600.0.30.1)
+// swift-module-flags: -target x86_64-apple-ios15.0-simulator -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -module-name CXoneChatSDK
+// swift-module-flags-ignorable: -no-verify-emitted-module-interface
+import CXoneGuideUtility
+import Combine
+import Foundation
+import KeychainSwift
+import Mockable
+import Swift
+import UIKit
+import UniformTypeIdentifiers
+import _Concurrency
+import _StringProcessing
+import _SwiftConcurrencyShims
+@_hasMissingDesignatedInitializers public class CXoneChat : CXoneChatSDK.ChatProvider {
+  public static var shared: any CXoneChatSDK.ChatProvider
+  public static var logWriter: (any CXoneGuideUtility.LogWriter)? {
+    get
+    set
+  }
+  public var state: CXoneChatSDK.ChatState {
+    get
+  }
+  public var mode: CXoneChatSDK.ChatMode {
+    get
+  }
+  final public let connection: any CXoneChatSDK.ConnectionProvider
+  final public let customer: any CXoneChatSDK.CustomerProvider
+  final public let customerCustomFields: any CXoneChatSDK.CustomerCustomFieldsProvider
+  final public let threads: any CXoneChatSDK.ChatThreadListProvider
+  final public let analytics: any CXoneChatSDK.AnalyticsProvider
+  public func add(delegate: any CXoneChatSDK.CXoneChatDelegate)
+  public func remove(delegate: any CXoneChatSDK.CXoneChatDelegate)
+  public static func signOut()
+  @objc deinit
+}
+public protocol AnalyticsProvider {
+  var visitorId: Foundation.UUID? { get }
+  func viewPage(title: Swift.String, url: Swift.String) async throws
+  func viewPageEnded(title: Swift.String, url: Swift.String) async throws
+  func chatWindowOpen() async throws
+  func conversion(type: Swift.String, value: Swift.Double) async throws
+  func proactiveActionDisplay(data: CXoneChatSDK.ProactiveActionDetails) async throws
+  func proactiveActionClick(data: CXoneChatSDK.ProactiveActionDetails) async throws
+  func proactiveActionSuccess(_ isSuccess: Swift.Bool, data: CXoneChatSDK.ProactiveActionDetails) async throws
+}
+public protocol CXoneChatDelegate : AnyObject {
+  func onUnexpectedDisconnect()
+  func onChatUpdated(_ state: CXoneChatSDK.ChatState, mode: CXoneChatSDK.ChatMode)
+  func onThreadUpdated(_ chatThread: CXoneChatSDK.ChatThread)
+  func onThreadsUpdated(_ chatThreads: [CXoneChatSDK.ChatThread])
+  func onCustomEventMessage(_ messageData: Foundation.Data)
+  func onAgentTyping(_ isTyping: Swift.Bool, agent: CXoneChatSDK.Agent, threadId: Foundation.UUID)
+  func onContactCustomFieldsSet()
+  func onCustomerCustomFieldsSet()
+  func onError(_ error: any Swift.Error)
+  func onTokenRefreshFailed()
+  func onProactivePopupAction(data: [Swift.String : Any], actionId: Foundation.UUID)
+}
+extension CXoneChatSDK.CXoneChatDelegate {
+  public func onUnexpectedDisconnect()
+  public func onChatUpdated(_ state: CXoneChatSDK.ChatState, mode: CXoneChatSDK.ChatMode)
+  public func onThreadUpdated(_ chatThread: CXoneChatSDK.ChatThread)
+  public func onThreadsUpdated(_ chatThreads: [CXoneChatSDK.ChatThread])
+  public func onCustomEventMessage(_ messageData: Foundation.Data)
+  public func onAgentTyping(_ isTyping: Swift.Bool, agent: CXoneChatSDK.Agent, threadId: Foundation.UUID)
+  public func onContactCustomFieldsSet()
+  public func onCustomerCustomFieldsSet()
+  public func onError(_ error: any Swift.Error)
+  public func onTokenRefreshFailed()
+  public func onProactivePopupAction(data: [Swift.String : Any], actionId: Foundation.UUID)
+}
+public protocol ChatProvider : AnyObject {
+  static var shared: any CXoneChatSDK.ChatProvider { get set }
+  static var logWriter: (any CXoneGuideUtility.LogWriter)? { get set }
+  var state: CXoneChatSDK.ChatState { get }
+  var mode: CXoneChatSDK.ChatMode { get }
+  var connection: any CXoneChatSDK.ConnectionProvider { get }
+  var customer: any CXoneChatSDK.CustomerProvider { get }
+  var customerCustomFields: any CXoneChatSDK.CustomerCustomFieldsProvider { get }
+  var threads: any CXoneChatSDK.ChatThreadListProvider { get }
+  var analytics: any CXoneChatSDK.AnalyticsProvider { get }
+  func add(delegate: any CXoneChatSDK.CXoneChatDelegate)
+  func remove(delegate: any CXoneChatSDK.CXoneChatDelegate)
+  static func signOut()
+}
+public protocol ChatThreadListProvider {
+  var preChatSurvey: CXoneChatSDK.PreChatSurvey? { get }
+  var customFields: any CXoneChatSDK.ContactCustomFieldsProvider { get }
+  func get() -> [CXoneChatSDK.ChatThread]
+  @discardableResult
+  func create() async throws -> any CXoneChatSDK.ChatThreadProvider
+  @discardableResult
+  func create(with customFields: [Swift.String : Swift.String]) async throws -> any CXoneChatSDK.ChatThreadProvider
+  func load(with id: Foundation.UUID?) async throws
+  func provider(for threadId: Foundation.UUID) throws -> any CXoneChatSDK.ChatThreadProvider
+  func provider(for thread: CXoneChatSDK.ChatThread) throws -> any CXoneChatSDK.ChatThreadProvider
+}
+public protocol ChatThreadProvider {
+  var chatThread: CXoneChatSDK.ChatThread { get }
+  func loadMoreMessages() async throws
+  func send(_ message: CXoneChatSDK.OutboundMessage) async throws
+  func updateName(_ name: Swift.String) async throws
+  func archive() async throws
+  func markRead() async throws
+  func endContact() async throws
+  func reportTypingStart(_ didStart: Swift.Bool) async throws
+}
+public protocol ConnectionProvider {
+  var channelConfiguration: CXoneChatSDK.ChannelConfiguration { get }
+  func getChannelConfiguration(environment: CXoneChatSDK.Environment, brandId: Swift.Int, channelId: Swift.String) async throws -> CXoneChatSDK.ChannelConfiguration
+  func getChannelConfiguration(chatURL: Swift.String, brandId: Swift.Int, channelId: Swift.String) async throws -> CXoneChatSDK.ChannelConfiguration
+  func prepare(environment: CXoneChatSDK.Environment, brandId: Swift.Int, channelId: Swift.String) async throws
+  func prepare(chatURL: Swift.String, socketURL: Swift.String, brandId: Swift.Int, channelId: Swift.String) async throws
+  func connect() async throws
+  func disconnect()
+  func executeTrigger(_ triggerId: Foundation.UUID) async throws
+}
+public protocol ContactCustomFieldsProvider {
+  func get(for threadId: Foundation.UUID) -> [Swift.String : Swift.String]
+  func set(_ customFields: [Swift.String : Swift.String], for threadId: Foundation.UUID) async throws
+}
+public protocol CustomerCustomFieldsProvider {
+  func get() -> [Swift.String : Swift.String]
+  func set(_ customFields: [Swift.String : Swift.String]) async throws
+}
+public protocol CustomerProvider {
+  func get() -> CXoneChatSDK.CustomerIdentity?
+  func set(customer: CXoneChatSDK.CustomerIdentity?) throws
+  func setDeviceToken(_ token: Swift.String)
+  func setDeviceToken(_ tokenData: Foundation.Data)
+  func setAuthorizationCode(_ code: Swift.String)
+  func setCodeVerifier(_ verifier: Swift.String)
+  func setName(firstName: Swift.String, lastName: Swift.String)
+}
+public enum ActionType : Swift.String, Swift.Codable {
+  case welcomeMessage
+  case customPopupBox
+  public init?(rawValue: Swift.String)
+  public typealias RawValue = Swift.String
+  public var rawValue: Swift.String {
+    get
+  }
+}
+public enum CustomFieldType : Swift.Equatable {
+  case textField(CXoneChatSDK.CustomFieldTextField)
+  case selector(CXoneChatSDK.CustomFieldSelector)
+  case hierarchical(CXoneChatSDK.CustomFieldHierarchical)
+  public static func == (a: CXoneChatSDK.CustomFieldType, b: CXoneChatSDK.CustomFieldType) -> Swift.Bool
+}
+public enum MessageContentType : Swift.Equatable {
+  case text(CXoneChatSDK.MessagePayload)
+  case richLink(CXoneChatSDK.MessageRichLink)
+  case quickReplies(CXoneChatSDK.MessageQuickReplies)
+  case listPicker(CXoneChatSDK.MessageListPicker)
+  case unknown
+  public static func == (a: CXoneChatSDK.MessageContentType, b: CXoneChatSDK.MessageContentType) -> Swift.Bool
+}
+public enum MessageDirection {
+  case toAgent
+  case toClient
+  public static func == (a: CXoneChatSDK.MessageDirection, b: CXoneChatSDK.MessageDirection) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public enum MessageStatus : Swift.Comparable {
+  case sent
+  case delivered
+  case seen
+  case failed
+  public static func == (a: CXoneChatSDK.MessageStatus, b: CXoneChatSDK.MessageStatus) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public static func < (a: CXoneChatSDK.MessageStatus, b: CXoneChatSDK.MessageStatus) -> Swift.Bool
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public enum MessageSubElementType : Swift.Equatable {
+  case replyButton(CXoneChatSDK.MessageReplyButton)
+  public static func == (a: CXoneChatSDK.MessageSubElementType, b: CXoneChatSDK.MessageSubElementType) -> Swift.Bool
+}
+public struct Agent : Swift.Equatable {
+  public let id: Swift.Int
+  public let firstName: Swift.String
+  public let surname: Swift.String
+  public let nickname: Swift.String?
+  public let isBotUser: Swift.Bool
+  public let isSurveyUser: Swift.Bool
+  public let imageUrl: Swift.String
+  public var fullName: Swift.String {
+    get
+  }
+  public static func == (a: CXoneChatSDK.Agent, b: CXoneChatSDK.Agent) -> Swift.Bool
+}
+public struct AllowedFileType {
+  public let mimeType: Swift.String
+  public let details: Swift.String
+}
+public struct Attachment : Swift.Equatable {
+  public let url: Swift.String
+  public let friendlyName: Swift.String
+  public let mimeType: Swift.String
+  public let fileName: Swift.String
+  public static func == (a: CXoneChatSDK.Attachment, b: CXoneChatSDK.Attachment) -> Swift.Bool
+}
+public enum CXoneChatError : Foundation.LocalizedError, Swift.Equatable {
+  case notConnected
+  case unsupportedChannelConfig
+  case invalidData
+  case invalidThread
+  case noMoreMessages
+  case attachmentError
+  case invalidFileSize
+  case invalidFileType
+  case serverError
+  @available(*, deprecated, message: "Error is no longer forwarded to the host application – it is handled internally from version 1.3.0")
+  case recoveringThreadFailed
+  case missingParameter(Swift.String)
+  case invalidParameter(Swift.String)
+  case missingPreChatCustomFields
+  case unknownCaseCustomFields
+  case unknownCustomerCustomFields
+  case customerAssociationFailure
+  case webSocketConnectionFailure
+  case channelConfigFailure
+  case missingAccessToken
+  case customerVisitorAssociationFailure
+  case invalidRequest
+  case invalidOldestDate
+  case noSuchFile(Swift.String)
+  case missingVisitId
+  case missingVisitorId
+  case illegalChatState
+  case illegalThreadState
+  case eventTimeout
+  public var errorDescription: Swift.String? {
+    get
+  }
+  public static func == (lhs: CXoneChatSDK.CXoneChatError, rhs: CXoneChatSDK.CXoneChatError) -> Swift.Bool
+}
+public struct ChannelConfiguration {
+  public let hasMultipleThreadsPerEndUser: Swift.Bool
+  public let isProactiveChatEnabled: Swift.Bool
+  public let isAuthorizationEnabled: Swift.Bool
+  public let fileRestrictions: CXoneChatSDK.FileRestrictions
+  public let features: [Swift.String : Swift.Bool]
+  public let isOnline: Swift.Bool
+  public let isLiveChat: Swift.Bool
+}
+public enum ChatMode {
+  case singlethread
+  case multithread
+  case liveChat
+  public static func == (a: CXoneChatSDK.ChatMode, b: CXoneChatSDK.ChatMode) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public enum ChatState : Swift.Comparable {
+  case initial
+  case preparing
+  case prepared
+  case offline
+  case connecting
+  case connected
+  case ready
+  case closed
+  public var isChatAvailable: Swift.Bool {
+    get
+  }
+  public var isAnalyticsAvailable: Swift.Bool {
+    get
+  }
+  public var isPrepareable: Swift.Bool {
+    get
+  }
+  public static func == (a: CXoneChatSDK.ChatState, b: CXoneChatSDK.ChatState) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public static func < (a: CXoneChatSDK.ChatState, b: CXoneChatSDK.ChatState) -> Swift.Bool
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+@_hasMissingDesignatedInitializers public class ChatThread : Swift.Identifiable {
+  final public let id: Foundation.UUID
+  public var name: Swift.String?
+  public var messages: [CXoneChatSDK.Message]
+  public var assignedAgent: CXoneChatSDK.Agent?
+  public var lastAssignedAgent: CXoneChatSDK.Agent?
+  public var scrollToken: Swift.String
+  public var state: CXoneChatSDK.ChatThreadState
+  public var hasMoreMessagesToLoad: Swift.Bool {
+    get
+  }
+  public var positionInQueue: Swift.Int?
+  public typealias ID = Foundation.UUID
+  @objc deinit
+}
+public enum ChatThreadState : Swift.Comparable {
+  case pending
+  case received
+  case loaded
+  case ready
+  case closed
+  public var isLoaded: Swift.Bool {
+    get
+  }
+  public static func == (a: CXoneChatSDK.ChatThreadState, b: CXoneChatSDK.ChatThreadState) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
+  public static func < (a: CXoneChatSDK.ChatThreadState, b: CXoneChatSDK.ChatThreadState) -> Swift.Bool
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public struct ContentDescriptor {
+  public let data: CXoneChatSDK.ContentDescriptorSource
+  public let mimeType: Swift.String
+  public let fileName: Swift.String
+  public let friendlyName: Swift.String
+  public init(data: Foundation.Data, mimeType: Swift.String, fileName: Swift.String, friendlyName: Swift.String)
+  public init(url: Foundation.URL, mimeType: Swift.String, fileName: Swift.String, friendlyName: Swift.String)
+}
+public enum ContentDescriptorSource {
+  case bytes(Foundation.Data)
+  case url(Foundation.URL)
+}
+extension CXoneChatSDK.ContentDescriptorSource : Swift.CustomStringConvertible {
+  public var description: Swift.String {
+    get
+  }
+}
+public struct CustomFieldHierarchical {
+  public let ident: Swift.String
+  public let label: Swift.String
+  public let value: Swift.String?
+  public let nodes: [CXoneChatSDK.CustomFieldHierarchicalNode]
+}
+extension CXoneChatSDK.CustomFieldHierarchical : Swift.Equatable {
+  public static func == (lhs: CXoneChatSDK.CustomFieldHierarchical, rhs: CXoneChatSDK.CustomFieldHierarchical) -> Swift.Bool
+}
+public struct CustomFieldHierarchicalNode {
+  public let value: Swift.String
+  public let label: Swift.String
+  public let children: [CXoneChatSDK.CustomFieldHierarchicalNode]
+}
+extension CXoneChatSDK.CustomFieldHierarchicalNode : Swift.Equatable {
+  public static func == (lhs: CXoneChatSDK.CustomFieldHierarchicalNode, rhs: CXoneChatSDK.CustomFieldHierarchicalNode) -> Swift.Bool
+}
+public struct CustomFieldSelector {
+  public let ident: Swift.String
+  public let label: Swift.String
+  public let value: Swift.String?
+  public let options: [Swift.String : Swift.String]
+}
+extension CXoneChatSDK.CustomFieldSelector : Swift.Equatable {
+  public static func == (lhs: CXoneChatSDK.CustomFieldSelector, rhs: CXoneChatSDK.CustomFieldSelector) -> Swift.Bool
+}
+public struct CustomFieldTextField {
+  public let ident: Swift.String
+  public let label: Swift.String
+  public let value: Swift.String?
+  public let isEmail: Swift.Bool
+}
+extension CXoneChatSDK.CustomFieldTextField : Swift.Equatable {
+  public static func == (lhs: CXoneChatSDK.CustomFieldTextField, rhs: CXoneChatSDK.CustomFieldTextField) -> Swift.Bool
+}
+public struct CustomerIdentity : Swift.Equatable {
+  public let id: Swift.String
+  public var firstName: Swift.String?
+  public var lastName: Swift.String?
+  public var fullName: Swift.String? {
+    get
+  }
+  public init(id: Swift.String, firstName: Swift.String?, lastName: Swift.String?)
+  public static func == (a: CXoneChatSDK.CustomerIdentity, b: CXoneChatSDK.CustomerIdentity) -> Swift.Bool
+}
+public enum Environment : Swift.String, Swift.CaseIterable, Swift.Codable {
+  case NA1
+  case EU1
+  case AU1
+  case CA1
+  case UK1
+  case JP1
+  public var location: Swift.String {
+    get
+  }
+  public var chatURL: Swift.String {
+    get
+  }
+  public var socketURL: Swift.String {
+    get
+  }
+  public init?(rawValue: Swift.String)
+  public typealias AllCases = [CXoneChatSDK.Environment]
+  public typealias RawValue = Swift.String
+  nonisolated public static var allCases: [CXoneChatSDK.Environment] {
+    get
+  }
+  public var rawValue: Swift.String {
+    get
+  }
+}
+public struct FileRestrictions {
+  public let allowedFileSize: Swift.Int32
+  public let allowedFileTypes: [CXoneChatSDK.AllowedFileType]
+  public let isAttachmentsEnabled: Swift.Bool
+}
+public struct Message {
+  public let id: Foundation.UUID
+  public let threadId: Foundation.UUID
+  public let contentType: CXoneChatSDK.MessageContentType
+  public let createdAt: Foundation.Date
+  public let attachments: [CXoneChatSDK.Attachment]
+  public let direction: CXoneChatSDK.MessageDirection
+  public let userStatistics: CXoneChatSDK.UserStatistics?
+  public let authorUser: CXoneChatSDK.Agent?
+  public let authorEndUserIdentity: CXoneChatSDK.CustomerIdentity?
+  public var senderInfo: CXoneChatSDK.SenderInfo? {
+    get
+  }
+  public var status: CXoneChatSDK.MessageStatus
+  public init(id: Foundation.UUID, threadId: Foundation.UUID, contentType: CXoneChatSDK.MessageContentType, createdAt: Foundation.Date, attachments: [CXoneChatSDK.Attachment], direction: CXoneChatSDK.MessageDirection, userStatistics: CXoneChatSDK.UserStatistics?, authorUser: CXoneChatSDK.Agent?, authorEndUserIdentity: CXoneChatSDK.CustomerIdentity?, status: CXoneChatSDK.MessageStatus)
+}
+extension CXoneChatSDK.Message : Swift.Equatable {
+  public static func == (lhs: CXoneChatSDK.Message, rhs: CXoneChatSDK.Message) -> Swift.Bool
+}
+public struct MessagePayload : Swift.Equatable {
+  public let text: Swift.String
+  public let postback: Swift.String?
+  public static func == (a: CXoneChatSDK.MessagePayload, b: CXoneChatSDK.MessagePayload) -> Swift.Bool
+}
+public struct OutboundMessage {
+  public let text: Swift.String
+  public let attachments: [CXoneChatSDK.ContentDescriptor]
+  public let postback: Swift.String?
+  public init(text: Swift.String, attachments: [CXoneChatSDK.ContentDescriptor] = [], postback: Swift.String? = nil)
+}
+public struct MessageListPicker : Swift.Equatable {
+  public let title: Swift.String
+  public let text: Swift.String
+  public let buttons: [CXoneChatSDK.MessageSubElementType]
+  public static func == (a: CXoneChatSDK.MessageListPicker, b: CXoneChatSDK.MessageListPicker) -> Swift.Bool
+}
+public struct MessageQuickReplies : Swift.Equatable {
+  public let title: Swift.String
+  public let buttons: [CXoneChatSDK.MessageReplyButton]
+  public static func == (a: CXoneChatSDK.MessageQuickReplies, b: CXoneChatSDK.MessageQuickReplies) -> Swift.Bool
+}
+public struct MessageReplyButton : Swift.Hashable, Swift.Equatable {
+  public let text: Swift.String
+  public let description: Swift.String?
+  public let postback: Swift.String?
+  public let iconName: Swift.String?
+  public let iconUrl: Foundation.URL?
+  public let iconMimeType: Swift.String?
+  public func hash(into hasher: inout Swift.Hasher)
+  public static func == (a: CXoneChatSDK.MessageReplyButton, b: CXoneChatSDK.MessageReplyButton) -> Swift.Bool
+  public var hashValue: Swift.Int {
+    get
+  }
+}
+public struct MessageRichLink : Swift.Equatable {
+  public let title: Swift.String
+  public let url: Foundation.URL
+  public let fileName: Swift.String
+  public let fileUrl: Foundation.URL
+  public let mimeType: Swift.String
+  public static func == (a: CXoneChatSDK.MessageRichLink, b: CXoneChatSDK.MessageRichLink) -> Swift.Bool
+}
+public struct PreChatSurvey {
+  public let name: Swift.String
+  public let customFields: [CXoneChatSDK.PreChatSurveyCustomField]
+}
+public struct PreChatSurveyCustomField {
+  public let isRequired: Swift.Bool
+  public let type: CXoneChatSDK.CustomFieldType
+}
+public struct ProactiveActionDataMessageContent {
+  public let bodyText: Swift.String?
+  public let headlineText: Swift.String?
+  public let headlineSecondaryText: Swift.String?
+  public let image: Swift.String?
+  public init(bodyText: Swift.String? = nil, headlineText: Swift.String? = nil, headlineSecondaryText: Swift.String? = nil, image: Swift.String? = nil)
+}
+public struct ProactiveActionDetails {
+  public let id: Foundation.UUID
+  public let name: Swift.String
+  public let type: CXoneChatSDK.ActionType
+  public let content: CXoneChatSDK.ProactiveActionDataMessageContent?
+  public init(id: Foundation.UUID, name: Swift.String, type: CXoneChatSDK.ActionType, content: CXoneChatSDK.ProactiveActionDataMessageContent?)
+}
+public struct SenderInfo {
+  public let id: Swift.String
+  public let firstName: Swift.String?
+  public let lastName: Swift.String?
+  public var fullName: Swift.String? {
+    get
+  }
+  public init?(message: CXoneChatSDK.Message)
+}
+public struct UserStatistics : Swift.Equatable {
+  public let seenAt: Foundation.Date?
+  public let readAt: Foundation.Date?
+  public static func == (a: CXoneChatSDK.UserStatistics, b: CXoneChatSDK.UserStatistics) -> Swift.Bool
+}
+public struct CXoneChatSDKModule {
+  public static let version: Swift.String
+}
+extension CXoneChatSDK.ActionType : Swift.Equatable {}
+extension CXoneChatSDK.ActionType : Swift.Hashable {}
+extension CXoneChatSDK.ActionType : Swift.RawRepresentable {}
+extension CXoneChatSDK.MessageDirection : Swift.Equatable {}
+extension CXoneChatSDK.MessageDirection : Swift.Hashable {}
+extension CXoneChatSDK.MessageStatus : Swift.Hashable {}
+extension CXoneChatSDK.ChatMode : Swift.Equatable {}
+extension CXoneChatSDK.ChatMode : Swift.Hashable {}
+extension CXoneChatSDK.ChatState : Swift.Hashable {}
+extension CXoneChatSDK.ChatThreadState : Swift.Hashable {}
+extension CXoneChatSDK.Environment : Swift.Equatable {}
+extension CXoneChatSDK.Environment : Swift.Hashable {}
+extension CXoneChatSDK.Environment : Swift.RawRepresentable {}
