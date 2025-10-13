@@ -143,6 +143,25 @@ Events (subscribe with `useEvent(ExpoCxonemobilesdk, 'eventName')`):
 - The iOS CXoneChat SDK framework is already included at `ios/Frameworks/CXoneChatSDK.xcframework` and referenced by `ios/ExpoCxonemobilesdk.podspec`.
 - Use the example app to exercise the module: Connection, Threads, CustomFields, Customer, Analytics.
 
+## Platform Support
+- iOS only (minimum iOS 15.1). No web or Android implementation.
+
+## Feature Coverage
+- Core SDK integration: prepare, connect, disconnect, signOut (yes)
+- Modes: detect at runtime via `Connection.getChatMode()` (yes)
+- Multi-thread chat: list/create/load/send/markRead/update/archive/end/typing (yes)
+- Rich content messages: send attachment (URL/base64) (yes)
+- Custom fields: customer/thread get/set (yes)
+- Customer identity & OAuth: set identity/name/device token/auth code/code verifier (yes)
+- Analytics: viewPage/viewPageEnded/chatWindowOpen/conversion (yes)
+- Events: chatUpdated, (threads|thread)Updated, agentTyping, etc. (yes)
+
+## Troubleshooting
+- After adding/updating Swift files under `ios/`, reinstall pods in the example app so Xcode sees new sources:
+  - `cd example/ios && pod install`
+  - Then clean build and run (e.g., `npx expo run:ios`)
+- Build errors about missing `CXoneChatSDK` usually indicate the vendored framework is absent or not linked.
+
 ## About CXoneChatSDK.xcframework
 
 The vendored XCFramework in `ios/Frameworks` is generated from a maintained fork of the upstream SDK:

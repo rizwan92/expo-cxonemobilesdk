@@ -7,6 +7,11 @@ export default function App() {
   // Subscribe to key events for debugging/demo
   const chatUpdated = useEvent(ExpoCxonemobilesdk, 'chatUpdated');
   const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
+  const threadUpdated = useEvent(ExpoCxonemobilesdk, 'threadUpdated');
+  const agentTyping = useEvent(ExpoCxonemobilesdk, 'agentTyping');
+  const customEventMessage = useEvent(ExpoCxonemobilesdk, 'customEventMessage');
+  const proactivePopupAction = useEvent(ExpoCxonemobilesdk, 'proactivePopupAction');
+  const errorEvent = useEvent(ExpoCxonemobilesdk, 'error');
 
   return (
     <SafeAreaView style={styles.container}>
@@ -16,6 +21,11 @@ export default function App() {
           <Text>Call native methods with logs</Text>
           <Text>chatUpdated: {chatUpdated ? `${chatUpdated.state}/${chatUpdated.mode}` : '—'}</Text>
           <Text>threadsUpdated: {threadsUpdated ? `${threadsUpdated.threadIds?.length ?? 0}` : '—'}</Text>
+          <Text>threadUpdated: {threadUpdated ? `${threadUpdated.threadId ?? ''}` : '—'}</Text>
+          <Text>agentTyping: {agentTyping ? `${agentTyping.threadId}:${agentTyping.isTyping}` : '—'}</Text>
+          <Text>customEventMessage: {customEventMessage ? `${customEventMessage.base64?.slice(0, 8)}…` : '—'}</Text>
+          <Text>proactivePopupAction: {proactivePopupAction ? `${proactivePopupAction.actionId}` : '—'}</Text>
+          <Text>error: {errorEvent ? `${errorEvent.message}` : '—'}</Text>
           <Button
             title="prepare (env=NA1, brandId=123, channel=demo)"
             onPress={async () => {

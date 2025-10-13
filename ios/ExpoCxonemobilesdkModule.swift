@@ -2,6 +2,13 @@ import ExpoModulesCore
 import CXoneChatSDK
 
 public class ExpoCxonemobilesdkModule: Module {
+  private var delegateRegistered = false
+  private func registerDelegateIfNeeded() {
+    if !delegateRegistered {
+      CXoneChat.shared.add(delegate: self)
+      delegateRegistered = true
+    }
+  }
     
   // Each module class must implement the definition function. The definition consists of components
   // that describes the module's functionality and behavior.
@@ -32,12 +39,12 @@ public class ExpoCxonemobilesdkModule: Module {
     }
 
     AsyncFunction("prepare") { (env: String, brandId: Int, channelId: String) async throws in
-      CXoneChat.shared.add(delegate: self)
+      self.registerDelegateIfNeeded()
       try await ConnectionBridge.prepare(env: env, brandId: brandId, channelId: channelId)
     }
 
     AsyncFunction("connect") { () async throws in
-      CXoneChat.shared.add(delegate: self)
+      self.registerDelegateIfNeeded()
       try await ConnectionBridge.connect()
     }
 
