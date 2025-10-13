@@ -14,14 +14,8 @@ across Swift, TypeScript, podspecs, and the example app.
     - No events and no native views are currently enabled.
 - iOS packaging
   - `ios/ExpoCxonemobilesdk.podspec`
-    - Vendors required XCFrameworks under `ios/Frameworks`.
-  - `nice-cxone-mobile-sdk-ios/scripts/build_all_xcframeworks.sh`
-    - Builds XCFrameworks for `CXoneChatSDK` and its dependencies.
-    - Copies outputs into `ios/Frameworks`.
-  - `nice-cxone-mobile-sdk-ios/scripts/build_spm_xcframework.sh`
-    - Low-level helper used by the build-all script.
-  - `stubs/*`
-    - Minimal stub packages used to avoid building macro-heavy deps (optional).
+    - Vendors `ios/Frameworks/CXoneChatSDK.xcframework`.
+    - XCFramework generation is handled in a separate repository; this repo only vendors the output.
 - TypeScript bindings
   - `src/ExpoCxonemobilesdkModule.ts`
     - JSI binding via `requireNativeModule("ExpoCxonemobilesdk")`.
@@ -55,14 +49,26 @@ across Swift, TypeScript, podspecs, and the example app.
   - Add a button or handler to invoke the new method.
   - Log before/after, and catch errors with `console.error`.
 
-4) Dependencies & Packaging (if required)
-- If the new method requires additional native dependencies:
-  - Add corresponding XCFrameworks into `ios/Frameworks`.
-  - Update `ios/ExpoCxonemobilesdk.podspec` to include them under `s.vendored_frameworks`.
-  - (If building from source) run:
-    - `cd nice-cxone-mobile-sdk-ios`
-    - `./scripts/build_all_xcframeworks.sh Release ../ios/Frameworks`
-  - Then reinstall pods in the example app: `cd ../example/ios && pod install`.
+## Modularity Guidelines (Swift + TypeScript)
+
+As we expand CXoneChatSDK coverage, avoid putting all logic in a single file. Group related functionality into small, focused files.
+
+Swift (iOS)
+- Keep `definition()` in `ios/ExpoCxonemobilesdkModule.swift` minimal.
+- Add feature-focused Swift files in `ios/` (or subfolders) that each return the definitions used by `definition()` (e.g., connection, threads, messages, analytics).
+- Keep logging and error mapping in those helpers.
+
+TypeScript
+- Keep `src/ExpoCxonemobilesdkModule.ts` as the typed native binding only.
+- Add `src/api/` wrappers per feature (e.g., `connection.ts`, `threads.ts`, `messages.ts`) that call the native module and implement logging, argument shaping, and error handling.
+- Re-export your public API from `src/index.ts`.
+
+Example App
+- Mirror the modular structure in `example/App.tsx` with sections per feature and call into `src/api/*` so the example exercises the same public API you ship.
+
+README
+- Keep concise: quickstart, supported features, and a link to the fork that generates the XCFramework.
+- Update the features list and minimal usage snippets when adding new APIs.
 
 ## Adding Events (Only if Needed)
 - Swift: In `ios/ExpoCxonemobilesdkModule.swift`, add `Events("eventName")` at the top
@@ -86,18 +92,3 @@ across Swift, TypeScript, podspecs, and the example app.
 - Do: Update the example app to reflect any new API.
 - Don’t: Re-add previous sample pieces (e.g., `PI`, `setValueAsync`, native view) unless
   there is a product requirement.
-
-## Quick Build Steps
-- Build XCFrameworks and copy:
-  - `cd nice-cxone-mobile-sdk-ios`
-  - `./scripts/build_all_xcframeworks.sh Release ../ios/Frameworks`
-- Install pods & run example:
-  - `cd ../example/ios && pod install`
-  - `npx expo run:ios`
-
-## Known Pitfalls
-- Missing dependent Swift modules (e.g., `CXoneGuideUtility`, `Mockable`) will cause
-  `failed to build module` errors if not present as XCFrameworks.
-- `Environment` must be one of the SDK’s uppercased cases (e.g., `NA1`, `EU1`).
-- `brandId` is an `Int` in Swift; pass a `number` from TypeScript.
-

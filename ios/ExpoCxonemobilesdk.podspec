@@ -28,9 +28,6 @@ Pod::Spec.new do |s|
   # Ensure these exist locally before running `pod install`.
   s.vendored_frameworks = [
     'Frameworks/CXoneChatSDK.xcframework',
-    'Frameworks/CXoneGuideUtility.xcframework',
-    'Frameworks/KeychainSwift.xcframework',
-    'Frameworks/Mockable.xcframework'
   ]
 
 

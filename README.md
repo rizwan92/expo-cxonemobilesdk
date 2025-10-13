@@ -23,33 +23,11 @@ npm install expo-cxonemobilesdk
 
 ### Configure for Android
 
-
-
+Not required for this package.
 
 ### Configure for iOS
 
-The CXoneChatSDK depends on Swift modules `CXoneGuideUtility`, `KeychainSwift`, and `Mockable`. These must be present alongside `CXoneChatSDK.xcframework` so Xcode can import the SDK.
-
-If you have the SPM workspace under `nice-cxone-mobile-sdk-ios/`, you can build all required XCFrameworks and copy them into the module automatically:
-
-```
-cd nice-cxone-mobile-sdk-ios
-chmod +x scripts/build_all_xcframeworks.sh
-./scripts/build_all_xcframeworks.sh Release ../ios/Frameworks
-```
-
-This produces and copies:
-- `ios/Frameworks/CXoneChatSDK.xcframework`
-- `ios/Frameworks/CXoneGuideUtility.xcframework`
-- `ios/Frameworks/KeychainSwift.xcframework`
-- `ios/Frameworks/Mockable.xcframework`
-
-Then install pods in the example app:
-
-```
-cd ../example/ios
-pod install
-```
+No manual XCFramework generation required — the SDK frameworks are vendored under `ios/Frameworks` and linked by the podspec.
 
 # Contributing
 
@@ -57,64 +35,17 @@ Contributions are very welcome! Please refer to guidelines described in the [con
 
 
 
-## Building XC framework using nice-cxone-mobile-sdk-ios
- first step is dientifying the scheme  using xcodebuild -list -json
+## Notes
 
- ```
- {
-  "workspace" : {
-    "name" : "nice-cxone-mobile-sdk-ios",
-    "schemes" : [
-      "CXoneChatSDK"
-    ]
-  }
-}
-```
+- The iOS CXoneChat SDK framework is already included at `ios/Frameworks/CXoneChatSDK.xcframework` and referenced by `ios/ExpoCxonemobilesdk.podspec`.
+- Use the example app to exercise the module: `prepare`, `connect`, `disconnect`.
 
+## About CXoneChatSDK.xcframework
 
-then we can build the framework using the following command
+The vendored XCFramework in `ios/Frameworks` is generated from a maintained fork of the upstream SDK:
 
-```
+- Fork: https://github.com/rizwan92/nice-cxone-mobile-sdk-ios
 
-# 3) Archive for iOS device
-xcodebuild archive \
-  -scheme CXoneChatSDK \
-  -destination 'generic/platform=iOS' \
-  -archivePath ./build/CXoneChatSDK-iOS.xcarchive \
-  SKIP_INSTALL=NO BUILD_LIBRARY_FOR_DISTRIBUTION=YES CODE_SIGNING_ALLOWED=NO
+We build the XCFramework in that fork and then manually copy the output into this repository under `ios/Frameworks` for use by the podspec. If regeneration is needed, use the fork’s scripts to produce fresh artifacts and replace:
 
-# 4) Archive for iOS Simulator
-xcodebuild archive \
-  -scheme CXoneChatSDK \
-  -destination 'generic/platform=iOS Simulator' \
-  -archivePath ./build/CXoneChatSDK-Sim.xcarchive \
-  SKIP_INSTALL=NO BUILD_LIBRARY_FOR_DISTRIBUTION=YES CODE_SIGNING_ALLOWED=NO
-
-# 5) Create the XCFramework
-xcodebuild -create-xcframework \
-  -framework ./build/CXoneChatSDK-iOS.xcarchive/Products/Library/Frameworks/CXoneChatSDK.framework \
-  -framework ./build/CXoneChatSDK-Sim.xcarchive/Products/Library/Frameworks/CXoneChatSDK.framework \
-  -output ./build/CXoneChatSDK.xcframework
-
-```
-
-we have to use the generic XCFramework to avoid issues with simulator and device architectures
-
-then the generated XCFramework can be added to the ios/Frameworks/CXoneChatSDK.xcframework directory and linked in the podspec file
-
-```
-  # Vendored binary
-  s.vendored_frameworks = 'Frameworks/CXoneChatSDK.xcframework'
-
-```  
-
-
-
-# About CXoneWrapper.xcframework
-
-This project builds a `CXoneWrapper.xcframework` that wraps the [nice-cxone-mobile-sdk-ios](https://github.com/nice/nice-cxone-mobile-sdk-ios) framework, providing a simplified interface for integration into Expo applications.
-using git submoudle git submodule add https://github.com/nice-devone/nice-cxone-mobile-sdk-ios CXoneWrapper/Vendor/nice-cxone-mobile-sdk-ios
-The build script `scripts/build_wrapper_xcframeworks.sh` allows customization of the build process, including options for release/debug builds, building for distribution, embedding privacy manifests, and cleaning derived data.
-
-
-
+- `ios/Frameworks/CXoneChatSDK.xcframework`
