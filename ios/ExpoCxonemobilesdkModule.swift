@@ -52,6 +52,12 @@ public class ExpoCxonemobilesdkModule: Module {
     Function("getChatMode") { () -> String in
       ConnectionBridge.modeString()
     }
+    Function("getChatState") { () -> String in
+      ConnectionBridge.stateString()
+    }
+    Function("isConnected") { () -> Bool in
+      ConnectionBridge.isConnected()
+    }
     AsyncFunction("executeTrigger") { (triggerId: String) async throws in
       guard let uuid = UUID(uuidString: triggerId) else {
         let err = NSError(domain: "ExpoCxonemobilesdk", code: -3, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID: \(triggerId)"])
@@ -158,6 +164,13 @@ public class ExpoCxonemobilesdkModule: Module {
         throw NSError(domain: "ExpoCxonemobilesdk", code: -3, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID: \(threadId)"])
       }
       try await ThreadsBridge.reportTyping(threadId: uuid, isTyping: isTyping)
+    }
+
+    Function("threadsGetMessages") { (threadId: String) throws -> [[String: Any]] in
+      guard let uuid = UUID(uuidString: threadId) else {
+        throw NSError(domain: "ExpoCxonemobilesdk", code: -3, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID: \(threadId)"])
+      }
+      return try ThreadsBridge.messages(threadId: uuid)
     }
 
     // MARK: Rich content messages

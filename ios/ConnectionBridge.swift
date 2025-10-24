@@ -38,5 +38,21 @@ enum ConnectionBridge {
     @unknown default: return "unknown"
     }
   }
-}
 
+  static func stateString() -> String {
+    let s = String(describing: CXoneChat.shared.state)
+    NSLog("[ExpoCxonemobilesdk] Connection.state -> \(s)")
+    return s
+  }
+
+  static func isConnected() -> Bool {
+    switch CXoneChat.shared.state {
+    case .connected, .ready:
+      NSLog("[ExpoCxonemobilesdk] Connection.isConnected -> true")
+      return true
+    default:
+      NSLog("[ExpoCxonemobilesdk] Connection.isConnected -> false")
+      return false
+    }
+  }
+}

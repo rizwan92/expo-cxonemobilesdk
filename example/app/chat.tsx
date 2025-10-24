@@ -2,14 +2,15 @@ import React, { useMemo, useState } from 'react';
 import { SafeAreaView, ScrollView, View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import ExpoCxonemobilesdk, { Connection, Threads, Customer, CustomFields, Analytics } from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
+import { useConnectionStatus } from './useConnectionStatus';
 
 export default function ChatScreen() {
   const TAG = '[ChatScreen]';
   const chatUpdated = useEvent(ExpoCxonemobilesdk, 'chatUpdated');
   const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
-  const [env, setEnv] = useState('NA1');
-  const [brandId, setBrandId] = useState('123');
-  const [channelId, setChannelId] = useState('demo');
+  const [env, setEnv] = useState('EU1');
+  const [brandId, setBrandId] = useState('1086');
+  const [channelId, setChannelId] = useState('chat_15bf234b-d6a8-4ce0-8b90-e8cf3c6f3748');
   const [triggerId, setTriggerId] = useState('00000000-0000-0000-0000-000000000001');
 
   // Threads state
@@ -44,6 +45,7 @@ export default function ChatScreen() {
   const [convValue, setConvValue] = useState('99.99');
 
   const mode = useMemo(() => Connection.getChatMode(), [threadsUpdated, chatUpdated]);
+  const { connected, chatState, checking, connectAndSync, refresh } = useConnectionStatus({ attempts: 3, intervalMs: 1000 });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -68,15 +70,26 @@ export default function ChatScreen() {
           />
           <View style={styles.spacer} />
           <Button
-            title="Connect"
+            title={checking ? "Connecting…" : "Connect"}
             onPress={async () => {
-              console.log(TAG, 'connect');
-              await Connection.connect();
+              console.log(TAG, 'connect (with status checks)');
+              await connectAndSync();
             }}
           />
           <View style={styles.spacer} />
           <Button title="Disconnect" onPress={() => Connection.disconnect()} />
+          <View style={styles.spacer} />
+          <Button
+            title="Check Connection"
+            onPress={() => {
+              console.log(TAG, 'manual connection check');
+              refresh();
+            }}
+          />
           <Text style={styles.meta}>Mode: {mode}</Text>
+          <Text style={styles.meta}>State: {chatState}</Text>
+          <Text style={styles.meta}>Connected: {String(connected)}</Text>
+          <Text style={styles.meta}>Checking: {String(checking)}</Text>
           <Text style={styles.meta}>chatUpdated: {chatUpdated ? `${chatUpdated.state}/${chatUpdated.mode}` : '—'}</Text>
           <Text style={styles.meta}>threadsUpdated: {threadsUpdated ? `${threadsUpdated.threadIds?.length ?? 0}` : '—'}</Text>
           <Row label="Trigger ID">
@@ -84,7 +97,7 @@ export default function ChatScreen() {
           </Row>
           <Button title="Execute Trigger" onPress={async () => { await Connection.executeTrigger(triggerId); }} />
           <View style={styles.spacer} />
-          <Button title="Sign Out" onPress={() => Connection.executeTrigger(triggerId)} />
+          <Button title="Sign Out" onPress={() => Connection.signOut()} />
         </View>
 
         <View style={styles.card}>

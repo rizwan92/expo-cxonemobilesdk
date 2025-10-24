@@ -23,8 +23,24 @@ export function getChatMode() {
   return mode;
 }
 
+export function getChatState() {
+  const state = Native.getChatState();
+  console.log(TAG, 'getChatState ->', state);
+  return state;
+}
+
+export function isConnected() {
+  const connected = Native.isConnected();
+  console.log(TAG, 'isConnected ->', connected);
+  return connected;
+}
+
 export async function executeTrigger(triggerId: string) {
   console.log(TAG, 'executeTrigger', triggerId);
   await Native.executeTrigger(triggerId);
 }
 
+export function signOut() {
+  console.log(TAG, 'signOut');
+  Native.signOut();
+}

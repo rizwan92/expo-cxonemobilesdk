@@ -1,4 +1,5 @@
 import { NativeModule, requireNativeModule } from "expo";
+import type { ChatMessage } from './types';
 
 import { ExpoCxonemobilesdkModuleEvents } from "./ExpoCxonemobilesdk.types";
 
@@ -7,6 +8,8 @@ declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkMo
   connect(): Promise<void>;
   disconnect(): void;
   getChatMode(): 'singlethread' | 'multithread' | 'liveChat' | 'unknown';
+  getChatState(): 'initial' | 'preparing' | 'prepared' | 'offline' | 'connecting' | 'connected' | 'ready' | 'closed';
+  isConnected(): boolean;
   executeTrigger(triggerId: string): Promise<void>;
   setCustomerName(firstName: string, lastName: string): void;
   setCustomerIdentity(id: string, firstName?: string, lastName?: string): void;
@@ -31,6 +34,7 @@ declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkMo
   threadsTyping(threadId: string, isTyping: boolean): Promise<void>;
   threadsSendAttachmentURL(threadId: string, url: string, mimeType: string, fileName: string, friendlyName: string): Promise<void>;
   threadsSendAttachmentBase64(threadId: string, base64: string, mimeType: string, fileName: string, friendlyName: string): Promise<void>;
+  threadsGetMessages(threadId: string): ChatMessage[];
   customerCustomFieldsGet(): Record<string, string>;
   customerCustomFieldsSet(fields: Record<string, string>): Promise<void>;
   threadCustomFieldsGet(threadId: string): Record<string, string>;

@@ -71,5 +71,46 @@ enum ThreadsBridge {
   static func reportTyping(threadId: UUID, isTyping: Bool) async throws {
     try await provider(for: threadId).reportTypingStart(isTyping)
   }
-}
 
+  static func messages(threadId: UUID) throws -> [[String: Any]] {
+    let p = try provider(for: threadId)
+    let thread = p.chatThread
+    let dateFormatter = ISO8601DateFormatter()
+    return thread.messages.map { m in
+      var text: String? = nil
+      switch m.contentType {
+      case .text(let payload):
+        text = payload.text
+      case .richLink(_):
+        text = "[rich link]"
+      case .quickReplies(_):
+        text = "[quick replies]"
+      case .listPicker(_):
+        text = "[list picker]"
+      case .unknown:
+        text = "[unknown]"
+      }
+      var author: [String: Any]? = nil
+      if let a = m.authorUser {
+        author = [
+          "id": a.id,
+          "firstName": a.firstName,
+          "surname": a.surname,
+          "nickname": a.nickname as Any,
+          "fullName": a.fullName,
+          "imageUrl": a.imageUrl
+        ]
+      }
+      return [
+        "id": m.id.uuidString,
+        "threadId": m.threadId.uuidString,
+        "text": text as Any,
+        "createdAt": dateFormatter.string(from: m.createdAt),
+        "createdAtMs": Int64(m.createdAt.timeIntervalSince1970 * 1000),
+        "direction": String(describing: m.direction),
+        "status": String(describing: m.status),
+        "author": author as Any
+      ]
+    }
+  }
+}

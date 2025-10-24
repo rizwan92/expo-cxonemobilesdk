@@ -1,4 +1,5 @@
 import Native from '../ExpoCxonemobilesdkModule';
+import type { ChatMessage } from '../types';
 
 const TAG = '[CXone/Threads]';
 
@@ -9,10 +10,15 @@ export function list(): string[] {
 }
 
 export async function create(customFields?: Record<string, string>): Promise<string> {
-  console.log(TAG, 'create', customFields);
-  const id = await Native.threadsCreate(customFields);
-  console.log(TAG, 'create ->', id);
-  return id;
+  console.log(TAG, 'create', customFields ?? '(no custom fields)');
+  try {
+    const id = await Native.threadsCreate(customFields);
+    console.log(TAG, 'create ->', id);
+    return id;
+  } catch (e) {
+    console.error(TAG, 'create failed', e);
+    throw e;
+  }
 }
 
 export async function load(threadId?: string) {
@@ -63,4 +69,10 @@ export async function sendAttachmentURL(threadId: string, url: string, mimeType:
 export async function sendAttachmentBase64(threadId: string, base64: string, mimeType: string, fileName: string, friendlyName: string) {
   console.log(TAG, 'sendAttachmentBase64', { threadId, mimeType, fileName, friendlyName });
   await Native.threadsSendAttachmentBase64(threadId, base64, mimeType, fileName, friendlyName);
+}
+
+export async function getMessages(threadId: string): Promise<ChatMessage[]> {
+  console.log(TAG, 'getMessages', threadId);
+  const list = await Native.threadsGetMessages(threadId);
+  return list as ChatMessage[];
 }
