@@ -16,7 +16,7 @@ enum ThreadsBridge {
     }
   }
 
-  static func create(customFields: [String: String]?) async throws -> String {
+  static func create(customFields: [String: String]?) async throws -> [String: Any] {
     let provider: any ChatThreadProvider
     if let customFields, !customFields.isEmpty {
       provider = try await CXoneChat.shared.threads.create(with: customFields)
@@ -24,14 +24,7 @@ enum ThreadsBridge {
       provider = try await CXoneChat.shared.threads.create()
     }
     let thread = provider.chatThread
-    // Reflect id
-    let mirror = Mirror(reflecting: thread)
-    for child in mirror.children {
-      if child.label == "id", let id = child.value as? UUID {
-        return id.uuidString
-      }
-    }
-    throw NSError(domain: "ExpoCxonemobilesdk", code: -10, userInfo: [NSLocalizedDescriptionKey: "Unable to read thread id"])
+    return (JSONBridge.encode(thread) as? [String: Any]) ?? [:]
   }
 
   static func load(threadId: UUID?) async throws {
@@ -75,42 +68,61 @@ enum ThreadsBridge {
   static func messages(threadId: UUID) throws -> [[String: Any]] {
     let p = try provider(for: threadId)
     let thread = p.chatThread
-    let dateFormatter = ISO8601DateFormatter()
-    return thread.messages.map { m in
-      var text: String? = nil
-      switch m.contentType {
-      case .text(let payload):
-        text = payload.text
-      case .richLink(_):
-        text = "[rich link]"
-      case .quickReplies(_):
-        text = "[quick replies]"
-      case .listPicker(_):
-        text = "[list picker]"
-      case .unknown:
-        text = "[unknown]"
-      }
-      var author: [String: Any]? = nil
-      if let a = m.authorUser {
-        author = [
-          "id": a.id,
-          "firstName": a.firstName,
-          "surname": a.surname,
-          "nickname": a.nickname as Any,
-          "fullName": a.fullName,
-          "imageUrl": a.imageUrl
-        ]
-      }
-      return [
-        "id": m.id.uuidString,
-        "threadId": m.threadId.uuidString,
-        "text": text as Any,
-        "createdAt": dateFormatter.string(from: m.createdAt),
-        "createdAtMs": Int64(m.createdAt.timeIntervalSince1970 * 1000),
-        "direction": String(describing: m.direction),
-        "status": String(describing: m.status),
-        "author": author as Any
-      ]
+    return thread.messages.compactMap { JSONBridge.encode($0) as? [String: Any] }
+  }
+
+  static func messagesLimited(threadId: UUID, limit: Int) throws -> [[String: Any]] {
+    let p = try provider(for: threadId)
+    let thread = p.chatThread
+    let msgs = thread.messages
+    let count = max(0, min(limit, msgs.count))
+    let slice = msgs.suffix(count)
+    return slice.compactMap { JSONBridge.encode($0) as? [String: Any] }
+  }
+
+  static func ensureMessages(threadId: UUID, minCount: Int) async throws -> [[String: Any]] {
+    let p = try provider(for: threadId)
+    let target = max(0, minCount)
+    // Load older messages until we have at least target or there are no more
+    while p.chatThread.messages.count < target && p.chatThread.hasMoreMessagesToLoad {
+      try await p.loadMoreMessages()
     }
+    let msgs = p.chatThread.messages
+    let slice = msgs.suffix(min(target, msgs.count))
+    return slice.compactMap { JSONBridge.encode($0) as? [String: Any] }
+  }
+
+  static func listDetails() -> [[String: Any]] {
+    let threads = CXoneChat.shared.threads.get()
+    return threads.compactMap { JSONBridge.encode($0) as? [String: Any] }
+  }
+
+  static func getDetails(threadId: UUID) throws -> [String: Any] {
+    let p = try provider(for: threadId)
+    return (JSONBridge.encode(p.chatThread) as? [String: Any]) ?? [:]
+  }
+
+  static func listDetailsLimited(limit: Int) -> [[String: Any]] {
+    let threads = CXoneChat.shared.threads.get()
+    return threads.compactMap { thread in
+      var dict = (JSONBridge.encode(thread) as? [String: Any]) ?? [:]
+      if var arr = dict["messages"] as? [[String: Any]] {
+        let count = max(0, min(limit, arr.count))
+        arr = Array(arr.suffix(count))
+        dict["messages"] = arr
+      }
+      return dict
+    }
+  }
+
+  static func getDetailsLimited(threadId: UUID, limit: Int) throws -> [String: Any] {
+    let p = try provider(for: threadId)
+    var dict = (JSONBridge.encode(p.chatThread) as? [String: Any]) ?? [:]
+    if var arr = dict["messages"] as? [[String: Any]] {
+      let count = max(0, min(limit, arr.count))
+      arr = Array(arr.suffix(count))
+      dict["messages"] = arr
+    }
+    return dict
   }
 }

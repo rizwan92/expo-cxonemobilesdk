@@ -114,9 +114,9 @@ export default function ChatScreen() {
           <Button
             title="Create Thread"
             onPress={async () => {
-              const id = await Threads.create();
-              console.log(TAG, 'created thread', id);
-              setActiveThread(id);
+              const details = await Threads.create();
+              console.log(TAG, 'created thread', details);
+              setActiveThread(details.id);
             }}
           />
           <Text style={styles.meta}>Active thread: {activeThread ?? '—'}</Text>

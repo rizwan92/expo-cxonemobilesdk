@@ -63,6 +63,30 @@ TypeScript
 - Add `src/api/` wrappers per feature (e.g., `connection.ts`, `threads.ts`, `messages.ts`) that call the native module and implement logging, argument shaping, and error handling.
 - Re-export your public API from `src/index.ts`.
 
+## Return Shape and Typing Strategy (SDK JSON First)
+
+Goal: For values that originate in CXoneChatSDK (threads, messages, agents, states), prefer returning the full native payload as JSON so we don’t lose information when the SDK evolves. Keep the JavaScript surface permissive by default to avoid breaking changes when the SDK adds fields.
+
+Swift (iOS)
+- Prefer returning `[String: Any]` (JSON-serializable dictionaries) for SDK objects rather than mapping to narrow primitives.
+- When feasible, include “full details” variants that return everything the SDK exposes (e.g., `threadsGetFullDetails`).
+- Log the full JSON (pretty printed) when adding new endpoints so we can shape TS helpers later: `NSLog("[ExpoCxonemobilesdk] …\n<json>")`.
+- Keep small helpers to extract common fields, but do not strip properties from the returned JSON.
+
+TypeScript
+- In `src/ExpoCxonemobilesdkModule.ts` declare return types as broad JSON shapes, e.g. `Record<string, any>` or dedicated interfaces with index signatures.
+- In `src/api/*` you MAY add optional “curated” helpers that parse the JSON into stricter types for app code, but the native binding should tolerate unknown fields.
+- Favor forward-compatible types over strict enums for SDK-driven fields (use `string` plus docs, or union with fallback `string`).
+
+Examples
+- Threads
+  - Native: `threadsCreate` returns the full thread JSON (id, state, assignedAgent, messages, scrollToken, etc.).
+  - TypeScript: the binding type can be `Record<string, any>` or a permissive `ChatThreadDetails` that allows unknown keys.
+  - Optional: expose both `threadsGetDetails` (light) and `threadsGetFullDetails` (heavy) for performance-sensitive surfaces.
+
+Breaking changes policy
+- This repository is in early development; prefer forward-compatibility. If adding a new field from the SDK, return it as-is in JSON. Do not remove existing fields without a deprecation note.
+
 Example App
 - Mirror the modular structure in `example/App.tsx` with sections per feature and call into `src/api/*` so the example exercises the same public API you ship.
 

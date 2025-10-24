@@ -181,8 +181,8 @@ export default function App() {
             title="Create Thread"
             onPress={async () => {
               try {
-                const id = await Threads.create();
-                console.log(`${TAG} created thread`, id);
+                const details = await Threads.create();
+                console.log(`${TAG} created thread`, details);
               } catch (e) {
                 console.error(`${TAG} create thread failed`, e);
               }

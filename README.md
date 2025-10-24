@@ -48,8 +48,8 @@ const mode = Connection.getChatMode(); // 'singlethread' | 'multithread' | 'live
 
 // Threads (multithread)
 const ids = Threads.list();
-const newId = await Threads.create();
-await Threads.sendText(newId, 'Hello from Expo');
+const details = await Threads.create();
+await Threads.sendText(details.id, 'Hello from Expo');
 await Threads.markRead(newId);
 
 // Rich content
@@ -63,7 +63,7 @@ await Threads.sendAttachmentURL(
 
 // Custom fields
 await CustomFields.setCustomer({ plan: 'gold' });
-await CustomFields.setThread(newId, { topic: 'support' });
+await CustomFields.setThread(details.id, { topic: 'support' });
 
 // Customer identity / OAuth
 Customer.setName('Jane', 'Doe');
@@ -100,7 +100,7 @@ See `example/App.tsx` for a runnable demo.
   - `signOut(): void`
 - Threads (multithread)
   - `list(): string[]`
-  - `create(customFields?: Record<string,string>): Promise<string>`
+  - `create(customFields?: Record<string,string>): Promise<ChatThreadDetails>`
   - `load(threadId?: string): Promise<void>`
   - `sendText(threadId: string, text: string, postback?: string): Promise<void>`
   - `loadMore(threadId: string): Promise<void>`

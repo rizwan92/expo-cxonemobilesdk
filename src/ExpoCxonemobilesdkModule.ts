@@ -1,5 +1,5 @@
 import { NativeModule, requireNativeModule } from "expo";
-import type { ChatMessage } from './types';
+import type { ChatMessage, ChatThreadDetails } from './types';
 
 import { ExpoCxonemobilesdkModuleEvents } from "./ExpoCxonemobilesdk.types";
 
@@ -23,8 +23,12 @@ declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkMo
   analyticsChatWindowOpen(): Promise<void>;
   analyticsConversion(type: string, value: number): Promise<void>;
   threadsList(): string[];
-  threadsCreate(customFields?: Record<string, string>): Promise<string>;
+  threadsCreate(customFields?: Record<string, string>): Promise<ChatThreadDetails>;
   threadsLoad(threadId?: string): Promise<void>;
+  threadsListDetails(): ChatThreadDetails[];
+  threadsListDetailsLimited(limit: number): ChatThreadDetails[];
+  threadsGetDetails(threadId: string): ChatThreadDetails;
+  threadsGetDetailsLimited(threadId: string, limit: number): ChatThreadDetails;
   threadsSendText(threadId: string, text: string, postback?: string): Promise<void>;
   threadsLoadMore(threadId: string): Promise<void>;
   threadsMarkRead(threadId: string): Promise<void>;
@@ -35,6 +39,9 @@ declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkMo
   threadsSendAttachmentURL(threadId: string, url: string, mimeType: string, fileName: string, friendlyName: string): Promise<void>;
   threadsSendAttachmentBase64(threadId: string, base64: string, mimeType: string, fileName: string, friendlyName: string): Promise<void>;
   threadsGetMessages(threadId: string): ChatMessage[];
+  threadsGetMessagesLimited(threadId: string, limit: number): ChatMessage[];
+  threadsEnsureMessages(threadId: string, minCount: number): Promise<ChatMessage[]>;
+  threadsGetMessagesLimited(threadId: string, limit: number): ChatMessage[];
   customerCustomFieldsGet(): Record<string, string>;
   customerCustomFieldsSet(fields: Record<string, string>): Promise<void>;
   threadCustomFieldsGet(threadId: string): Record<string, string>;

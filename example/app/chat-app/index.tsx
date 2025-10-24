@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { SafeAreaView, View, Text, Button, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import ExpoCxonemobilesdk, { Connection, Threads, Customer } from 'expo-cxonemobilesdk';
+import type { ChatThreadDetails } from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
 import { useConnectionStatus } from '../useConnectionStatus';
 import { CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID } from './config';
@@ -14,7 +15,7 @@ export default function ChatAppHome() {
   const { connected, chatState, checking, connectAndSync, refresh } = useConnectionStatus({ attempts: 5, intervalMs: 800 });
 
   const [visitorId, setVisitorId] = useState<string | null>(null);
-  const [threadIds, setThreadIds] = useState<string[]>([]);
+  const [threadList, setThreadList] = useState<ChatThreadDetails[]>([]);
   const [prepareDone, setPrepareDone] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
   const [chatMode, setChatMode] = useState<'singlethread' | 'multithread' | 'liveChat' | 'unknown'>(
@@ -57,7 +58,7 @@ export default function ChatAppHome() {
   // Load visitor id and thread list
   const reload = useCallback(() => {
     setVisitorId(Customer.getVisitorId());
-    setThreadIds(Threads.list());
+    setThreadList(Threads.listDetails());
     setChatMode(Connection.getChatMode());
   }, []);
 
@@ -91,10 +92,10 @@ export default function ChatAppHome() {
       for (let i = 0; i < 6; i++) {
         // eslint-disable-next-line no-await-in-loop
         await new Promise((r) => setTimeout(r, 500));
-        const ids = Threads.list();
-        setThreadIds(ids);
-        if (ids.length > 0) {
-          router.push(`/chat-app/thread/${ids[0]}`);
+        const list = Threads.listDetails();
+        setThreadList(list);
+        if (list.length > 0) {
+          router.push(`/chat-app/thread/${list[0].id}`);
           break;
         }
       }
@@ -142,24 +143,35 @@ export default function ChatAppHome() {
           disabled={!isMultithread}
           onPress={async () => {
             try {
-              const id = await Threads.create();
-              setThreadIds(Threads.list());
-              router.push(`/chat-app/thread/${id}`);
+              const details = await Threads.create();
+              setThreadList(Threads.listDetails());
+              router.push(`/chat-app/thread/${details.id}`);
             } catch (e) {
               setLastError(String((e as any)?.message ?? e));
             }
           }}
         />
         <FlatList
-          data={threadIds}
-          keyExtractor={(id) => id}
+          data={threadList}
+          keyExtractor={(t) => t.id}
           ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
           renderItem={({ item }) => (
             <TouchableOpacity
               style={styles.thread}
-              onPress={() => router.push(`/chat-app/thread/${item}`)}
+              onPress={() => router.push(`/chat-app/thread/${item.id}`)}
             >
-              <Text style={styles.threadText}>{item}</Text>
+              <Text style={styles.threadText}>{item.name && item.name.length ? item.name : item.id}</Text>
+              <Text style={styles.meta}>
+                State: {String(item.state)} • Messages: {item.messagesCount ?? item.messages?.length ?? 0} • More: {String(item.hasMoreMessagesToLoad)}
+              </Text>
+              {item.assignedAgent?.fullName ? (
+                <Text style={styles.meta}>Agent: {item.assignedAgent.fullName}</Text>
+              ) : item.lastAssignedAgent?.fullName ? (
+                <Text style={styles.meta}>Last Agent: {item.lastAssignedAgent.fullName}</Text>
+              ) : null}
+              {typeof item.scrollToken === 'string' && (
+                <Text style={styles.meta}>Scroll: {item.scrollToken.length > 16 ? `${item.scrollToken.slice(0, 16)}…` : item.scrollToken}</Text>
+              )}
             </TouchableOpacity>
           )}
           ListEmptyComponent={<Text style={styles.meta}>No threads yet.</Text>}

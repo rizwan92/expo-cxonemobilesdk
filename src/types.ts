@@ -24,3 +24,17 @@ export type ChatMessage = {
   author?: ChatAuthor | null;
 };
 
+export type ChatThreadState = 'pending' | 'received' | 'loaded' | 'ready' | 'closed';
+
+export type ChatThreadDetails = {
+  id: string;
+  name?: string | null;
+  state: ChatThreadState | string;
+  hasMoreMessagesToLoad: boolean;
+  positionInQueue?: number | null;
+  assignedAgent?: ChatAuthor | null;
+  lastAssignedAgent?: ChatAuthor | null;
+  messagesCount?: number;
+  scrollToken?: string;
+  messages?: ChatMessage[];
+};

@@ -32,7 +32,7 @@ export default function ThreadScreen() {
 
   const reload = useCallback(async () => {
     if (!threadId) return;
-    const raw = await Threads.getMessages(threadId);
+    const raw = await Threads.getMessagesLimited(threadId, 30);
     console.log("Loaded messages for thread", threadId, JSON.stringify(raw, null, 2));
     setMessages(raw);
   }, [threadId]);
