@@ -49,7 +49,7 @@ const mode = Connection.getChatMode(); // 'singlethread' | 'multithread' | 'live
 // Threads (multithread)
 const ids = Threads.list();
 const details = await Threads.create();
-await Threads.sendText(details.id, 'Hello from Expo');
+await Threads.send(details.id, { text: 'Hello from Expo' });
 await Threads.markRead(newId);
 
 // Rich content
@@ -102,7 +102,7 @@ See `example/App.tsx` for a runnable demo.
   - `list(): string[]`
   - `create(customFields?: Record<string,string>): Promise<ChatThreadDetails>`
   - `load(threadId?: string): Promise<void>`
-  - `sendText(threadId: string, text: string, postback?: string): Promise<void>`
+- `send(threadId: string, message: OutboundMessage): Promise<void>`
   - `loadMore(threadId: string): Promise<void>`
   - `markRead(threadId: string): Promise<void>`
   - `updateName(threadId: string, name: string): Promise<void>`

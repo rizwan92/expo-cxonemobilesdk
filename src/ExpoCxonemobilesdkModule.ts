@@ -1,5 +1,5 @@
 import { NativeModule, requireNativeModule } from "expo";
-import type { ChatMessage, ChatThreadDetails, ChatMessagesPage } from './types';
+import type { ChatMessage, ChatThreadDetails, ChatMessagesPage, OutboundMessage } from './types';
 
 import { ExpoCxonemobilesdkModuleEvents } from "./ExpoCxonemobilesdk.types";
 
@@ -27,7 +27,7 @@ declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkMo
   threadsLoad(threadId?: string): Promise<void>;
   threadsListDetails(): ChatThreadDetails[];
   threadsGetDetails(threadId: string): ChatThreadDetails;
-  threadsSendText(threadId: string, text: string, postback?: string): Promise<void>;
+  threadsSend(threadId: string, message: OutboundMessage): Promise<void>;
   threadsLoadMore(threadId: string): Promise<void>;
   threadsMarkRead(threadId: string): Promise<void>;
   threadsUpdateName(threadId: string, name: string): Promise<void>;

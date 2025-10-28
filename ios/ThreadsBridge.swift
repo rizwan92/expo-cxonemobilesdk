@@ -41,6 +41,28 @@ enum ThreadsBridge {
     try await p.send(msg)
   }
 
+  static func sendOutbound(threadId: UUID, text: String, postback: String?, attachments: [[String: Any]]) async throws {
+    let p = try provider(for: threadId)
+    var descs: [ContentDescriptor] = []
+    for a in attachments {
+      if let urlStr = a["url"] as? String,
+         let mime = a["mimeType"] as? String,
+         let fileName = a["fileName"] as? String,
+         let friendly = a["friendlyName"] as? String,
+         let url = URL(string: urlStr) {
+        descs.append(ContentDescriptor(url: url, mimeType: mime, fileName: fileName, friendlyName: friendly))
+      } else if let base64 = a["data"] as? String,
+                let data = Data(base64Encoded: base64),
+                let mime = a["mimeType"] as? String,
+                let fileName = a["fileName"] as? String,
+                let friendly = a["friendlyName"] as? String {
+        descs.append(ContentDescriptor(data: data, mimeType: mime, fileName: fileName, friendlyName: friendly))
+      }
+    }
+    let msg = OutboundMessage(text: text, attachments: descs, postback: postback)
+    try await p.send(msg)
+  }
+
   static func loadMore(threadId: UUID) async throws {
     try await provider(for: threadId).loadMoreMessages()
   }

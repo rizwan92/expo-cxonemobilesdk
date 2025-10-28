@@ -64,26 +64,126 @@ enum JSONBridge {
     ]
   }
 
-  private static func encodeMessage(_ m: Message) -> [String: Any] {
-    var text: String? = nil
-    switch m.contentType {
-    case .text(let payload): text = payload.text
-    case .richLink(_): text = "[rich link]"
-    case .quickReplies(_): text = "[quick replies]"
-    case .listPicker(_): text = "[list picker]"
-    case .unknown: text = "[unknown]"
+  private static func encodeAttachment(_ att: Attachment) -> [String: Any] {
+    return [
+      "url": att.url,
+      "friendlyName": att.friendlyName,
+      "mimeType": att.mimeType,
+      "fileName": att.fileName,
+    ]
+  }
+
+  private static func encodeReplyButton(_ btn: MessageReplyButton) -> [String: Any] {
+    return [
+      "text": btn.text,
+      "description": btn.description as Any,
+      "postback": btn.postback as Any,
+      "iconName": btn.iconName as Any,
+      "iconUrl": btn.iconUrl?.absoluteString as Any,
+      "iconMimeType": btn.iconMimeType as Any,
+    ]
+  }
+
+  private static func encodeContent(_ c: MessageContentType) -> [String: Any] {
+    switch c {
+    case .text(let payload):
+      return [
+        "type": "text",
+        "payload": [
+          "text": payload.text,
+          "postback": payload.postback as Any,
+        ]
+      ]
+    case .richLink(let link):
+      return [
+        "type": "richLink",
+        "data": [
+          "title": link.title,
+          "url": link.url.absoluteString,
+          "fileName": link.fileName,
+          "fileUrl": link.fileUrl.absoluteString,
+          "mimeType": link.mimeType,
+        ]
+      ]
+    case .quickReplies(let qr):
+      let buttons: [[String: Any]] = qr.buttons.compactMap { sub in
+        switch sub {
+        case .replyButton(let b):
+          return encodeReplyButton(b)
+        }
+      }
+      return [
+        "type": "quickReplies",
+        "data": [
+          "title": qr.title,
+          "buttons": buttons,
+        ]
+      ]
+    case .listPicker(let lp):
+      let buttons: [[String: Any]] = lp.buttons.compactMap { sub in
+        switch sub {
+        case .replyButton(let b):
+          return encodeReplyButton(b)
+        }
+      }
+      return [
+        "type": "listPicker",
+        "data": [
+          "title": lp.title,
+          "text": lp.text,
+          "buttons": buttons,
+        ]
+      ]
+    case .unknown:
+      return ["type": "unknown"]
     }
+  }
+
+  private static func encodeMessage(_ m: Message) -> [String: Any] {
     var author: [String: Any]? = nil
     if let a = m.authorUser { author = encodeAgent(a) }
+    var endUserIdentity: [String: Any]? = nil
+    if let eu = m.authorEndUserIdentity {
+      endUserIdentity = [
+        "id": eu.id,
+        "firstName": eu.firstName as Any,
+        "lastName": eu.lastName as Any,
+      ]
+    }
+    var senderInfo: [String: Any]? = nil
+    if let s = m.senderInfo {
+      senderInfo = [
+        "id": s.id,
+        "firstName": s.firstName as Any,
+        "lastName": s.lastName as Any,
+        "fullName": s.fullName as Any,
+      ]
+    }
+    var userStats: [String: Any]? = nil
+    if let us = m.userStatistics {
+      var dict: [String: Any] = [:]
+      if let seen = us.seenAt {
+        dict["seenAt"] = iso.string(from: seen)
+      }
+      if let read = us.readAt {
+        dict["readAt"] = iso.string(from: read)
+      }
+      userStats = dict
+    }
+    let attachments = m.attachments.map { encodeAttachment($0) }
+    let content = encodeContent(m.contentType)
     return [
       "id": m.id.uuidString,
       "threadId": m.threadId.uuidString,
-      "text": text as Any,
       "createdAt": iso.string(from: m.createdAt),
-      "createdAtMs": Int64(m.createdAt.timeIntervalSince1970 * 1000),
       "direction": String(describing: m.direction),
       "status": String(describing: m.status),
-      "author": author as Any,
+      "authorUser": author as Any,
+      "authorEndUserIdentity": endUserIdentity as Any,
+      "senderInfo": senderInfo as Any,
+      "userStatistics": userStats as Any,
+      "attachments": attachments,
+      "contentType": content,
     ]
   }
 
@@ -116,4 +216,3 @@ extension Optional: OptionalProtocol {
   var isNil: Bool { self == nil }
   var wrappedAny: Any? { self }
 }
-

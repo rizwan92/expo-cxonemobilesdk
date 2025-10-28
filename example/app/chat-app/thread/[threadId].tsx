@@ -38,7 +38,7 @@ export default function ThreadScreen() {
   const reload = useCallback(async () => {
     if (!threadId) return;
     const page = await Threads.getMessages(threadId, undefined, LIMIT);
-    console.log("Loaded page for thread", threadId, page.messages.length);
+    console.log("Loaded page for thread", threadId, JSON.stringify(page,null,2));
     setMessages(page.messages);
     setScrollToken(page.scrollToken);
     setHasMore(page.hasMore);
@@ -65,7 +65,7 @@ export default function ThreadScreen() {
   const onSend = useCallback(
     async (text: string) => {
       if (!threadId || !text) return;
-      await Threads.sendText(threadId, text);
+      await Threads.send(threadId, { text });
       await reload();
     },
     [threadId, reload]

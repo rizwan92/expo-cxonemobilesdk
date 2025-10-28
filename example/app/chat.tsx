@@ -127,7 +127,7 @@ export default function ChatScreen() {
             title="Send Text"
             onPress={async () => {
               if (!activeThread) return;
-              await Threads.sendText(activeThread, messageText);
+              await Threads.send(activeThread, { text: messageText });
             }}
           />
           <View style={styles.spacer} />

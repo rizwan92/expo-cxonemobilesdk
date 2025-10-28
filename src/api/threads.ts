@@ -1,5 +1,5 @@
 import Native from '../ExpoCxonemobilesdkModule';
-import type { ChatMessage, ChatThreadDetails, ChatMessagesPage } from '../types';
+import type { ChatMessage, ChatThreadDetails, ChatMessagesPage, OutboundMessage } from '../types';
 
 const TAG = '[CXone/Threads]';
 
@@ -34,9 +34,9 @@ export async function load(threadId?: string) {
   await Native.threadsLoad(threadId);
 }
 
-export async function sendText(threadId: string, text: string, postback?: string) {
-  console.log(TAG, 'sendText', { threadId, text, postback });
-  await Native.threadsSendText(threadId, text, postback);
+export async function send(threadId: string, message: OutboundMessage) {
+  console.log(TAG, 'send', { threadId, hasAttachments: !!message.attachments?.length, hasPostback: !!message.postback });
+  await (Native as any).threadsSend(threadId, message);
 }
 
 export async function loadMore(threadId: string) {
