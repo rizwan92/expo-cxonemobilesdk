@@ -7,13 +7,14 @@ import Avatar from './Avatar';
 type Props = {
   messages: ChatMessage[];
   myUserLabel?: string;
+  hasMore?: boolean;
+  loadingMore?: boolean;
+  onLoadMore?: () => void;
 };
 
-export default function ChatList({ messages, myUserLabel = 'You' }: Props) {
-  // Sort newest -> oldest for display bottom-up; we keep FlatList inverted
-  const data = useMemo(() => {
-    return [...messages].sort((a, b) => (a.createdAtMs || 0) - (b.createdAtMs || 0));
-  }, [messages]);
+export default function ChatList({ messages, myUserLabel = 'You', hasMore, loadingMore, onLoadMore }: Props) {
+  // Use order as provided by SDK/API; no resorting here.
+  const data = messages;
 
   const renderItem: ListRenderItem<ChatMessage> = ({ item }) => {
     const isMe = item.direction === 'toAgent';
@@ -40,6 +41,16 @@ export default function ChatList({ messages, myUserLabel = 'You' }: Props) {
       keyExtractor={(m) => m.id}
       renderItem={renderItem}
       inverted
+      onEndReachedThreshold={0.1}
+      onEndReached={() => {
+        if (hasMore && !loadingMore) {
+          onLoadMore?.();
+        }
+      }}
+      maintainVisibleContentPosition={{ minIndexForVisible: 1 }}
+      initialNumToRender={20}
+      maxToRenderPerBatch={20}
+      windowSize={10}
     />
   );
 }

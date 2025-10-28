@@ -1,5 +1,5 @@
 import Native from '../ExpoCxonemobilesdkModule';
-import type { ChatMessage, ChatThreadDetails } from '../types';
+import type { ChatMessage, ChatThreadDetails, ChatMessagesPage } from '../types';
 
 const TAG = '[CXone/Threads]';
 
@@ -15,11 +15,7 @@ export function listDetails(): ChatThreadDetails[] {
   return details;
 }
 
-export function listDetailsLimited(limit: number): ChatThreadDetails[] {
-  const details = Native.threadsListDetailsLimited(limit);
-  console.log(TAG, 'listDetailsLimited ->', details.length, 'limit', limit);
-  return details;
-}
+// Limited variants removed at native layer
 
 export async function create(customFields?: Record<string, string>): Promise<ChatThreadDetails> {
   console.log(TAG, 'create', customFields ?? '(no custom fields)');
@@ -83,34 +79,20 @@ export async function sendAttachmentBase64(threadId: string, base64: string, mim
   await Native.threadsSendAttachmentBase64(threadId, base64, mimeType, fileName, friendlyName);
 }
 
-export async function getMessages(threadId: string): Promise<ChatMessage[]> {
-  console.log(TAG, 'getMessages', threadId);
-  const list = await Native.threadsGetMessages(threadId);
-  return list as ChatMessage[];
+export async function getMessages(threadId: string, scrollToken?: string, limit?: number): Promise<ChatMessagesPage> {
+  console.log(TAG, 'getMessages', { threadId, scrollToken, limit });
+  const page = await (Native as any).threadsGetMessages(threadId, scrollToken, limit);
+  return page as ChatMessagesPage;
 }
 
-export async function getMessagesLimited(threadId: string, limit: number): Promise<ChatMessage[]> {
-  console.log(TAG, 'getMessagesLimited', threadId, 'limit', limit);
-  const list = await Native.threadsGetMessagesLimited(threadId, limit);
-  return list as ChatMessage[];
-}
+// Limited variants removed at native layer
 
 export function getDetails(threadId: string): ChatThreadDetails {
   const d = Native.threadsGetDetails(threadId);
   console.log(TAG, 'getDetails ->', d);
   return d;
 }
-
-export async function ensureMessages(threadId: string, minCount: number): Promise<ChatMessage[]> {
-  console.log(TAG, 'ensureMessages', threadId, 'minCount', minCount);
-  const list = await Native.threadsEnsureMessages(threadId, minCount);
-  return list as ChatMessage[];
-}
-
-export function getDetailsLimited(threadId: string, limit: number): ChatThreadDetails {
-  const d = Native.threadsGetDetailsLimited(threadId, limit);
-  console.log(TAG, 'getDetailsLimited ->', threadId, 'limit', limit);
-  return d;
-}
+// messagesPage removed; use getMessages(threadId, scrollToken?)
+// Limited variants removed at native layer
 
 // Full details are returned by getDetails/listDetails now

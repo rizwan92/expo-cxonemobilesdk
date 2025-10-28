@@ -22,7 +22,7 @@ export default function MessageBubble({ text, isMe, createdAtMs, status, authorN
           <Text style={[styles.text, isMe ? styles.textMe : styles.textThem]}>{text}</Text>
         </View>
         <View style={[styles.metaRow, isMe ? styles.metaMe : styles.metaThem]}>
-          <Timestamp ms={createdAtMs} style={styles.metaText} />
+          <Timestamp ms={createdAtMs} style={styles.metaText} variant="full" />
           {isMe && <StatusTicks status={status} />}
         </View>
       </View>

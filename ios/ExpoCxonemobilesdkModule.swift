@@ -119,9 +119,6 @@ public class ExpoCxonemobilesdkModule: Module {
     Function("threadsListDetails") { () -> [[String: Any]] in
       ThreadsBridge.listDetails()
     }
-    Function("threadsListDetailsLimited") { (limit: Int) -> [[String: Any]] in
-      ThreadsBridge.listDetailsLimited(limit: max(0, limit))
-    }
     AsyncFunction("threadsCreate") { (customFields: [String: String]?) async throws -> [String: Any] in
       try await ThreadsBridge.create(customFields: customFields)
     }
@@ -134,12 +131,6 @@ public class ExpoCxonemobilesdkModule: Module {
         throw NSError(domain: "ExpoCxonemobilesdk", code: -3, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID: \(threadId)"])
       }
       return try ThreadsBridge.getDetails(threadId: uuid)
-    }
-    Function("threadsGetDetailsLimited") { (threadId: String, limit: Int) throws -> [String: Any] in
-      guard let uuid = UUID(uuidString: threadId) else {
-        throw NSError(domain: "ExpoCxonemobilesdk", code: -3, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID: \(threadId)"])
-      }
-      return try ThreadsBridge.getDetailsLimited(threadId: uuid, limit: max(0, limit))
     }
     AsyncFunction("threadsSendText") { (threadId: String, text: String, postback: String?) async throws in
       guard let uuid = UUID(uuidString: threadId) else {
@@ -184,24 +175,13 @@ public class ExpoCxonemobilesdkModule: Module {
       try await ThreadsBridge.reportTyping(threadId: uuid, isTyping: isTyping)
     }
 
-    Function("threadsGetMessages") { (threadId: String) throws -> [[String: Any]] in
+    AsyncFunction("threadsGetMessages") { (threadId: String, scrollToken: String?, limit: Int?) async throws -> [String: Any] in
       guard let uuid = UUID(uuidString: threadId) else {
         throw NSError(domain: "ExpoCxonemobilesdk", code: -3, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID: \(threadId)"])
       }
-      return try ThreadsBridge.messages(threadId: uuid)
+      return try await ThreadsBridge.messagesPage(threadId: uuid, scrollToken: scrollToken, limit: limit)
     }
-    Function("threadsGetMessagesLimited") { (threadId: String, limit: Int) throws -> [[String: Any]] in
-      guard let uuid = UUID(uuidString: threadId) else {
-        throw NSError(domain: "ExpoCxonemobilesdk", code: -3, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID: \(threadId)"])
-      }
-      return try ThreadsBridge.messagesLimited(threadId: uuid, limit: max(0, limit))
-    }
-    AsyncFunction("threadsEnsureMessages") { (threadId: String, minCount: Int) async throws -> [[String: Any]] in
-      guard let uuid = UUID(uuidString: threadId) else {
-        throw NSError(domain: "ExpoCxonemobilesdk", code: -3, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID: \(threadId)"])
-      }
-      return try await ThreadsBridge.ensureMessages(threadId: uuid, minCount: minCount)
-    }
+    // Limited variants removed
 
     // MARK: Rich content messages
     AsyncFunction("threadsSendAttachmentURL") { (threadId: String, url: String, mimeType: String, fileName: String, friendlyName: String) async throws in

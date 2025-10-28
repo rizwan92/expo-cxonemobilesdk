@@ -15,6 +15,9 @@ import type { ChatMessage } from "expo-cxonemobilesdk";
 import { useEvent } from "expo";
 import { ChatList, Composer } from "../../../components/chat";
 
+
+const LIMIT = 10
+
 export default function ThreadScreen() {
   const router = useRouter();
   const { threadId } = useLocalSearchParams<{ threadId: string }>();
@@ -29,12 +32,16 @@ export default function ThreadScreen() {
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loadingEarlier, setLoadingEarlier] = useState(false);
+  const [scrollToken, setScrollToken] = useState<string | undefined>(undefined);
+  const [hasMore, setHasMore] = useState<boolean>(false);
 
   const reload = useCallback(async () => {
     if (!threadId) return;
-    const raw = await Threads.getMessagesLimited(threadId, 30);
-    console.log("Loaded messages for thread", threadId, JSON.stringify(raw, null, 2));
-    setMessages(raw);
+    const page = await Threads.getMessages(threadId, undefined, LIMIT);
+    console.log("Loaded page for thread", threadId, page.messages.length);
+    setMessages(page.messages);
+    setScrollToken(page.scrollToken);
+    setHasMore(page.hasMore);
   }, [threadId]);
 
   useEffect(() => {
@@ -66,14 +73,22 @@ export default function ThreadScreen() {
 
   const onLoadEarlier = useCallback(async () => {
     if (!threadId) return;
+    if (!hasMore) return;
     setLoadingEarlier(true);
     try {
-      await Threads.loadMore(threadId);
-      await reload();
+      const page = await Threads.getMessages(threadId, scrollToken, LIMIT);
+      setScrollToken(page.scrollToken);
+      setHasMore(page.hasMore);
+      // Merge and dedupe by id (keep current page messages after existing so order stays newest->older)
+      setMessages((prev) => {
+        const byId = new Map<string, ChatMessage>();
+        for (const m of [...prev, ...page.messages]) byId.set(m.id, m);
+        return Array.from(byId.values());
+      });
     } finally {
       setLoadingEarlier(false);
     }
-  }, [threadId]);
+  }, [threadId, hasMore, scrollToken]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -96,7 +111,12 @@ export default function ThreadScreen() {
           )}
         </View>
         <View style={{ flex: 1 }}>
-          <ChatList messages={messages} />
+          <ChatList
+            messages={messages}
+            hasMore={hasMore}
+            loadingMore={loadingEarlier}
+            onLoadMore={onLoadEarlier}
+          />
         </View>
         <Composer onSend={onSend} />
       </KeyboardAvoidingView>

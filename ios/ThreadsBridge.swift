@@ -65,32 +65,42 @@ enum ThreadsBridge {
     try await provider(for: threadId).reportTypingStart(isTyping)
   }
 
-  static func messages(threadId: UUID) throws -> [[String: Any]] {
+  static func messagesPage(threadId: UUID, scrollToken: String?, limit: Int?) async throws -> [String: Any] {
     let p = try provider(for: threadId)
-    let thread = p.chatThread
-    return thread.messages.compactMap { JSONBridge.encode($0) as? [String: Any] }
-  }
-
-  static func messagesLimited(threadId: UUID, limit: Int) throws -> [[String: Any]] {
-    let p = try provider(for: threadId)
-    let thread = p.chatThread
-    let msgs = thread.messages
-    let count = max(0, min(limit, msgs.count))
-    let slice = msgs.suffix(count)
-    return slice.compactMap { JSONBridge.encode($0) as? [String: Any] }
-  }
-
-  static func ensureMessages(threadId: UUID, minCount: Int) async throws -> [[String: Any]] {
-    let p = try provider(for: threadId)
-    let target = max(0, minCount)
-    // Load older messages until we have at least target or there are no more
-    while p.chatThread.messages.count < target && p.chatThread.hasMoreMessagesToLoad {
-      try await p.loadMoreMessages()
+    let target = max(0, limit ?? 10)
+    var page: [Message]
+    if let token = scrollToken, token == p.chatThread.scrollToken {
+      // Load older messages until we reach the requested page size or no more
+      let before = p.chatThread.messages
+      let beforeIds = Set(before.map { $0.id })
+      var loaded = 0
+      while loaded < target && p.chatThread.hasMoreMessagesToLoad {
+        try await p.loadMoreMessages()
+        loaded = p.chatThread.messages.filter { !beforeIds.contains($0.id) }.count
+      }
+      let after = p.chatThread.messages
+      let delta = after.filter { !beforeIds.contains($0.id) }
+      page = Array(delta)
+    } else {
+      // Initial page: ensure we have at least `target` messages
+      while p.chatThread.messages.count < target && p.chatThread.hasMoreMessagesToLoad {
+        try await p.loadMoreMessages()
+      }
+      page = p.chatThread.messages
     }
-    let msgs = p.chatThread.messages
-    let slice = msgs.suffix(min(target, msgs.count))
-    return slice.compactMap { JSONBridge.encode($0) as? [String: Any] }
+    // Sort by createdAt descending for chat box consumption
+    let sorted = page.sorted { $0.createdAt > $1.createdAt }
+    let limited = Array(sorted.prefix(target))
+    let encoded = limited.compactMap { JSONBridge.encode($0) as? [String: Any] }
+    return [
+      "messages": encoded,
+      "scrollToken": p.chatThread.scrollToken,
+      "hasMore": p.chatThread.hasMoreMessagesToLoad,
+    ]
   }
+
+  // Note: SDK doesn't provide server-side limit fetching; callers should
+  // call loadMoreMessages() as needed before calling messages(...).
 
   static func listDetails() -> [[String: Any]] {
     let threads = CXoneChat.shared.threads.get()
@@ -102,27 +112,6 @@ enum ThreadsBridge {
     return (JSONBridge.encode(p.chatThread) as? [String: Any]) ?? [:]
   }
 
-  static func listDetailsLimited(limit: Int) -> [[String: Any]] {
-    let threads = CXoneChat.shared.threads.get()
-    return threads.compactMap { thread in
-      var dict = (JSONBridge.encode(thread) as? [String: Any]) ?? [:]
-      if var arr = dict["messages"] as? [[String: Any]] {
-        let count = max(0, min(limit, arr.count))
-        arr = Array(arr.suffix(count))
-        dict["messages"] = arr
-      }
-      return dict
-    }
-  }
-
-  static func getDetailsLimited(threadId: UUID, limit: Int) throws -> [String: Any] {
-    let p = try provider(for: threadId)
-    var dict = (JSONBridge.encode(p.chatThread) as? [String: Any]) ?? [:]
-    if var arr = dict["messages"] as? [[String: Any]] {
-      let count = max(0, min(limit, arr.count))
-      arr = Array(arr.suffix(count))
-      dict["messages"] = arr
-    }
-    return dict
-  }
+  // Limited variants removed; prefer callers to page with loadMore
+  // and then use getDetails/listDetails/messages.
 }
