@@ -105,7 +105,7 @@ export default function ChatScreen() {
           <Button
             title="List Threads"
             onPress={() => {
-              const ids = Threads.list();
+              const ids = Threads.get().map(t => t.id);
               console.log(TAG, 'threads', ids);
               if (ids.length) setActiveThread(ids[0]);
             }}
@@ -140,7 +140,7 @@ export default function ChatScreen() {
               title={typing ? 'Stop' : 'Start'}
               onPress={async () => {
                 if (!activeThread) return;
-                await Threads.typing(activeThread, !typing);
+                await Threads.reportTypingStart(activeThread, !typing);
                 setTyping(!typing);
               }}
             />

@@ -40,6 +40,24 @@ export default function App() {
           />
           <View style={{ height: 8 }} />
           <Button
+            title="prepareWithURLs (sample URLs)"
+            onPress={async () => {
+              console.log(`${TAG} prepareWithURLs pressed`);
+              try {
+                await Connection.prepareWithURLs(
+                  "https://chat.example.com",
+                  "wss://socket.example.com",
+                  123,
+                  "demo"
+                );
+                console.log(`${TAG} prepareWithURLs resolved`);
+              } catch (e) {
+                console.error(`${TAG} prepareWithURLs failed`, e);
+              }
+            }}
+          />
+          <View style={{ height: 8 }} />
+          <Button
             title="connect"
             onPress={async () => {
               console.log(`${TAG} connect pressed`);
@@ -61,6 +79,32 @@ export default function App() {
                 console.log(`${TAG} disconnect completed`);
               } catch (e) {
                 console.error(`${TAG} disconnect failed`, e);
+              }
+            }}
+          />
+          <View style={{ height: 8 }} />
+          <Button
+            title="getChannelConfiguration (env variant)"
+            onPress={async () => {
+              console.log(`${TAG} getChannelConfiguration pressed`);
+              try {
+                const cfg = await Connection.getChannelConfiguration("NA1", 123, "demo");
+                console.log(`${TAG} getChannelConfiguration ->`, cfg);
+              } catch (e) {
+                console.error(`${TAG} getChannelConfiguration failed`, e);
+              }
+            }}
+          />
+          <View style={{ height: 8 }} />
+          <Button
+            title="getChannelConfigurationByURL (URL variant)"
+            onPress={async () => {
+              console.log(`${TAG} getChannelConfigurationByURL pressed`);
+              try {
+                const cfg = await Connection.getChannelConfigurationByURL("https://chat.example.com", 123, "demo");
+                console.log(`${TAG} getChannelConfigurationByURL ->`, cfg);
+              } catch (e) {
+                console.error(`${TAG} getChannelConfigurationByURL failed`, e);
               }
             }}
           />
@@ -172,7 +216,7 @@ export default function App() {
           <Button
             title="List Threads"
             onPress={() => {
-              const ids = Threads.list();
+              const ids = Threads.get().map(t => t.id);
               console.log(`${TAG} threads`, ids);
             }}
           />
@@ -192,11 +236,12 @@ export default function App() {
           <Button
             title="Send Attachment (URL) to first thread"
             onPress={async () => {
-              const ids = Threads.list();
-              if (!ids.length) return console.warn(`${TAG} no threads`);
+              const threads = Threads.get();
+              if (!threads.length) return console.warn(`${TAG} no threads`);
+              const firstId = threads[0].id;
               try {
                 await Threads.sendAttachmentURL(
-                  ids[0],
+                  firstId,
                   'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
                   'application/pdf',
                   'dummy.pdf',
@@ -234,9 +279,9 @@ export default function App() {
           <Button
             title="Get/Set Thread Fields (first thread)"
             onPress={async () => {
-              const ids = Threads.list();
-              if (!ids.length) return console.warn(`${TAG} no threads`);
-              const first = ids[0];
+              const threads = Threads.get();
+              if (!threads.length) return console.warn(`${TAG} no threads`);
+              const first = threads[0].id;
               const f = CustomFields.getThread(first);
               console.log(`${TAG} thread fields`, f);
               try {

@@ -43,6 +43,11 @@ public class ExpoCxonemobilesdkModule: Module {
       try await ConnectionBridge.prepare(env: env, brandId: brandId, channelId: channelId)
     }
 
+    AsyncFunction("prepareWithURLs") { (chatURL: String, socketURL: String, brandId: Int, channelId: String) async throws in
+      self.registerDelegateIfNeeded()
+      try await ConnectionBridge.prepare(chatURL: chatURL, socketURL: socketURL, brandId: brandId, channelId: channelId)
+    }
+
     AsyncFunction("connect") { () async throws in
       self.registerDelegateIfNeeded()
       try await ConnectionBridge.connect()
@@ -64,6 +69,12 @@ public class ExpoCxonemobilesdkModule: Module {
         throw err
       }
       try await ConnectionBridge.executeTrigger(uuid)
+    }
+    AsyncFunction("getChannelConfiguration") { (env: String, brandId: Int, channelId: String) async throws -> [String: Any] in
+      try await ConnectionBridge.getChannelConfiguration(env: env, brandId: brandId, channelId: channelId)
+    }
+    AsyncFunction("getChannelConfigurationByURL") { (chatURL: String, brandId: Int, channelId: String) async throws -> [String: Any] in
+      try await ConnectionBridge.getChannelConfiguration(chatURL: chatURL, brandId: brandId, channelId: channelId)
     }
 
     // MARK: Customer
@@ -113,10 +124,8 @@ public class ExpoCxonemobilesdkModule: Module {
     }
 
     // MARK: Threads (multithread support)
-    Function("threadsList") { () -> [String] in
-      ThreadsBridge.listThreadIds()
-    }
-    Function("threadsListDetails") { () -> [[String: Any]] in
+    // Matches ChatThreadListProvider.get()
+    Function("threadsGet") { () -> [[String: Any]] in
       ThreadsBridge.listDetails()
     }
     AsyncFunction("threadsCreate") { (customFields: [String: String]?) async throws -> [String: Any] in
@@ -171,11 +180,12 @@ public class ExpoCxonemobilesdkModule: Module {
       }
       try await ThreadsBridge.endContact(threadId: uuid)
     }
-    AsyncFunction("threadsTyping") { (threadId: String, isTyping: Bool) async throws in
+    // Matches ChatThreadProvider.reportTypingStart(_ didStart: Bool)
+    AsyncFunction("threadsReportTypingStart") { (threadId: String, didStart: Bool) async throws in
       guard let uuid = UUID(uuidString: threadId) else {
         throw NSError(domain: "ExpoCxonemobilesdk", code: -3, userInfo: [NSLocalizedDescriptionKey: "Invalid UUID: \(threadId)"])
       }
-      try await ThreadsBridge.reportTyping(threadId: uuid, isTyping: isTyping)
+      try await ThreadsBridge.reportTyping(threadId: uuid, isTyping: didStart)
     }
 
     AsyncFunction("threadsGetMessages") { (threadId: String, scrollToken: String?, limit: Int?) async throws -> [String: Any] in

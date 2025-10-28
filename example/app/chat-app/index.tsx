@@ -61,7 +61,7 @@ export default function ChatAppHome() {
   // Load visitor id and thread list
   const reload = useCallback(() => {
     setVisitorId(Customer.getVisitorId());
-    setThreadList(Threads.listDetails());
+    setThreadList(Threads.get());
     setChatMode(Connection.getChatMode());
   }, []);
 
@@ -95,7 +95,7 @@ export default function ChatAppHome() {
       for (let i = 0; i < 6; i++) {
         // eslint-disable-next-line no-await-in-loop
         await new Promise((r) => setTimeout(r, 500));
-        const list = Threads.listDetails();
+        const list = Threads.get();
         setThreadList(list);
         if (list.length > 0) {
           router.push(`/chat-app/thread/${list[0].id}`);
@@ -196,7 +196,7 @@ export default function ChatAppHome() {
                 await connectAndSync();
               }
               const details = await Threads.create({ requestedAgentId: selectedAgent.id, requestedAgentName: selectedAgent.fullName, startedByUserId: selectedUser.id });
-              setThreadList(Threads.listDetails());
+              setThreadList(Threads.get());
               router.push(`/chat-app/thread/${details.id}`);
             } catch (e) {
               setLastError(String((e as any)?.message ?? e));

@@ -5,12 +5,15 @@ import { ExpoCxonemobilesdkModuleEvents } from "./ExpoCxonemobilesdk.types";
 
 declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkModuleEvents> {
   prepare(env: string, brandId: number, channelId: string): Promise<void>;
+  prepareWithURLs(chatURL: string, socketURL: string, brandId: number, channelId: string): Promise<void>;
   connect(): Promise<void>;
   disconnect(): void;
   getChatMode(): 'singlethread' | 'multithread' | 'liveChat' | 'unknown';
   getChatState(): 'initial' | 'preparing' | 'prepared' | 'offline' | 'connecting' | 'connected' | 'ready' | 'closed';
   isConnected(): boolean;
   executeTrigger(triggerId: string): Promise<void>;
+  getChannelConfiguration(env: string, brandId: number, channelId: string): Promise<Record<string, any>>;
+  getChannelConfigurationByURL(chatURL: string, brandId: number, channelId: string): Promise<Record<string, any>>;
   setCustomerName(firstName: string, lastName: string): void;
   setCustomerIdentity(id: string, firstName?: string, lastName?: string): void;
   clearCustomerIdentity(): void;
@@ -22,10 +25,9 @@ declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkMo
   analyticsViewPageEnded(title: string, url: string): Promise<void>;
   analyticsChatWindowOpen(): Promise<void>;
   analyticsConversion(type: string, value: number): Promise<void>;
-  threadsList(): string[];
+  threadsGet(): ChatThreadDetails[];
   threadsCreate(customFields?: Record<string, string>): Promise<ChatThreadDetails>;
   threadsLoad(threadId?: string): Promise<void>;
-  threadsListDetails(): ChatThreadDetails[];
   threadsGetDetails(threadId: string): ChatThreadDetails;
   threadsSend(threadId: string, message: OutboundMessage): Promise<void>;
   threadsLoadMore(threadId: string): Promise<void>;
@@ -33,7 +35,7 @@ declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkMo
   threadsUpdateName(threadId: string, name: string): Promise<void>;
   threadsArchive(threadId: string): Promise<void>;
   threadsEndContact(threadId: string): Promise<void>;
-  threadsTyping(threadId: string, isTyping: boolean): Promise<void>;
+  threadsReportTypingStart(threadId: string, didStart: boolean): Promise<void>;
   threadsSendAttachmentURL(threadId: string, url: string, mimeType: string, fileName: string, friendlyName: string): Promise<void>;
   threadsSendAttachmentBase64(threadId: string, base64: string, mimeType: string, fileName: string, friendlyName: string): Promise<void>;
   threadsGetMessages(threadId: string, scrollToken?: string, limit?: number): Promise<ChatMessagesPage>;

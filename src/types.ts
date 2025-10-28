@@ -102,3 +102,6 @@ export type ChatThreadDetails = {
   scrollToken?: string;
   messages?: ChatMessage[];
 };
+
+// Broad JSON for channel configuration as returned by native SDK
+export type ChannelConfiguration = Record<string, any>;

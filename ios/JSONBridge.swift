@@ -106,12 +106,7 @@ enum JSONBridge {
         ]
       ]
     case .quickReplies(let qr):
-      let buttons: [[String: Any]] = qr.buttons.compactMap { sub in
-        switch sub {
-        case .replyButton(let b):
-          return encodeReplyButton(b)
-        }
-      }
+      let buttons: [[String: Any]] = qr.buttons.map { encodeReplyButton($0) }
       return [
         "type": "quickReplies",
         "data": [

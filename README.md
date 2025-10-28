@@ -47,7 +47,7 @@ await Connection.connect();
 const mode = Connection.getChatMode(); // 'singlethread' | 'multithread' | 'liveChat' | 'unknown'
 
 // Threads (multithread)
-const ids = Threads.list();
+const ids = Threads.get().map(t => t.id);
 const details = await Threads.create();
 await Threads.send(details.id, { text: 'Hello from Expo' });
 await Threads.markRead(newId);
@@ -93,13 +93,16 @@ See `example/App.tsx` for a runnable demo.
 
 - Connection
   - `prepare(env: string, brandId: number, channelId: string): Promise<void>`
+  - `prepareWithURLs(chatURL: string, socketURL: string, brandId: number, channelId: string): Promise<void>`
   - `connect(): Promise<void>`
   - `disconnect(): void`
   - `getChatMode(): 'singlethread' | 'multithread' | 'liveChat' | 'unknown'`
+  - `getChannelConfiguration(env: string, brandId: number, channelId: string): Promise<ChannelConfiguration>`
+  - `getChannelConfigurationByURL(chatURL: string, brandId: number, channelId: string): Promise<ChannelConfiguration>`
   - `executeTrigger(triggerId: string): Promise<void>`
   - `signOut(): void`
 - Threads (multithread)
-  - `list(): string[]`
+  - `get(): ChatThreadDetails[]`
   - `create(customFields?: Record<string,string>): Promise<ChatThreadDetails>`
   - `load(threadId?: string): Promise<void>`
 - `send(threadId: string, message: OutboundMessage): Promise<void>`
@@ -108,7 +111,7 @@ See `example/App.tsx` for a runnable demo.
   - `updateName(threadId: string, name: string): Promise<void>`
   - `archive(threadId: string): Promise<void>`
   - `endContact(threadId: string): Promise<void>`
-  - `typing(threadId: string, isTyping: boolean): Promise<void>`
+  - `reportTypingStart(threadId: string, didStart: boolean): Promise<void>`
   - `sendAttachmentURL(threadId: string, url: string, mimeType: string, fileName: string, friendlyName: string): Promise<void>`
   - `sendAttachmentBase64(threadId: string, base64: string, mimeType: string, fileName: string, friendlyName: string): Promise<void>`
 - Customer / OAuth
@@ -149,7 +152,7 @@ Events (subscribe with `useEvent(ExpoCxonemobilesdk, 'eventName')`):
 ## Feature Coverage
 - Core SDK integration: prepare, connect, disconnect, signOut (yes)
 - Modes: detect at runtime via `Connection.getChatMode()` (yes)
-- Multi-thread chat: list/create/load/send/markRead/update/archive/end/typing (yes)
+- Multi-thread chat: get/create/load/send/markRead/update/archive/end/typing (yes)
 - Rich content messages: send attachment (URL/base64) (yes)
 - Custom fields: customer/thread get/set (yes)
 - Customer identity & OAuth: set identity/name/device token/auth code/code verifier (yes)

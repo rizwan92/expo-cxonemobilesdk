@@ -15,6 +15,11 @@ enum ConnectionBridge {
     try await CXoneChat.shared.connection.prepare(environment: environment, brandId: brandId, channelId: channelId)
   }
 
+  static func prepare(chatURL: String, socketURL: String, brandId: Int, channelId: String) async throws {
+    NSLog("[ExpoCxonemobilesdk] Connection.prepareWithURLs chatURL=\(chatURL) socketURL=\(socketURL) brandId=\(brandId) channelId=\(channelId)")
+    try await CXoneChat.shared.connection.prepare(chatURL: chatURL, socketURL: socketURL, brandId: brandId, channelId: channelId)
+  }
+
   static func connect() async throws {
     NSLog("[ExpoCxonemobilesdk] Connection.connect")
     try await CXoneChat.shared.connection.connect()
@@ -54,5 +59,26 @@ enum ConnectionBridge {
       NSLog("[ExpoCxonemobilesdk] Connection.isConnected -> false")
       return false
     }
+  }
+
+  // MARK: Channel configuration fetchers
+  static func getChannelConfiguration(env: String, brandId: Int, channelId: String) async throws -> [String: Any] {
+    NSLog("[ExpoCxonemobilesdk] Connection.getChannelConfiguration env=\(env) brandId=\(brandId) channelId=\(channelId)")
+    guard let environment = Environment(rawValue: env.uppercased()) else {
+      let err = NSError(
+        domain: "ExpoCxonemobilesdk",
+        code: -2,
+        userInfo: [NSLocalizedDescriptionKey: "Unsupported CXone environment '\(env)'"]
+      )
+      throw err
+    }
+    let cfg = try await CXoneChat.shared.connection.getChannelConfiguration(environment: environment, brandId: brandId, channelId: channelId)
+    return (JSONBridge.encode(cfg) as? [String: Any]) ?? [:]
+  }
+
+  static func getChannelConfiguration(chatURL: String, brandId: Int, channelId: String) async throws -> [String: Any] {
+    NSLog("[ExpoCxonemobilesdk] Connection.getChannelConfiguration chatURL=\(chatURL) brandId=\(brandId) channelId=\(channelId)")
+    let cfg = try await CXoneChat.shared.connection.getChannelConfiguration(chatURL: chatURL, brandId: brandId, channelId: channelId)
+    return (JSONBridge.encode(cfg) as? [String: Any]) ?? [:]
   }
 }
