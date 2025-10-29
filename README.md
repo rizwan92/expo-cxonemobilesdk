@@ -28,6 +28,20 @@ Notes:
 - iOS frameworks are vendored (see below); minimum iOS 15.1.
 - Brand/environment values must match your CXone setup; environments are uppercased (e.g., `NA1`, `EU1`).
 
+### Configure example credentials (.env)
+
+The example app reads credentials from `example/.env` via Expo public env variables. Copy the template and edit values:
+
+```
+cp example/.env.example example/.env
+# then edit example/.env
+EXPO_PUBLIC_CHAT_ENV=EU1
+EXPO_PUBLIC_CHAT_BRAND_ID=1086
+EXPO_PUBLIC_CHAT_CHANNEL_ID=chat_xxx
+```
+
+These are consumed in `example/app/chat-app/config.ts` and passed to `Connection.prepare`.
+
 # Contributing
 
 Contributions are very welcome! Please refer to guidelines described in the [contributing guide]( https://github.com/expo/expo#contributing).
@@ -51,7 +65,7 @@ const { connected, chatState, checking, refresh, connectAndSync } = useConnectio
 const ids = Threads.get().map(t => t.id);
 const details = await Threads.create();
 await Threads.send(details.id, { text: 'Hello from Expo' });
-await Threads.markRead(newId);
+await Threads.markRead(details.id);
 
 // Rich content
 await Threads.sendAttachmentURL(

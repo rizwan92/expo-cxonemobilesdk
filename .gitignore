@@ -58,3 +58,6 @@ yarn-error.log
 nice-cxone-mobile-sdk-ios
 ios/.module-cache/*
 
+# Environment files
+.env
+example/.env
