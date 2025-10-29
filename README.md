@@ -67,6 +67,20 @@ yarn format:check
 npm run format:check
 ```
 
+Swift formatting (iOS):
+
+We also support formatting Swift sources via SwiftFormat. Install once using Homebrew, then run scripts:
+
+```
+brew install swiftformat
+
+# Format all Swift under ios/
+yarn format:swift
+
+# Check formatting without changing files
+yarn format:swift:check
+```
+
 ## Usage (Modular API)
 
 Import the modular wrappers that mirror common CXoneChat SDK features:
