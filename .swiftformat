@@ -1,23 +1,17 @@
-# SwiftFormat configuration
+# SwiftFormat configuration (see https://github.com/nicklockwood/SwiftFormat)
 
-# Exclude third-party and build outputs
-exclude:
-  - ios/Frameworks
-  - example/ios/Pods
-  - build
+# Exclude third-party and build outputs (comma-separated paths)
+exclude = ios/Frameworks,example/ios/Pods,build
 
 # General
-indent: 2
-maxwidth: 120
-linebreaks: lf
+indent = 2
+maxwidth = 120
+linebreaks = lf
 
 # Wrapping
-wraparguments: before-first
-wrapcollections: before-first
+wraparguments = before-first
+wrapcollections = before-first
 
 # Style tweaks
-self: remove
-stripunusedargs: closure-only
-stripunusedimports: true
-redundanttype: true
-
+self = remove
+stripunusedargs = closure-only
