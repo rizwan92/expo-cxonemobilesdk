@@ -1,0 +1,14 @@
+# Dependencies and builds
+node_modules/
+build/
+dist/
+
+# iOS/Android artifacts
+example/ios/Pods/
+ios/Frameworks/
+android/
+
+# Misc
+.expo/
+.DS_Store
+

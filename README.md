@@ -47,6 +47,25 @@ These are consumed in `example/app/chat-app/config.ts` and passed to `Connection
 Contributions are very welcome! Please refer to guidelines described in the [contributing guide]( https://github.com/expo/expo#contributing).
 
 
+### Formatting
+
+This repo uses Prettier for JS/TS formatting. Run:
+
+```
+yarn format
+# or
+npm run format
+```
+
+Check formatting without writing changes:
+
+```
+yarn format:check
+# or
+npm run format:check
+```
+
+
 
 ## Usage (Modular API)
 
