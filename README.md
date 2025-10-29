@@ -105,7 +105,7 @@ See `example/App.tsx` for a runnable demo.
   - `get(): ChatThreadDetails[]`
   - `create(customFields?: Record<string,string>): Promise<ChatThreadDetails>`
   - `load(threadId?: string): Promise<void>`
-- `send(threadId: string, message: OutboundMessage): Promise<void>`
+  - `send(threadId: string, message: OutboundMessage): Promise<void>`
   - `loadMore(threadId: string): Promise<void>`
   - `markRead(threadId: string): Promise<void>`
   - `updateName(threadId: string, name: string): Promise<void>`
@@ -114,6 +114,7 @@ See `example/App.tsx` for a runnable demo.
   - `reportTypingStart(threadId: string, didStart: boolean): Promise<void>`
   - `sendAttachmentURL(threadId: string, url: string, mimeType: string, fileName: string, friendlyName: string): Promise<void>`
   - `sendAttachmentBase64(threadId: string, base64: string, mimeType: string, fileName: string, friendlyName: string): Promise<void>`
+  - To page messages: call `loadMore(threadId)` then `getDetails(threadId)` to read `messages` and `hasMoreMessagesToLoad`.
 - Customer / OAuth
   - `setName(firstName: string, lastName: string): void`
   - `setIdentity(id: string, firstName?: string, lastName?: string): void`

@@ -13,9 +13,9 @@ export default function StatusTicks({ status }: Props) {
     case 'delivered':
       return <Text style={[styles.tick, styles.gray]}>✓✓</Text>;
     case 'seen':
-      return <Text style={[styles.tick, styles.blue]}>✓✓</Text>;
+      return <Text style={[styles.tick, styles.green]}>✓✓</Text>;
     case 'failed':
-      return <Text style={[styles.tick, styles.red]}>!</Text>;
+      return <Text style={[styles.tick, styles.red]}>✓</Text>;
     default:
       return null;
   }
@@ -24,7 +24,6 @@ export default function StatusTicks({ status }: Props) {
 const styles = StyleSheet.create({
   tick: { fontSize: 11, marginLeft: 4 },
   gray: { color: '#9ca3af' },
-  blue: { color: '#60a5fa' },
+  green: { color: '#10b981' },
   red: { color: '#ef4444' },
 });
-

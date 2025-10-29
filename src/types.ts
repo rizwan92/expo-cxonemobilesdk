@@ -82,12 +82,6 @@ export type OutboundMessage = {
   postback?: string | null;
 };
 
-export type ChatMessagesPage = {
-  messages: ChatMessage[];
-  scrollToken: string;
-  hasMore: boolean;
-};
-
 export type ChatThreadState = 'pending' | 'received' | 'loaded' | 'ready' | 'closed';
 
 export type ChatThreadDetails = {

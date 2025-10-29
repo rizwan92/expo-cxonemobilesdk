@@ -1,9 +1,5 @@
 import Native from "../ExpoCxonemobilesdkModule";
-import type {
-  ChatThreadDetails,
-  ChatMessagesPage,
-  OutboundMessage,
-} from "../types";
+import type { ChatThreadDetails, OutboundMessage } from "../types";
 
 const TAG = "[CXone/Threads]";
 
@@ -25,7 +21,7 @@ export async function create(
   console.log(TAG, "create", customFields ?? "(no custom fields)");
   try {
     const details = await Native.threadsCreate(customFields);
-    console.log(TAG, "create ->", details);
+    console.log(TAG, "create -> id", (details as any)?.id);
     return details as ChatThreadDetails;
   } catch (e) {
     console.error(TAG, "create failed", e);
@@ -47,9 +43,9 @@ export async function send(threadId: string, message: OutboundMessage) {
   await (Native as any).threadsSend(threadId, message);
 }
 
-export async function loadMore(threadId: string) {
+export async function loadMore(threadId: string): Promise<void> {
   console.log(TAG, "loadMore", threadId);
-  await Native.threadsLoadMore(threadId);
+  await (Native as any).threadsLoadMore(threadId);
 }
 
 export async function markRead(threadId: string) {
@@ -122,28 +118,24 @@ export async function sendAttachmentBase64(
   );
 }
 
-export async function getMessages(
-  threadId: string,
-  scrollToken?: string,
-  limit?: number
-): Promise<ChatMessagesPage> {
-  console.log(TAG, "getMessages", { threadId, scrollToken, limit });
-  const page = await (Native as any).threadsGetMessages(
-    threadId,
-    scrollToken,
-    limit
-  );
-  return page as ChatMessagesPage;
-}
+// Paging is driven by loadMore(threadId) and then reading details via getDetails(threadId)
 
 // Limited variants removed at native layer
 
 export function getDetails(threadId: string): ChatThreadDetails {
-  const d = Native.threadsGetDetails(threadId);
-  console.log(TAG, "getDetails ->", d);
-  return d;
+  const d = Native.threadsGetDetails(threadId) as any;
+  console.log(
+    TAG,
+    "getDetails -> id",
+    d?.id,
+    "messages",
+    Array.isArray(d?.messages) ? d.messages.length : 0,
+    "hasMore",
+    d?.hasMoreMessagesToLoad
+  );
+  return d as any;
 }
-// messagesPage removed; use getMessages(threadId, scrollToken?)
+// messagesPage removed; use loadMore() + getDetails(threadId)
 // Limited variants removed at native layer
 
 // Full details are returned by getDetails/listDetails now

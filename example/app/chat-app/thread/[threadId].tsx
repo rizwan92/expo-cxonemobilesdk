@@ -15,9 +15,6 @@ import type { ChatMessage } from "expo-cxonemobilesdk";
 import { useEvent } from "expo";
 import { ChatList, Composer } from "../../../components/chat";
 
-
-const LIMIT = 10
-
 export default function ThreadScreen() {
   const router = useRouter();
   const { threadId } = useLocalSearchParams<{ threadId: string }>();
@@ -32,16 +29,16 @@ export default function ThreadScreen() {
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loadingEarlier, setLoadingEarlier] = useState(false);
-  const [scrollToken, setScrollToken] = useState<string | undefined>(undefined);
   const [hasMore, setHasMore] = useState<boolean>(false);
+  const [counterText, setCounterText] = useState<string>("1");
+  const [scrollKey, setScrollKey] = useState(0);
 
   const reload = useCallback(async () => {
     if (!threadId) return;
-    const page = await Threads.getMessages(threadId, undefined, LIMIT);
-    console.log("Loaded page for thread", threadId, JSON.stringify(page,null,2));
-    setMessages(page.messages);
-    setScrollToken(page.scrollToken);
-    setHasMore(page.hasMore);
+    const details = await Threads.getDetails(threadId);
+    const list = details.messages ?? [];
+    setMessages(list);
+    setHasMore(!!details.hasMoreMessagesToLoad);
   }, [threadId]);
 
   useEffect(() => {
@@ -66,7 +63,14 @@ export default function ThreadScreen() {
     async (text: string) => {
       if (!threadId || !text) return;
       await Threads.send(threadId, { text });
+      // Increment counter for next send
+      const n = Number(text);
+      if (Number.isFinite(n)) {
+        setCounterText(String(n + 1));
+      }
       await reload();
+      // Explicitly scroll to bottom after sending
+      setScrollKey((k) => k + 1);
     },
     [threadId, reload]
   );
@@ -76,19 +80,14 @@ export default function ThreadScreen() {
     if (!hasMore) return;
     setLoadingEarlier(true);
     try {
-      const page = await Threads.getMessages(threadId, scrollToken, LIMIT);
-      setScrollToken(page.scrollToken);
-      setHasMore(page.hasMore);
-      // Merge and dedupe by id (keep current page messages after existing so order stays newest->older)
-      setMessages((prev) => {
-        const byId = new Map<string, ChatMessage>();
-        for (const m of [...prev, ...page.messages]) byId.set(m.id, m);
-        return Array.from(byId.values());
-      });
+      await Threads.loadMore(threadId);
+      const details = await Threads.getDetails(threadId);
+      setMessages(details.messages ?? []);
+      setHasMore(!!details.hasMoreMessagesToLoad);
     } finally {
       setLoadingEarlier(false);
     }
-  }, [threadId, hasMore, scrollToken]);
+  }, [threadId, hasMore]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -116,9 +115,14 @@ export default function ThreadScreen() {
             hasMore={hasMore}
             loadingMore={loadingEarlier}
             onLoadMore={onLoadEarlier}
+            scrollToBottomKey={scrollKey}
           />
         </View>
-        <Composer onSend={onSend} />
+        <Composer
+          onSend={onSend}
+          value={counterText}
+          onChangeText={setCounterText}
+        />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

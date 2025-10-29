@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { FlatList, ListRenderItem, View } from 'react-native';
 import type { ChatMessage, MessageContent } from 'expo-cxonemobilesdk';
 import MessageBubble from './MessageBubble';
@@ -10,11 +10,22 @@ type Props = {
   hasMore?: boolean;
   loadingMore?: boolean;
   onLoadMore?: () => void;
+  scrollToBottomKey?: number; // bump to force scroll to latest
 };
 
-export default function ChatList({ messages, myUserLabel = 'You', hasMore, loadingMore, onLoadMore }: Props) {
-  // Use order as provided by SDK/API; no resorting here.
+export default function ChatList({ messages, myUserLabel = 'You', hasMore, loadingMore, onLoadMore, scrollToBottomKey }: Props) {
+  // Use the SDK-provided order without client-side sorting
   const data = messages;
+
+  // Auto-scroll to latest when a new message is added
+  const listRef = useRef<FlatList<ChatMessage>>(null);
+  useEffect(() => {
+    if (typeof scrollToBottomKey === 'number') {
+      try {
+        listRef.current?.scrollToIndex({ index: 0, animated: true });
+      } catch {}
+    }
+  }, [scrollToBottomKey]);
 
   const renderItem: ListRenderItem<ChatMessage> = ({ item }) => {
     const isMe = item.direction === 'toAgent';
@@ -43,6 +54,7 @@ export default function ChatList({ messages, myUserLabel = 'You', hasMore, loadi
             createdAtMs={isFinite(ms) ? ms : undefined}
             status={item.status}
             authorName={!isMe ? name : undefined}
+            direction={item.direction as any}
           />
         </View>
       </View>
@@ -51,6 +63,7 @@ export default function ChatList({ messages, myUserLabel = 'You', hasMore, loadi
 
   return (
     <FlatList
+      ref={listRef}
       data={data}
       keyExtractor={(m) => m.id}
       renderItem={renderItem}
