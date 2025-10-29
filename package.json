@@ -16,8 +16,8 @@
     "open:android": "open -a \"Android Studio\" example/android",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "format:swift": "swiftformat ios",
-    "format:swift:check": "swiftformat --lint ios"
+    "format:swift": "swift-format -i -r ios --configuration .swift-format.json",
+    "format:swift:check": "swift-format --mode lint -r ios --configuration .swift-format.json"
   },
   "keywords": [
     "react-native",

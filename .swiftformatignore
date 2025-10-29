@@ -1,5 +1,0 @@
-# Paths ignored by SwiftFormat
-ios/Frameworks
-example/ios/Pods
-build
-

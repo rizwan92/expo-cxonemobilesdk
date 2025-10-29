@@ -51,7 +51,9 @@ Contributions are very welcome! Please refer to guidelines described in the [con
 
 ### Formatting
 
-This repo uses Prettier for JS/TS formatting. Run:
+This repo uses Prettier for JS/TS formatting and Apple's swift-format for Swift.
+
+JS/TS:
 
 ```
 yarn format
@@ -67,17 +69,15 @@ yarn format:check
 npm run format:check
 ```
 
-Swift formatting (iOS):
-
-We also support formatting Swift sources via SwiftFormat. Install once using Homebrew, then run scripts:
+Swift (iOS) via Apple swift-format:
 
 ```
-brew install swiftformat
+brew install swift-format
 
-# Format all Swift under ios/
+# Format all Swift files under ios/
 yarn format:swift
 
-# Check formatting without changing files
+# Lint Swift formatting (no changes written)
 yarn format:swift:check
 ```
 
