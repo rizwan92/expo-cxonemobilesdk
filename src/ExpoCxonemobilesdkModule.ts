@@ -1,7 +1,7 @@
-import { NativeModule, requireNativeModule } from "expo";
-import type { ChatThreadDetails, OutboundMessage } from "./types";
+import { NativeModule, requireNativeModule } from 'expo';
+import type { ChatThreadDetails, OutboundMessage } from './types';
 
-import { ExpoCxonemobilesdkModuleEvents } from "./ExpoCxonemobilesdk.types";
+import { ExpoCxonemobilesdkModuleEvents } from './ExpoCxonemobilesdk.types';
 
 declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkModuleEvents> {
   prepare(env: string, brandId: number, channelId: string): Promise<void>;
@@ -9,31 +9,31 @@ declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkMo
     chatURL: string,
     socketURL: string,
     brandId: number,
-    channelId: string
+    channelId: string,
   ): Promise<void>;
   connect(): Promise<void>;
   disconnect(): void;
-  getChatMode(): "singlethread" | "multithread" | "liveChat" | "unknown";
+  getChatMode(): 'singlethread' | 'multithread' | 'liveChat' | 'unknown';
   getChatState():
-    | "initial"
-    | "preparing"
-    | "prepared"
-    | "offline"
-    | "connecting"
-    | "connected"
-    | "ready"
-    | "closed";
+    | 'initial'
+    | 'preparing'
+    | 'prepared'
+    | 'offline'
+    | 'connecting'
+    | 'connected'
+    | 'ready'
+    | 'closed';
   isConnected(): boolean;
   executeTrigger(triggerId: string): Promise<void>;
   getChannelConfiguration(
     env: string,
     brandId: number,
-    channelId: string
+    channelId: string,
   ): Promise<Record<string, any>>;
   getChannelConfigurationByURL(
     chatURL: string,
     brandId: number,
-    channelId: string
+    channelId: string,
   ): Promise<Record<string, any>>;
   setCustomerName(firstName: string, lastName: string): void;
   setCustomerIdentity(id: string, firstName?: string, lastName?: string): void;
@@ -47,9 +47,7 @@ declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkMo
   analyticsChatWindowOpen(): Promise<void>;
   analyticsConversion(type: string, value: number): Promise<void>;
   threadsGet(): ChatThreadDetails[];
-  threadsCreate(
-    customFields?: Record<string, string>
-  ): Promise<ChatThreadDetails>;
+  threadsCreate(customFields?: Record<string, string>): Promise<ChatThreadDetails>;
   threadsLoad(threadId?: string): Promise<void>;
   threadsGetDetails(threadId: string): ChatThreadDetails;
   threadsSend(threadId: string, message: OutboundMessage): Promise<void>;
@@ -64,26 +62,21 @@ declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkMo
     url: string,
     mimeType: string,
     fileName: string,
-    friendlyName: string
+    friendlyName: string,
   ): Promise<void>;
   threadsSendAttachmentBase64(
     threadId: string,
     base64: string,
     mimeType: string,
     fileName: string,
-    friendlyName: string
+    friendlyName: string,
   ): Promise<void>;
   customerCustomFieldsGet(): Record<string, string>;
   customerCustomFieldsSet(fields: Record<string, string>): Promise<void>;
   threadCustomFieldsGet(threadId: string): Record<string, string>;
-  threadCustomFieldsSet(
-    threadId: string,
-    fields: Record<string, string>
-  ): Promise<void>;
+  threadCustomFieldsSet(threadId: string, fields: Record<string, string>): Promise<void>;
   signOut(): void;
 }
 
 // This call loads the native module object from the JSI.
-export default requireNativeModule<ExpoCxonemobilesdkModule>(
-  "ExpoCxonemobilesdk"
-);
+export default requireNativeModule<ExpoCxonemobilesdkModule>('ExpoCxonemobilesdk');

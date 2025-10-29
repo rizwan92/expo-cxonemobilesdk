@@ -1,6 +1,12 @@
 import React, { useMemo, useState } from 'react';
 import { SafeAreaView, ScrollView, View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import ExpoCxonemobilesdk, { Connection, Threads, Customer, CustomFields, Analytics } from 'expo-cxonemobilesdk';
+import ExpoCxonemobilesdk, {
+  Connection,
+  Threads,
+  Customer,
+  CustomFields,
+  Analytics,
+} from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
 import { useConnectionStatus } from 'expo-cxonemobilesdk';
 
@@ -20,7 +26,9 @@ export default function ChatScreen() {
   const [threadName, setThreadName] = useState('New Thread Name');
 
   // Attachment state
-  const [attUrl, setAttUrl] = useState('https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf');
+  const [attUrl, setAttUrl] = useState(
+    'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+  );
   const [attMime, setAttMime] = useState('application/pdf');
   const [attFile, setAttFile] = useState('dummy.pdf');
   const [attFriendly, setAttFriendly] = useState('Dummy PDF');
@@ -45,7 +53,10 @@ export default function ChatScreen() {
   const [convValue, setConvValue] = useState('99.99');
 
   const mode = useMemo(() => Connection.getChatMode(), [threadsUpdated, chatUpdated]);
-  const { connected, chatState, checking, connectAndSync, refresh } = useConnectionStatus({ attempts: 3, intervalMs: 1000 });
+  const { connected, chatState, checking, connectAndSync, refresh } = useConnectionStatus({
+    attempts: 3,
+    intervalMs: 1000,
+  });
 
   return (
     <SafeAreaView style={styles.container}>
@@ -53,10 +64,20 @@ export default function ChatScreen() {
         <View style={styles.card}>
           <Text style={styles.header}>Connection</Text>
           <Row label="Environment">
-            <TextInput style={styles.input} value={env} onChangeText={setEnv} autoCapitalize="characters" />
+            <TextInput
+              style={styles.input}
+              value={env}
+              onChangeText={setEnv}
+              autoCapitalize="characters"
+            />
           </Row>
           <Row label="Brand ID">
-            <TextInput style={styles.input} value={brandId} onChangeText={setBrandId} keyboardType="number-pad" />
+            <TextInput
+              style={styles.input}
+              value={brandId}
+              onChangeText={setBrandId}
+              keyboardType="number-pad"
+            />
           </Row>
           <Row label="Channel ID">
             <TextInput style={styles.input} value={channelId} onChangeText={setChannelId} />
@@ -70,7 +91,7 @@ export default function ChatScreen() {
           />
           <View style={styles.spacer} />
           <Button
-            title={checking ? "Connecting…" : "Connect"}
+            title={checking ? 'Connecting…' : 'Connect'}
             onPress={async () => {
               console.log(TAG, 'connect (with status checks)');
               await connectAndSync();
@@ -90,12 +111,21 @@ export default function ChatScreen() {
           <Text style={styles.meta}>State: {chatState}</Text>
           <Text style={styles.meta}>Connected: {String(connected)}</Text>
           <Text style={styles.meta}>Checking: {String(checking)}</Text>
-          <Text style={styles.meta}>chatUpdated: {chatUpdated ? `${chatUpdated.state}/${chatUpdated.mode}` : '—'}</Text>
-          <Text style={styles.meta}>threadsUpdated: {threadsUpdated ? `${threadsUpdated.threadIds?.length ?? 0}` : '—'}</Text>
+          <Text style={styles.meta}>
+            chatUpdated: {chatUpdated ? `${chatUpdated.state}/${chatUpdated.mode}` : '—'}
+          </Text>
+          <Text style={styles.meta}>
+            threadsUpdated: {threadsUpdated ? `${threadsUpdated.threadIds?.length ?? 0}` : '—'}
+          </Text>
           <Row label="Trigger ID">
             <TextInput style={styles.input} value={triggerId} onChangeText={setTriggerId} />
           </Row>
-          <Button title="Execute Trigger" onPress={async () => { await Connection.executeTrigger(triggerId); }} />
+          <Button
+            title="Execute Trigger"
+            onPress={async () => {
+              await Connection.executeTrigger(triggerId);
+            }}
+          />
           <View style={styles.spacer} />
           <Button title="Sign Out" onPress={() => Connection.signOut()} />
         </View>
@@ -105,7 +135,7 @@ export default function ChatScreen() {
           <Button
             title="List Threads"
             onPress={() => {
-              const ids = Threads.get().map(t => t.id);
+              const ids = Threads.get().map((t) => t.id);
               console.log(TAG, 'threads', ids);
               if (ids.length) setActiveThread(ids[0]);
             }}
@@ -131,9 +161,19 @@ export default function ChatScreen() {
             }}
           />
           <View style={styles.spacer} />
-          <Button title="Load More" onPress={async () => { if (activeThread) await Threads.loadMore(activeThread); }} />
+          <Button
+            title="Load More"
+            onPress={async () => {
+              if (activeThread) await Threads.loadMore(activeThread);
+            }}
+          />
           <View style={styles.spacer} />
-          <Button title="Mark Read" onPress={async () => { if (activeThread) await Threads.markRead(activeThread); }} />
+          <Button
+            title="Mark Read"
+            onPress={async () => {
+              if (activeThread) await Threads.markRead(activeThread);
+            }}
+          />
           <View style={styles.spacer} />
           <Row label="Typing">
             <Button
@@ -148,11 +188,26 @@ export default function ChatScreen() {
           <Row label="Thread Name">
             <TextInput style={styles.input} value={threadName} onChangeText={setThreadName} />
           </Row>
-          <Button title="Update Name" onPress={async () => { if (activeThread) await Threads.updateName(activeThread, threadName); }} />
+          <Button
+            title="Update Name"
+            onPress={async () => {
+              if (activeThread) await Threads.updateName(activeThread, threadName);
+            }}
+          />
           <View style={styles.spacer} />
-          <Button title="Archive" onPress={async () => { if (activeThread) await Threads.archive(activeThread); }} />
+          <Button
+            title="Archive"
+            onPress={async () => {
+              if (activeThread) await Threads.archive(activeThread);
+            }}
+          />
           <View style={styles.spacer} />
-          <Button title="End Contact" onPress={async () => { if (activeThread) await Threads.endContact(activeThread); }} />
+          <Button
+            title="End Contact"
+            onPress={async () => {
+              if (activeThread) await Threads.endContact(activeThread);
+            }}
+          />
           <View style={styles.spacer} />
           <Text style={styles.subheader}>Attachments</Text>
           <Row label="URL">
@@ -176,55 +231,101 @@ export default function ChatScreen() {
           />
           <View style={styles.spacer} />
           <Row label="Base64">
-            <TextInput style={styles.input} value={attBase64} onChangeText={setAttBase64} placeholder="Paste base64 data" />
+            <TextInput
+              style={styles.input}
+              value={attBase64}
+              onChangeText={setAttBase64}
+              placeholder="Paste base64 data"
+            />
           </Row>
           <Button
             title="Send Attachment (Base64)"
             onPress={async () => {
               if (!activeThread || !attBase64) return;
-              await Threads.sendAttachmentBase64(activeThread, attBase64, attMime, attFile, attFriendly);
+              await Threads.sendAttachmentBase64(
+                activeThread,
+                attBase64,
+                attMime,
+                attFile,
+                attFriendly,
+              );
             }}
           />
         </View>
 
         <View style={styles.card}>
           <Text style={styles.header}>Customer & OAuth</Text>
-          <Row label="First Name"><TextInput style={styles.input} value={firstName} onChangeText={setFirstName} /></Row>
-          <Row label="Last Name"><TextInput style={styles.input} value={lastName} onChangeText={setLastName} /></Row>
+          <Row label="First Name">
+            <TextInput style={styles.input} value={firstName} onChangeText={setFirstName} />
+          </Row>
+          <Row label="Last Name">
+            <TextInput style={styles.input} value={lastName} onChangeText={setLastName} />
+          </Row>
           <Button title="Set Name" onPress={() => Customer.setName(firstName, lastName)} />
           <View style={styles.spacer} />
-          <Row label="Customer ID"><TextInput style={styles.input} value={customerId} onChangeText={setCustomerId} /></Row>
-          <Button title="Set Identity" onPress={() => Customer.setIdentity(customerId, firstName, lastName)} />
+          <Row label="Customer ID">
+            <TextInput style={styles.input} value={customerId} onChangeText={setCustomerId} />
+          </Row>
+          <Button
+            title="Set Identity"
+            onPress={() => Customer.setIdentity(customerId, firstName, lastName)}
+          />
           <View style={styles.spacer} />
           <Button title="Clear Identity" onPress={() => Customer.clearIdentity()} />
           <View style={styles.spacer} />
-          <Row label="Device Token"><TextInput style={styles.input} value={deviceToken} onChangeText={setDeviceToken} /></Row>
+          <Row label="Device Token">
+            <TextInput style={styles.input} value={deviceToken} onChangeText={setDeviceToken} />
+          </Row>
           <Button title="Set Device Token" onPress={() => Customer.setDeviceToken(deviceToken)} />
           <View style={styles.spacer} />
-          <Row label="Auth Code"><TextInput style={styles.input} value={authCode} onChangeText={setAuthCode} /></Row>
+          <Row label="Auth Code">
+            <TextInput style={styles.input} value={authCode} onChangeText={setAuthCode} />
+          </Row>
           <Button title="Set Auth Code" onPress={() => Customer.setAuthorizationCode(authCode)} />
           <View style={styles.spacer} />
-          <Row label="Code Verifier"><TextInput style={styles.input} value={codeVerifier} onChangeText={setCodeVerifier} /></Row>
-          <Button title="Set Code Verifier" onPress={() => Customer.setCodeVerifier(codeVerifier)} />
+          <Row label="Code Verifier">
+            <TextInput style={styles.input} value={codeVerifier} onChangeText={setCodeVerifier} />
+          </Row>
+          <Button
+            title="Set Code Verifier"
+            onPress={() => Customer.setCodeVerifier(codeVerifier)}
+          />
           <Text style={styles.meta}>Visitor ID: {Customer.getVisitorId() ?? '—'}</Text>
         </View>
 
         <View style={styles.card}>
           <Text style={styles.header}>Custom Fields</Text>
-          <Row label="Customer (JSON)"><TextInput style={styles.input} value={customerFieldsJson} onChangeText={setCustomerFieldsJson} /></Row>
+          <Row label="Customer (JSON)">
+            <TextInput
+              style={styles.input}
+              value={customerFieldsJson}
+              onChangeText={setCustomerFieldsJson}
+            />
+          </Row>
           <Button
             title="Set Customer Fields"
             onPress={async () => {
               try {
                 const obj = JSON.parse(customerFieldsJson || '{}');
                 await CustomFields.setCustomer(obj);
-              } catch (e) { console.warn(e); }
+              } catch (e) {
+                console.warn(e);
+              }
             }}
           />
           <View style={styles.spacer} />
-          <Button title="Get Customer Fields" onPress={() => console.log(TAG, 'customer fields', CustomFields.getCustomer())} />
+          <Button
+            title="Get Customer Fields"
+            onPress={() => console.log(TAG, 'customer fields', CustomFields.getCustomer())}
+          />
           <View style={styles.spacer} />
-          <Row label="Thread (JSON)"><TextInput style={styles.input} value={threadFieldsJson} onChangeText={setThreadFieldsJson} /></Row>
+          <Row label="Thread (JSON)">
+            <TextInput
+              style={styles.input}
+              value={threadFieldsJson}
+              onChangeText={setThreadFieldsJson}
+            />
+          </Row>
           <Button
             title="Set Thread Fields"
             onPress={async () => {
@@ -232,32 +333,76 @@ export default function ChatScreen() {
               try {
                 const obj = JSON.parse(threadFieldsJson || '{}');
                 await CustomFields.setThread(activeThread, obj);
-              } catch (e) { console.warn(e); }
+              } catch (e) {
+                console.warn(e);
+              }
             }}
           />
           <View style={styles.spacer} />
-          <Button title="Get Thread Fields" onPress={() => { if (activeThread) console.log(TAG, 'thread fields', CustomFields.getThread(activeThread)); }} />
+          <Button
+            title="Get Thread Fields"
+            onPress={() => {
+              if (activeThread)
+                console.log(TAG, 'thread fields', CustomFields.getThread(activeThread));
+            }}
+          />
         </View>
 
         <View style={styles.card}>
           <Text style={styles.header}>Analytics</Text>
-          <Row label="Title"><TextInput style={styles.input} value={pageTitle} onChangeText={setPageTitle} /></Row>
-          <Row label="URL"><TextInput style={styles.input} value={pageUrl} onChangeText={setPageUrl} /></Row>
-          <Button title="View Page" onPress={async () => { await Analytics.viewPage(pageTitle, pageUrl); }} />
+          <Row label="Title">
+            <TextInput style={styles.input} value={pageTitle} onChangeText={setPageTitle} />
+          </Row>
+          <Row label="URL">
+            <TextInput style={styles.input} value={pageUrl} onChangeText={setPageUrl} />
+          </Row>
+          <Button
+            title="View Page"
+            onPress={async () => {
+              await Analytics.viewPage(pageTitle, pageUrl);
+            }}
+          />
           <View style={styles.spacer} />
-          <Button title="View Page Ended" onPress={async () => { await Analytics.viewPageEnded(pageTitle, pageUrl); }} />
+          <Button
+            title="View Page Ended"
+            onPress={async () => {
+              await Analytics.viewPageEnded(pageTitle, pageUrl);
+            }}
+          />
           <View style={styles.spacer} />
-          <Button title="Chat Window Open" onPress={async () => { await Analytics.chatWindowOpen(); }} />
+          <Button
+            title="Chat Window Open"
+            onPress={async () => {
+              await Analytics.chatWindowOpen();
+            }}
+          />
           <View style={styles.spacer} />
-          <Row label="Conv Type"><TextInput style={styles.input} value={convType} onChangeText={setConvType} /></Row>
-          <Row label="Conv Value"><TextInput style={styles.input} value={convValue} onChangeText={setConvValue} keyboardType="decimal-pad" /></Row>
-          <Button title="Conversion" onPress={async () => { const v = Number(convValue) || 0; await Analytics.conversion(convType, v); }} />
+          <Row label="Conv Type">
+            <TextInput style={styles.input} value={convType} onChangeText={setConvType} />
+          </Row>
+          <Row label="Conv Value">
+            <TextInput
+              style={styles.input}
+              value={convValue}
+              onChangeText={setConvValue}
+              keyboardType="decimal-pad"
+            />
+          </Row>
+          <Button
+            title="Conversion"
+            onPress={async () => {
+              const v = Number(convValue) || 0;
+              await Analytics.conversion(convType, v);
+            }}
+          />
         </View>
 
         <View style={styles.card}>
           <Text style={styles.header}>Events (debug)</Text>
           <Text style={styles.meta}>agentTyping: use console to view details</Text>
-          <Text style={styles.meta}>customEventMessage/proactivePopupAction/errors printed to console as they occur</Text>
+          <Text style={styles.meta}>
+            customEventMessage/proactivePopupAction/errors printed to console as they occur
+          </Text>
         </View>
       </ScrollView>
     </SafeAreaView>

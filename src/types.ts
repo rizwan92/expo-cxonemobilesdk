@@ -61,7 +61,13 @@ export type MessageReplyButton = {
 };
 export type MessageQuickReplies = { title: string; buttons: MessageReplyButton[] };
 export type MessageListPicker = { title: string; text: string; buttons: MessageReplyButton[] };
-export type MessageRichLink = { title: string; url: string; fileName: string; fileUrl: string; mimeType: string };
+export type MessageRichLink = {
+  title: string;
+  url: string;
+  fileName: string;
+  fileUrl: string;
+  mimeType: string;
+};
 
 export type MessageContent =
   | { type: 'text'; payload: MessagePayload }

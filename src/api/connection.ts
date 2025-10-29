@@ -8,7 +8,12 @@ export async function prepare(env: string, brandId: number, channelId: string) {
   await Native.prepare(env, brandId, channelId);
 }
 
-export async function prepareWithURLs(chatURL: string, socketURL: string, brandId: number, channelId: string) {
+export async function prepareWithURLs(
+  chatURL: string,
+  socketURL: string,
+  brandId: number,
+  channelId: string,
+) {
   console.log(TAG, 'prepareWithURLs', { chatURL, socketURL, brandId, channelId });
   await (Native as any).prepareWithURLs(chatURL, socketURL, brandId, channelId);
 }
@@ -46,13 +51,21 @@ export async function executeTrigger(triggerId: string) {
   await Native.executeTrigger(triggerId);
 }
 
-export async function getChannelConfiguration(env: string, brandId: number, channelId: string): Promise<ChannelConfiguration> {
+export async function getChannelConfiguration(
+  env: string,
+  brandId: number,
+  channelId: string,
+): Promise<ChannelConfiguration> {
   console.log(TAG, 'getChannelConfiguration', { env, brandId, channelId });
   const cfg = await (Native as any).getChannelConfiguration(env, brandId, channelId);
   return cfg as ChannelConfiguration;
 }
 
-export async function getChannelConfigurationByURL(chatURL: string, brandId: number, channelId: string): Promise<ChannelConfiguration> {
+export async function getChannelConfigurationByURL(
+  chatURL: string,
+  brandId: number,
+  channelId: string,
+): Promise<ChannelConfiguration> {
   console.log(TAG, 'getChannelConfigurationByURL', { chatURL, brandId, channelId });
   const cfg = await (Native as any).getChannelConfigurationByURL(chatURL, brandId, channelId);
   return cfg as ChannelConfiguration;

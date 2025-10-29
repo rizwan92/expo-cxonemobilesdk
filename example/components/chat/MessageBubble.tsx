@@ -13,13 +13,18 @@ type Props = {
   direction?: 'toAgent' | 'toClient';
 };
 
-export default function MessageBubble({ text, isMe, createdAtMs, status, authorName, direction }: Props) {
+export default function MessageBubble({
+  text,
+  isMe,
+  createdAtMs,
+  status,
+  authorName,
+  direction,
+}: Props) {
   return (
     <View style={[styles.row, isMe ? styles.rowMe : styles.rowThem]}>
       <View style={{ maxWidth: '85%' }}>
-        {!isMe && !!authorName && (
-          <Text style={styles.author}>{authorName}</Text>
-        )}
+        {!isMe && !!authorName && <Text style={styles.author}>{authorName}</Text>}
         <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
           <Text style={[styles.text, isMe ? styles.textMe : styles.textThem]}>{text}</Text>
         </View>

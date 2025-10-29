@@ -28,7 +28,7 @@ export default function Home() {
                 'https://chat.example.com',
                 'wss://socket.example.com',
                 123,
-                'demo'
+                'demo',
               );
               console.log(TAG, 'prepareWithURLs resolved');
             } catch (e) {
@@ -57,7 +57,11 @@ export default function Home() {
             const TAG = '[Home]';
             console.log(TAG, 'getChannelConfigurationByURL pressed');
             try {
-              const cfg = await Connection.getChannelConfigurationByURL('https://chat.example.com', 123, 'demo');
+              const cfg = await Connection.getChannelConfigurationByURL(
+                'https://chat.example.com',
+                123,
+                'demo',
+              );
               console.log(TAG, 'getChannelConfigurationByURL ->', cfg);
             } catch (e) {
               console.error(TAG, 'getChannelConfigurationByURL failed', e);

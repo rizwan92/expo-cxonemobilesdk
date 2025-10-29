@@ -66,4 +66,3 @@ export function useConnectionStatus(options: UseConnectionOptions = {}) {
 
   return { connected, chatState, checking, refresh, connectAndSync };
 }
-

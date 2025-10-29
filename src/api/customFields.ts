@@ -23,4 +23,3 @@ export async function setThread(threadId: string, fields: Record<string, string>
   console.log(TAG, 'setThread', { threadId, fields });
   await Native.threadCustomFieldsSet(threadId, fields);
 }
-

@@ -8,7 +8,12 @@ type Props = {
   onChangeText?: (text: string) => void; // required if value is provided
 };
 
-export default function Composer({ onSend, placeholder = 'Type a message', value, onChangeText }: Props) {
+export default function Composer({
+  onSend,
+  placeholder = 'Type a message',
+  value,
+  onChangeText,
+}: Props) {
   const isControlled = typeof value === 'string' && typeof onChangeText === 'function';
   const [inner, setInner] = useState('');
   const text = isControlled ? (value as string) : inner;
@@ -45,6 +50,20 @@ export default function Composer({ onSend, placeholder = 'Type a message', value
 }
 
 const styles = StyleSheet.create({
-  container: { flexDirection: 'row', alignItems: 'center', padding: 8, borderTopWidth: StyleSheet.hairlineWidth, borderColor: '#ddd', backgroundColor: '#fff' },
-  input: { flex: 1, backgroundColor: '#f3f4f6', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 8, marginRight: 8 },
+  container: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 8,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderColor: '#ddd',
+    backgroundColor: '#fff',
+  },
+  input: {
+    flex: 1,
+    backgroundColor: '#f3f4f6',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    marginRight: 8,
+  },
 });

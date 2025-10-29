@@ -13,7 +13,14 @@ type Props = {
   scrollToBottomKey?: number; // bump to force scroll to latest
 };
 
-export default function ChatList({ messages, myUserLabel = 'You', hasMore, loadingMore, onLoadMore, scrollToBottomKey }: Props) {
+export default function ChatList({
+  messages,
+  myUserLabel = 'You',
+  hasMore,
+  loadingMore,
+  onLoadMore,
+  scrollToBottomKey,
+}: Props) {
   // Use the SDK-provided order without client-side sorting
   const data = messages;
 
@@ -45,7 +52,14 @@ export default function ChatList({ messages, myUserLabel = 'You', hasMore, loadi
       text = '[unknown]';
     }
     return (
-      <View style={{ flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 8, marginVertical: 4 }}>
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'flex-end',
+          paddingHorizontal: 8,
+          marginVertical: 4,
+        }}
+      >
         {!isMe && <Avatar name={name} imageUrl={item.authorUser?.imageUrl} size={28} />}
         <View style={{ flex: 1, marginLeft: isMe ? 0 : 6 }}>
           <MessageBubble

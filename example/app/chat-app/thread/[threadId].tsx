@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   SafeAreaView,
   View,
@@ -8,29 +8,23 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-} from "react-native";
-import { useLocalSearchParams, useRouter } from "expo-router";
-import { Threads } from "expo-cxonemobilesdk";
-import type { ChatMessage } from "expo-cxonemobilesdk";
-import { useEvent } from "expo";
-import { ChatList, Composer } from "../../../components/chat";
+} from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Threads } from 'expo-cxonemobilesdk';
+import type { ChatMessage } from 'expo-cxonemobilesdk';
+import { useEvent } from 'expo';
+import { ChatList, Composer } from '../../../components/chat';
 
 export default function ThreadScreen() {
   const router = useRouter();
   const { threadId } = useLocalSearchParams<{ threadId: string }>();
-  const threadUpdated = useEvent(
-    require("expo-cxonemobilesdk").default,
-    "threadUpdated"
-  );
-  const threadsUpdated = useEvent(
-    require("expo-cxonemobilesdk").default,
-    "threadsUpdated"
-  );
+  const threadUpdated = useEvent(require('expo-cxonemobilesdk').default, 'threadUpdated');
+  const threadsUpdated = useEvent(require('expo-cxonemobilesdk').default, 'threadsUpdated');
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loadingEarlier, setLoadingEarlier] = useState(false);
   const [hasMore, setHasMore] = useState<boolean>(false);
-  const [counterText, setCounterText] = useState<string>("1");
+  const [counterText, setCounterText] = useState<string>('1');
   const [scrollKey, setScrollKey] = useState(0);
 
   const reload = useCallback(async () => {
@@ -72,7 +66,7 @@ export default function ThreadScreen() {
       // Explicitly scroll to bottom after sending
       setScrollKey((k) => k + 1);
     },
-    [threadId, reload]
+    [threadId, reload],
   );
 
   const onLoadEarlier = useCallback(async () => {
@@ -100,7 +94,7 @@ export default function ThreadScreen() {
       </View>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <View style={{ paddingHorizontal: 12, paddingTop: 8 }}>
           {loadingEarlier ? (
@@ -118,25 +112,21 @@ export default function ThreadScreen() {
             scrollToBottomKey={scrollKey}
           />
         </View>
-        <Composer
-          onSend={onSend}
-          value={counterText}
-          onChangeText={setCounterText}
-        />
+        <Composer onSend={onSend} value={counterText} onChangeText={setCounterText} />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#fff" },
+  container: { flex: 1, backgroundColor: '#fff' },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     padding: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderColor: "#ddd",
+    borderColor: '#ddd',
   },
-  title: { fontSize: 14, fontWeight: "600", flex: 1, marginHorizontal: 12 },
+  title: { fontSize: 14, fontWeight: '600', flex: 1, marginHorizontal: 12 },
 });

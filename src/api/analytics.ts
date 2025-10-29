@@ -21,4 +21,3 @@ export async function conversion(type: string, value: number) {
   console.log(TAG, 'conversion', { type, value });
   await Native.analyticsConversion(type, value);
 }
-

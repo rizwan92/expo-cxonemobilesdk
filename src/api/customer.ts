@@ -37,4 +37,3 @@ export function getVisitorId() {
   console.log(TAG, 'getVisitorId ->', id);
   return id;
 }
-

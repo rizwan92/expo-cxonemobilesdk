@@ -1,5 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { SafeAreaView, View, Text, Button, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import {
+  SafeAreaView,
+  View,
+  Text,
+  Button,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+} from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import ExpoCxonemobilesdk, { Connection, Threads, Customer } from 'expo-cxonemobilesdk';
 import { USERS, AGENTS } from './profiles';
@@ -13,14 +21,17 @@ export default function ChatAppHome() {
   const chatUpdated = useEvent(ExpoCxonemobilesdk, 'chatUpdated');
   const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
   const errorEvent = useEvent(ExpoCxonemobilesdk, 'error');
-  const { connected, chatState, checking, connectAndSync, refresh } = useConnectionStatus({ attempts: 5, intervalMs: 800 });
+  const { connected, chatState, checking, connectAndSync, refresh } = useConnectionStatus({
+    attempts: 5,
+    intervalMs: 800,
+  });
 
   const [visitorId, setVisitorId] = useState<string | null>(null);
   const [threadList, setThreadList] = useState<ChatThreadDetails[]>([]);
   const [prepareDone, setPrepareDone] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
   const [chatMode, setChatMode] = useState<'singlethread' | 'multithread' | 'liveChat' | 'unknown'>(
-    () => Connection.getChatMode()
+    () => Connection.getChatMode(),
   );
   const [starting, setStarting] = useState(false);
   const [selectedUser, setSelectedUser] = useState(USERS[0]);
@@ -55,7 +66,9 @@ export default function ChatAppHome() {
         setLastError(String((e as any)?.message ?? e));
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Load visitor id and thread list
@@ -65,7 +78,9 @@ export default function ChatAppHome() {
     setChatMode(Connection.getChatMode());
   }, []);
 
-  useEffect(() => { reload(); }, [prepareDone, chatUpdated?.state, threadsUpdated?.threadIds?.length]);
+  useEffect(() => {
+    reload();
+  }, [prepareDone, chatUpdated?.state, threadsUpdated?.threadIds?.length]);
 
   // Surface native error events in UI status
   useEffect(() => {
@@ -74,7 +89,7 @@ export default function ChatAppHome() {
 
   const headerStatus = useMemo(
     () => `${chatState} ${connected ? '• Online' : '• Offline'} • Mode: ${chatMode}`,
-    [chatState, connected, chatMode]
+    [chatState, connected, chatMode],
   );
 
   const isMultithread = chatMode === 'multithread';
@@ -113,14 +128,23 @@ export default function ChatAppHome() {
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <View style={styles.headerTextBox}>
-          <Text style={styles.headerText} numberOfLines={2}>Chat Status: {headerStatus}</Text>
+          <Text style={styles.headerText} numberOfLines={2}>
+            Chat Status: {headerStatus}
+          </Text>
           {!!lastError && (
             <Text style={[styles.headerText, styles.headerError]} numberOfLines={2}>
               Error: {lastError}
             </Text>
           )}
         </View>
-        <Button title="Refresh" onPress={() => { setLastError(null); refresh(); reload(); }} />
+        <Button
+          title="Refresh"
+          onPress={() => {
+            setLastError(null);
+            refresh();
+            reload();
+          }}
+        />
       </View>
 
       <View style={styles.card}>
@@ -146,9 +170,16 @@ export default function ChatAppHome() {
                   setLastError(String((e as any)?.message ?? e));
                 }
               }}
-              style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: selectedUser.id === u.id ? '#111827' : '#e5e7eb' }}
+              style={{
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 8,
+                backgroundColor: selectedUser.id === u.id ? '#111827' : '#e5e7eb',
+              }}
             >
-              <Text style={{ color: selectedUser.id === u.id ? '#fff' : '#111827' }}>{u.firstName} {u.lastName}</Text>
+              <Text style={{ color: selectedUser.id === u.id ? '#fff' : '#111827' }}>
+                {u.firstName} {u.lastName}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -159,9 +190,16 @@ export default function ChatAppHome() {
             <TouchableOpacity
               key={a.id}
               onPress={() => setSelectedAgent(a)}
-              style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: selectedAgent.id === a.id ? '#111827' : '#e5e7eb' }}
+              style={{
+                paddingHorizontal: 10,
+                paddingVertical: 6,
+                borderRadius: 8,
+                backgroundColor: selectedAgent.id === a.id ? '#111827' : '#e5e7eb',
+              }}
             >
-              <Text style={{ color: selectedAgent.id === a.id ? '#fff' : '#111827' }}>{a.fullName}</Text>
+              <Text style={{ color: selectedAgent.id === a.id ? '#fff' : '#111827' }}>
+                {a.fullName}
+              </Text>
             </TouchableOpacity>
           ))}
         </View>
@@ -175,18 +213,19 @@ export default function ChatAppHome() {
       <View style={styles.card}>
         <Text style={styles.title}>Threads</Text>
         {!isMultithread && (
-          <Button
-            title={starting ? 'Starting…' : 'Start Chat'}
-            onPress={startSingleThread}
-          />
+          <Button title={starting ? 'Starting…' : 'Start Chat'} onPress={startSingleThread} />
         )}
         {!isMultithread && (
-          <Text style={[styles.meta, { marginTop: 8 }]}>This channel is {chatMode}. Use Start Chat to open the single active thread.</Text>
+          <Text style={[styles.meta, { marginTop: 8 }]}>
+            This channel is {chatMode}. Use Start Chat to open the single active thread.
+          </Text>
         )}
 
         <View style={{ height: 8 }} />
         <Button
-          title={isMultithread ? 'Create New Thread' : 'Create New Thread (unsupported in this mode)'}
+          title={
+            isMultithread ? 'Create New Thread' : 'Create New Thread (unsupported in this mode)'
+          }
           disabled={!isMultithread}
           onPress={async () => {
             try {
@@ -195,7 +234,11 @@ export default function ChatAppHome() {
               if (!(st === 'connected' || st === 'ready')) {
                 await connectAndSync();
               }
-              const details = await Threads.create({ requestedAgentId: selectedAgent.id, requestedAgentName: selectedAgent.fullName, startedByUserId: selectedUser.id });
+              const details = await Threads.create({
+                requestedAgentId: selectedAgent.id,
+                requestedAgentName: selectedAgent.fullName,
+                startedByUserId: selectedUser.id,
+              });
               setThreadList(Threads.get());
               router.push(`/chat-app/thread/${details.id}`);
             } catch (e) {
@@ -212,9 +255,13 @@ export default function ChatAppHome() {
               style={styles.thread}
               onPress={() => router.push(`/chat-app/thread/${item.id}`)}
             >
-              <Text style={styles.threadText}>{item.name && item.name.length ? item.name : item.id}</Text>
+              <Text style={styles.threadText}>
+                {item.name && item.name.length ? item.name : item.id}
+              </Text>
               <Text style={styles.meta}>
-                State: {String(item.state)} • Messages: {item.messagesCount ?? item.messages?.length ?? 0} • More: {String(item.hasMoreMessagesToLoad)}
+                State: {String(item.state)} • Messages:{' '}
+                {item.messagesCount ?? item.messages?.length ?? 0} • More:{' '}
+                {String(item.hasMoreMessagesToLoad)}
               </Text>
               {item.assignedAgent?.fullName ? (
                 <Text style={styles.meta}>Agent: {item.assignedAgent.fullName}</Text>
@@ -222,7 +269,12 @@ export default function ChatAppHome() {
                 <Text style={styles.meta}>Last Agent: {item.lastAssignedAgent.fullName}</Text>
               ) : null}
               {typeof item.scrollToken === 'string' && (
-                <Text style={styles.meta}>Scroll: {item.scrollToken.length > 16 ? `${item.scrollToken.slice(0, 16)}…` : item.scrollToken}</Text>
+                <Text style={styles.meta}>
+                  Scroll:{' '}
+                  {item.scrollToken.length > 16
+                    ? `${item.scrollToken.slice(0, 16)}…`
+                    : item.scrollToken}
+                </Text>
               )}
             </TouchableOpacity>
           )}
@@ -235,7 +287,15 @@ export default function ChatAppHome() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f5f7', padding: 12 },
-  header: { padding: 12, backgroundColor: '#111827', borderRadius: 10, marginBottom: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  header: {
+    padding: 12,
+    backgroundColor: '#111827',
+    borderRadius: 10,
+    marginBottom: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
   headerTextBox: { flex: 1, paddingRight: 8 },
   headerText: { color: '#fff', fontSize: 14, fontWeight: '600' },
   headerError: { color: '#fecaca' },

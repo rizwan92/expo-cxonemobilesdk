@@ -16,4 +16,3 @@ export default function LoadMore({ loading, onPress }: Props) {
   }
   return <Button title="Load earlier" onPress={onPress} />;
 }
-

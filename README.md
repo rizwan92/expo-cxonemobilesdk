@@ -16,15 +16,18 @@ npm install expo-cxonemobilesdk
 ```
 
 Expo (managed/bare):
+
 - iOS: `npx pod-install` (or `npx expo run:ios` which runs pods)
 - Android: no additional setup
 
 React Native (bare):
+
 - Ensure you’ve set up Expo Modules: https://docs.expo.dev/bare/installing-expo-modules/
 - iOS: `cd ios && pod install`
 - Android: no additional setup
 
 Notes:
+
 - iOS frameworks are vendored (see below); minimum iOS 15.1.
 - Brand/environment values must match your CXone setup; environments are uppercased (e.g., `NA1`, `EU1`).
 
@@ -44,8 +47,7 @@ These are consumed in `example/app/chat-app/config.ts` and passed to `Connection
 
 # Contributing
 
-Contributions are very welcome! Please refer to guidelines described in the [contributing guide]( https://github.com/expo/expo#contributing).
-
+Contributions are very welcome! Please refer to guidelines described in the [contributing guide](https://github.com/expo/expo#contributing).
 
 ### Formatting
 
@@ -64,8 +66,6 @@ yarn format:check
 # or
 npm run format:check
 ```
-
-
 
 ## Usage (Modular API)
 
@@ -169,6 +169,7 @@ See `example/App.tsx` for a runnable demo.
   - `conversion(type: string, value: number): Promise<void>`
 
 Events (subscribe with `useEvent(ExpoCxonemobilesdk, 'eventName')`) and Hook:
+
 - `chatUpdated({ state, mode })`
 - `threadsUpdated({ threadIds })`, `threadUpdated({ threadId })`
 - `agentTyping({ isTyping, threadId })`
@@ -183,9 +184,11 @@ Events (subscribe with `useEvent(ExpoCxonemobilesdk, 'eventName')`) and Hook:
 - Use the example app to exercise the module: Connection, Threads, CustomFields, Customer, Analytics.
 
 ## Platform Support
+
 - iOS only (minimum iOS 15.1). No web or Android implementation.
 
 ## Feature Coverage
+
 - Core SDK integration: prepare, connect, disconnect, signOut (yes)
 - Modes: detect at runtime via `Connection.getChatMode()` (yes)
 - Multi-thread chat: get/create/load/send/markRead/update/archive/end/typing (yes)
@@ -196,6 +199,7 @@ Events (subscribe with `useEvent(ExpoCxonemobilesdk, 'eventName')`) and Hook:
 - Events: chatUpdated, (threads|thread)Updated, agentTyping, etc. (yes)
 
 ## Troubleshooting
+
 - After adding/updating Swift files under `ios/`, reinstall pods in the example app so Xcode sees new sources:
   - `cd example/ios && pod install`
   - Then clean build and run (e.g., `npx expo run:ios`)

@@ -19,4 +19,3 @@ const styles = StyleSheet.create({
   toAgent: { color: '#6b7280' }, // gray
   toClient: { color: '#10b981' }, // green
 });
-

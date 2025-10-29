@@ -1,9 +1,15 @@
-import ExpoCxonemobilesdk, { Connection, Customer, Analytics, Threads, CustomFields } from "expo-cxonemobilesdk";
+import ExpoCxonemobilesdk, {
+  Connection,
+  Customer,
+  Analytics,
+  Threads,
+  CustomFields,
+} from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
-import { Button, SafeAreaView, ScrollView, Text, View } from "react-native";
+import { Button, SafeAreaView, ScrollView, Text, View } from 'react-native';
 
 export default function App() {
-  const TAG = "[ExpoCxonemobilesdkExample]";
+  const TAG = '[ExpoCxonemobilesdkExample]';
   // Subscribe to key events for debugging/demo
   const chatUpdated = useEvent(ExpoCxonemobilesdk, 'chatUpdated');
   const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
@@ -20,18 +26,27 @@ export default function App() {
         <Group name="Connection">
           <Text>Call native methods with logs</Text>
           <Text>chatUpdated: {chatUpdated ? `${chatUpdated.state}/${chatUpdated.mode}` : '—'}</Text>
-          <Text>threadsUpdated: {threadsUpdated ? `${threadsUpdated.threadIds?.length ?? 0}` : '—'}</Text>
+          <Text>
+            threadsUpdated: {threadsUpdated ? `${threadsUpdated.threadIds?.length ?? 0}` : '—'}
+          </Text>
           <Text>threadUpdated: {threadUpdated ? `${threadUpdated.threadId ?? ''}` : '—'}</Text>
-          <Text>agentTyping: {agentTyping ? `${agentTyping.threadId}:${agentTyping.isTyping}` : '—'}</Text>
-          <Text>customEventMessage: {customEventMessage ? `${customEventMessage.base64?.slice(0, 8)}…` : '—'}</Text>
-          <Text>proactivePopupAction: {proactivePopupAction ? `${proactivePopupAction.actionId}` : '—'}</Text>
+          <Text>
+            agentTyping: {agentTyping ? `${agentTyping.threadId}:${agentTyping.isTyping}` : '—'}
+          </Text>
+          <Text>
+            customEventMessage:{' '}
+            {customEventMessage ? `${customEventMessage.base64?.slice(0, 8)}…` : '—'}
+          </Text>
+          <Text>
+            proactivePopupAction: {proactivePopupAction ? `${proactivePopupAction.actionId}` : '—'}
+          </Text>
           <Text>error: {errorEvent ? `${errorEvent.message}` : '—'}</Text>
           <Button
             title="prepare (env=NA1, brandId=123, channel=demo)"
             onPress={async () => {
               console.log(`${TAG} prepare pressed`);
               try {
-                await Connection.prepare("NA1", 123, "demo");
+                await Connection.prepare('NA1', 123, 'demo');
                 console.log(`${TAG} prepare resolved`);
               } catch (e) {
                 console.error(`${TAG} prepare failed`, e);
@@ -45,10 +60,10 @@ export default function App() {
               console.log(`${TAG} prepareWithURLs pressed`);
               try {
                 await Connection.prepareWithURLs(
-                  "https://chat.example.com",
-                  "wss://socket.example.com",
+                  'https://chat.example.com',
+                  'wss://socket.example.com',
                   123,
-                  "demo"
+                  'demo',
                 );
                 console.log(`${TAG} prepareWithURLs resolved`);
               } catch (e) {
@@ -88,7 +103,7 @@ export default function App() {
             onPress={async () => {
               console.log(`${TAG} getChannelConfiguration pressed`);
               try {
-                const cfg = await Connection.getChannelConfiguration("NA1", 123, "demo");
+                const cfg = await Connection.getChannelConfiguration('NA1', 123, 'demo');
                 console.log(`${TAG} getChannelConfiguration ->`, cfg);
               } catch (e) {
                 console.error(`${TAG} getChannelConfiguration failed`, e);
@@ -101,7 +116,11 @@ export default function App() {
             onPress={async () => {
               console.log(`${TAG} getChannelConfigurationByURL pressed`);
               try {
-                const cfg = await Connection.getChannelConfigurationByURL("https://chat.example.com", 123, "demo");
+                const cfg = await Connection.getChannelConfigurationByURL(
+                  'https://chat.example.com',
+                  123,
+                  'demo',
+                );
                 console.log(`${TAG} getChannelConfigurationByURL ->`, cfg);
               } catch (e) {
                 console.error(`${TAG} getChannelConfigurationByURL failed`, e);
@@ -112,7 +131,7 @@ export default function App() {
           <Button
             title="executeTrigger (sample UUID)"
             onPress={async () => {
-              const sample = "00000000-0000-0000-0000-000000000001";
+              const sample = '00000000-0000-0000-0000-000000000001';
               console.log(`${TAG} executeTrigger pressed`, sample);
               try {
                 await Connection.executeTrigger(sample);
@@ -137,7 +156,7 @@ export default function App() {
             title="Set Name (Jane Doe)"
             onPress={() => {
               console.log(`${TAG} setCustomerName pressed`);
-              Customer.setName("Jane", "Doe");
+              Customer.setName('Jane', 'Doe');
             }}
           />
           <View style={{ height: 8 }} />
@@ -145,7 +164,7 @@ export default function App() {
             title="Set Identity (id=123)"
             onPress={() => {
               console.log(`${TAG} setCustomerIdentity pressed`);
-              Customer.setIdentity("123", "Jane", "Doe");
+              Customer.setIdentity('123', 'Jane', 'Doe');
             }}
           />
           <View style={{ height: 8 }} />
@@ -164,7 +183,7 @@ export default function App() {
             onPress={async () => {
               console.log(`${TAG} analyticsViewPage pressed`);
               try {
-                await Analytics.viewPage("Home", "https://example.com/home");
+                await Analytics.viewPage('Home', 'https://example.com/home');
                 console.log(`${TAG} analyticsViewPage resolved`);
               } catch (e) {
                 console.error(`${TAG} analyticsViewPage failed`, e);
@@ -177,7 +196,7 @@ export default function App() {
             onPress={async () => {
               console.log(`${TAG} analyticsViewPageEnded pressed`);
               try {
-                await Analytics.viewPageEnded("Home", "https://example.com/home");
+                await Analytics.viewPageEnded('Home', 'https://example.com/home');
                 console.log(`${TAG} analyticsViewPageEnded resolved`);
               } catch (e) {
                 console.error(`${TAG} analyticsViewPageEnded failed`, e);
@@ -203,7 +222,7 @@ export default function App() {
             onPress={async () => {
               console.log(`${TAG} analyticsConversion pressed`);
               try {
-                await Analytics.conversion("purchase", 99.99);
+                await Analytics.conversion('purchase', 99.99);
                 console.log(`${TAG} analyticsConversion resolved`);
               } catch (e) {
                 console.error(`${TAG} analyticsConversion failed`, e);
@@ -216,7 +235,7 @@ export default function App() {
           <Button
             title="List Threads"
             onPress={() => {
-              const ids = Threads.get().map(t => t.id);
+              const ids = Threads.get().map((t) => t.id);
               console.log(`${TAG} threads`, ids);
             }}
           />
@@ -245,7 +264,7 @@ export default function App() {
                   'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
                   'application/pdf',
                   'dummy.pdf',
-                  'Dummy PDF'
+                  'Dummy PDF',
                 );
                 console.log(`${TAG} attachment sent`);
               } catch (e) {
@@ -320,13 +339,13 @@ const styles = {
   },
   group: {
     margin: 20,
-    backgroundColor: "#fff",
+    backgroundColor: '#fff',
     borderRadius: 10,
     padding: 20,
   },
   container: {
     flex: 1,
-    backgroundColor: "#eee",
+    backgroundColor: '#eee',
   },
   view: {
     flex: 1,
