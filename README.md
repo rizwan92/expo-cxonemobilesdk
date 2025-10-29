@@ -39,12 +39,13 @@ Contributions are very welcome! Please refer to guidelines described in the [con
 Import the modular wrappers that mirror common CXoneChat SDK features:
 
 ```
-import { Connection, Customer, Analytics, Threads, CustomFields } from 'expo-cxonemobilesdk';
+import { Connection, Customer, Analytics, Threads, CustomFields, useConnectionStatus } from 'expo-cxonemobilesdk';
 
 // Connection
 await Connection.prepare('NA1', 123, 'demo');
 await Connection.connect();
 const mode = Connection.getChatMode(); // 'singlethread' | 'multithread' | 'liveChat' | 'unknown'
+const { connected, chatState, checking, refresh, connectAndSync } = useConnectionStatus({ attempts: 5, intervalMs: 800 });
 
 // Threads (multithread)
 const ids = Threads.get().map(t => t.id);
@@ -106,7 +107,7 @@ See `example/App.tsx` for a runnable demo.
   - `create(customFields?: Record<string,string>): Promise<ChatThreadDetails>`
   - `load(threadId?: string): Promise<void>`
   - `send(threadId: string, message: OutboundMessage): Promise<void>`
-  - `loadMore(threadId: string): Promise<void>`
+  - `loadMore(threadId: string): Promise<void>` (then call `getDetails(threadId)` to read updated messages)
   - `markRead(threadId: string): Promise<void>`
   - `updateName(threadId: string, name: string): Promise<void>`
   - `archive(threadId: string): Promise<void>`
@@ -134,13 +135,14 @@ See `example/App.tsx` for a runnable demo.
   - `chatWindowOpen(): Promise<void>`
   - `conversion(type: string, value: number): Promise<void>`
 
-Events (subscribe with `useEvent(ExpoCxonemobilesdk, 'eventName')`):
+Events (subscribe with `useEvent(ExpoCxonemobilesdk, 'eventName')`) and Hook:
 - `chatUpdated({ state, mode })`
 - `threadsUpdated({ threadIds })`, `threadUpdated({ threadId })`
 - `agentTyping({ isTyping, threadId })`
 - `customEventMessage({ base64 })`
 - `contactCustomFieldsSet()`, `customerCustomFieldsSet()`
 - `unexpectedDisconnect()`, `tokenRefreshFailed()`, `error({ message })`, `proactivePopupAction({ actionId, data })`
+- Hook: `useConnectionStatus({ attempts?, intervalMs? })` → `{ connected, chatState, checking, refresh, connectAndSync }`
 
 ## Notes
 

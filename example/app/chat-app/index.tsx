@@ -5,7 +5,7 @@ import ExpoCxonemobilesdk, { Connection, Threads, Customer } from 'expo-cxonemob
 import { USERS, AGENTS } from './profiles';
 import type { ChatThreadDetails } from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
-import { useConnectionStatus } from '../useConnectionStatus';
+import { useConnectionStatus } from 'expo-cxonemobilesdk';
 import { CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID } from './config';
 
 export default function ChatAppHome() {

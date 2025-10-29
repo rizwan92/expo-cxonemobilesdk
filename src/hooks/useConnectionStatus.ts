@@ -1,13 +1,14 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import ExpoCxonemobilesdk, { Connection } from 'expo-cxonemobilesdk';
+import { useCallback, useEffect, useState } from 'react';
 import { useEvent } from 'expo';
+import * as Connection from '../api/connection';
+import ExpoCxonemobilesdk from '../ExpoCxonemobilesdkModule';
 
-type Options = {
+export type UseConnectionOptions = {
   attempts?: number;
   intervalMs?: number;
 };
 
-export function useConnectionStatus(options: Options = {}) {
+export function useConnectionStatus(options: UseConnectionOptions = {}) {
   const attempts = options.attempts ?? 3;
   const intervalMs = options.intervalMs ?? 1000;
 
@@ -38,7 +39,6 @@ export function useConnectionStatus(options: Options = {}) {
     setChecking(true);
     try {
       const before = Connection.getChatState();
-      console.log('[useConnectionStatus] connectAndSync, before=', before);
       const already = before === 'connected' || before === 'ready';
       const connecting = before === 'connecting';
 
@@ -46,6 +46,8 @@ export function useConnectionStatus(options: Options = {}) {
         await Connection.connect();
       }
     } catch (e) {
+      // Surface but do not throw; hook continues polling state
+      // eslint-disable-next-line no-console
       console.error('[useConnectionStatus] connect failed', e);
     }
 
@@ -64,3 +66,4 @@ export function useConnectionStatus(options: Options = {}) {
 
   return { connected, chatState, checking, refresh, connectAndSync };
 }
+

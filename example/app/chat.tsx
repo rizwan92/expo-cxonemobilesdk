@@ -2,7 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { SafeAreaView, ScrollView, View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import ExpoCxonemobilesdk, { Connection, Threads, Customer, CustomFields, Analytics } from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
-import { useConnectionStatus } from './useConnectionStatus';
+import { useConnectionStatus } from 'expo-cxonemobilesdk';
 
 export default function ChatScreen() {
   const TAG = '[ChatScreen]';
