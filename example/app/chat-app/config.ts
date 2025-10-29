@@ -8,7 +8,7 @@ function getEnv(name: string): string {
   // Expo inlines EXPO_PUBLIC_* variables at build time
   const v = process.env[name];
   if (!v) {
-    console.warn(`[ChatAppConfig] Missing \\`${name}\\` in example/.env`);
+    console.warn(`[ChatAppConfig] Missing ${name} in example/.env`);
   }
   return v ?? '';
 }
