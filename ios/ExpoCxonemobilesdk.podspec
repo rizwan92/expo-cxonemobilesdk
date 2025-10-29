@@ -17,6 +17,8 @@ Pod::Spec.new do |s|
   s.static_framework = true
 
   s.dependency 'ExpoModulesCore'
+  # Transitive deps required by CXoneChatSDK swiftinterface
+  s.dependency 'KeychainSwift'
   # CXoneChatSDK is provided as a vendored XCFramework checked into ios/Frameworks
 
   # Swift/Objective-C compatibility

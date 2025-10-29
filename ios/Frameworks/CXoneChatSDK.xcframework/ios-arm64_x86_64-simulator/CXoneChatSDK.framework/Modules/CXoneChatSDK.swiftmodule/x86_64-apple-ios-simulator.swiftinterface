@@ -1,7 +1,7 @@
 // swift-interface-format-version: 1.0
-// swift-compiler-version: Apple Swift version 6.0.3 effective-5.10 (swiftlang-6.0.3.1.10 clang-1600.0.30.1)
-// swift-module-flags: -target x86_64-apple-ios15.0-simulator -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -module-name CXoneChatSDK
-// swift-module-flags-ignorable: -no-verify-emitted-module-interface
+// swift-compiler-version: Apple Swift version 6.2 effective-5.10 (swiftlang-6.2.0.19.9 clang-1700.3.19.1)
+// swift-module-flags: -target x86_64-apple-ios15.0-simulator -enable-objc-interop -enable-library-evolution -swift-version 5 -enforce-exclusivity=checked -O -enable-experimental-feature DebugDescriptionMacro -module-name CXoneChatSDK
+// swift-module-flags-ignorable: -no-verify-emitted-module-interface -formal-cxx-interoperability-mode=off -interface-compiler-version 6.2
 import CXoneGuideUtility
 import Combine
 import Foundation
@@ -15,10 +15,12 @@ import _StringProcessing
 import _SwiftConcurrencyShims
 @_hasMissingDesignatedInitializers public class CXoneChat : CXoneChatSDK.ChatProvider {
   public static var shared: any CXoneChatSDK.ChatProvider
+  #if compiler(>=5.3) && $NonescapableTypes
   public static var logWriter: (any CXoneGuideUtility.LogWriter)? {
     get
     set
   }
+  #endif
   public var state: CXoneChatSDK.ChatState {
     get
   }
@@ -36,7 +38,9 @@ import _SwiftConcurrencyShims
   @objc deinit
 }
 public protocol AnalyticsProvider {
+  #if compiler(>=5.3) && $NonescapableTypes
   var visitorId: Foundation.UUID? { get }
+  #endif
   func viewPage(title: Swift.String, url: Swift.String) async throws
   func viewPageEnded(title: Swift.String, url: Swift.String) async throws
   func chatWindowOpen() async throws
@@ -73,7 +77,9 @@ extension CXoneChatSDK.CXoneChatDelegate {
 }
 public protocol ChatProvider : AnyObject {
   static var shared: any CXoneChatSDK.ChatProvider { get set }
+  #if compiler(>=5.3) && $NonescapableTypes
   static var logWriter: (any CXoneGuideUtility.LogWriter)? { get set }
+  #endif
   var state: CXoneChatSDK.ChatState { get }
   var mode: CXoneChatSDK.ChatMode { get }
   var connection: any CXoneChatSDK.ConnectionProvider { get }
@@ -86,14 +92,18 @@ public protocol ChatProvider : AnyObject {
   static func signOut()
 }
 public protocol ChatThreadListProvider {
+  #if compiler(>=5.3) && $NonescapableTypes
   var preChatSurvey: CXoneChatSDK.PreChatSurvey? { get }
+  #endif
   var customFields: any CXoneChatSDK.ContactCustomFieldsProvider { get }
   func get() -> [CXoneChatSDK.ChatThread]
   @discardableResult
   func create() async throws -> any CXoneChatSDK.ChatThreadProvider
   @discardableResult
   func create(with customFields: [Swift.String : Swift.String]) async throws -> any CXoneChatSDK.ChatThreadProvider
+  #if compiler(>=5.3) && $NonescapableTypes
   func load(with id: Foundation.UUID?) async throws
+  #endif
   func provider(for threadId: Foundation.UUID) throws -> any CXoneChatSDK.ChatThreadProvider
   func provider(for thread: CXoneChatSDK.ChatThread) throws -> any CXoneChatSDK.ChatThreadProvider
 }
@@ -126,8 +136,12 @@ public protocol CustomerCustomFieldsProvider {
   func set(_ customFields: [Swift.String : Swift.String]) async throws
 }
 public protocol CustomerProvider {
+  #if compiler(>=5.3) && $NonescapableTypes
   func get() -> CXoneChatSDK.CustomerIdentity?
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
   func set(customer: CXoneChatSDK.CustomerIdentity?) throws
+  #endif
   func setDeviceToken(_ token: Swift.String)
   func setDeviceToken(_ tokenData: Foundation.Data)
   func setAuthorizationCode(_ code: Swift.String)
@@ -137,7 +151,9 @@ public protocol CustomerProvider {
 public enum ActionType : Swift.String, Swift.Codable {
   case welcomeMessage
   case customPopupBox
+  #if compiler(>=5.3) && $NonescapableTypes
   public init?(rawValue: Swift.String)
+  #endif
   public typealias RawValue = Swift.String
   public var rawValue: Swift.String {
     get
@@ -171,9 +187,9 @@ public enum MessageStatus : Swift.Comparable {
   case delivered
   case seen
   case failed
+  public static func < (a: CXoneChatSDK.MessageStatus, b: CXoneChatSDK.MessageStatus) -> Swift.Bool
   public static func == (a: CXoneChatSDK.MessageStatus, b: CXoneChatSDK.MessageStatus) -> Swift.Bool
   public func hash(into hasher: inout Swift.Hasher)
-  public static func < (a: CXoneChatSDK.MessageStatus, b: CXoneChatSDK.MessageStatus) -> Swift.Bool
   public var hashValue: Swift.Int {
     get
   }
@@ -236,9 +252,11 @@ public enum CXoneChatError : Foundation.LocalizedError, Swift.Equatable {
   case illegalChatState
   case illegalThreadState
   case eventTimeout
+  #if compiler(>=5.3) && $NonescapableTypes
   public var errorDescription: Swift.String? {
     get
   }
+  #endif
   public static func == (lhs: CXoneChatSDK.CXoneChatError, rhs: CXoneChatSDK.CXoneChatError) -> Swift.Bool
 }
 public struct ChannelConfiguration {
@@ -278,9 +296,9 @@ public enum ChatState : Swift.Comparable {
   public var isPrepareable: Swift.Bool {
     get
   }
+  public static func < (a: CXoneChatSDK.ChatState, b: CXoneChatSDK.ChatState) -> Swift.Bool
   public static func == (a: CXoneChatSDK.ChatState, b: CXoneChatSDK.ChatState) -> Swift.Bool
   public func hash(into hasher: inout Swift.Hasher)
-  public static func < (a: CXoneChatSDK.ChatState, b: CXoneChatSDK.ChatState) -> Swift.Bool
   public var hashValue: Swift.Int {
     get
   }
@@ -309,9 +327,9 @@ public enum ChatThreadState : Swift.Comparable {
   public var isLoaded: Swift.Bool {
     get
   }
+  public static func < (a: CXoneChatSDK.ChatThreadState, b: CXoneChatSDK.ChatThreadState) -> Swift.Bool
   public static func == (a: CXoneChatSDK.ChatThreadState, b: CXoneChatSDK.ChatThreadState) -> Swift.Bool
   public func hash(into hasher: inout Swift.Hasher)
-  public static func < (a: CXoneChatSDK.ChatThreadState, b: CXoneChatSDK.ChatThreadState) -> Swift.Bool
   public var hashValue: Swift.Int {
     get
   }
@@ -372,10 +390,14 @@ public struct CustomerIdentity : Swift.Equatable {
   public let id: Swift.String
   public var firstName: Swift.String?
   public var lastName: Swift.String?
+  #if compiler(>=5.3) && $NonescapableTypes
   public var fullName: Swift.String? {
     get
   }
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
   public init(id: Swift.String, firstName: Swift.String?, lastName: Swift.String?)
+  #endif
   public static func == (a: CXoneChatSDK.CustomerIdentity, b: CXoneChatSDK.CustomerIdentity) -> Swift.Bool
 }
 public enum Environment : Swift.String, Swift.CaseIterable, Swift.Codable {
@@ -394,7 +416,9 @@ public enum Environment : Swift.String, Swift.CaseIterable, Swift.Codable {
   public var socketURL: Swift.String {
     get
   }
+  #if compiler(>=5.3) && $NonescapableTypes
   public init?(rawValue: Swift.String)
+  #endif
   public typealias AllCases = [CXoneChatSDK.Environment]
   public typealias RawValue = Swift.String
   nonisolated public static var allCases: [CXoneChatSDK.Environment] {
@@ -419,11 +443,15 @@ public struct Message {
   public let userStatistics: CXoneChatSDK.UserStatistics?
   public let authorUser: CXoneChatSDK.Agent?
   public let authorEndUserIdentity: CXoneChatSDK.CustomerIdentity?
+  #if compiler(>=5.3) && $NonescapableTypes
   public var senderInfo: CXoneChatSDK.SenderInfo? {
     get
   }
+  #endif
   public var status: CXoneChatSDK.MessageStatus
+  #if compiler(>=5.3) && $NonescapableTypes
   public init(id: Foundation.UUID, threadId: Foundation.UUID, contentType: CXoneChatSDK.MessageContentType, createdAt: Foundation.Date, attachments: [CXoneChatSDK.Attachment], direction: CXoneChatSDK.MessageDirection, userStatistics: CXoneChatSDK.UserStatistics?, authorUser: CXoneChatSDK.Agent?, authorEndUserIdentity: CXoneChatSDK.CustomerIdentity?, status: CXoneChatSDK.MessageStatus)
+  #endif
 }
 extension CXoneChatSDK.Message : Swift.Equatable {
   public static func == (lhs: CXoneChatSDK.Message, rhs: CXoneChatSDK.Message) -> Swift.Bool
@@ -437,7 +465,9 @@ public struct OutboundMessage {
   public let text: Swift.String
   public let attachments: [CXoneChatSDK.ContentDescriptor]
   public let postback: Swift.String?
+  #if compiler(>=5.3) && $NonescapableTypes
   public init(text: Swift.String, attachments: [CXoneChatSDK.ContentDescriptor] = [], postback: Swift.String? = nil)
+  #endif
 }
 public struct MessageListPicker : Swift.Equatable {
   public let title: Swift.String
@@ -457,8 +487,8 @@ public struct MessageReplyButton : Swift.Hashable, Swift.Equatable {
   public let iconName: Swift.String?
   public let iconUrl: Foundation.URL?
   public let iconMimeType: Swift.String?
-  public func hash(into hasher: inout Swift.Hasher)
   public static func == (a: CXoneChatSDK.MessageReplyButton, b: CXoneChatSDK.MessageReplyButton) -> Swift.Bool
+  public func hash(into hasher: inout Swift.Hasher)
   public var hashValue: Swift.Int {
     get
   }
@@ -484,23 +514,31 @@ public struct ProactiveActionDataMessageContent {
   public let headlineText: Swift.String?
   public let headlineSecondaryText: Swift.String?
   public let image: Swift.String?
+  #if compiler(>=5.3) && $NonescapableTypes
   public init(bodyText: Swift.String? = nil, headlineText: Swift.String? = nil, headlineSecondaryText: Swift.String? = nil, image: Swift.String? = nil)
+  #endif
 }
 public struct ProactiveActionDetails {
   public let id: Foundation.UUID
   public let name: Swift.String
   public let type: CXoneChatSDK.ActionType
   public let content: CXoneChatSDK.ProactiveActionDataMessageContent?
+  #if compiler(>=5.3) && $NonescapableTypes
   public init(id: Foundation.UUID, name: Swift.String, type: CXoneChatSDK.ActionType, content: CXoneChatSDK.ProactiveActionDataMessageContent?)
+  #endif
 }
 public struct SenderInfo {
   public let id: Swift.String
   public let firstName: Swift.String?
   public let lastName: Swift.String?
+  #if compiler(>=5.3) && $NonescapableTypes
   public var fullName: Swift.String? {
     get
   }
+  #endif
+  #if compiler(>=5.3) && $NonescapableTypes
   public init?(message: CXoneChatSDK.Message)
+  #endif
 }
 public struct UserStatistics : Swift.Equatable {
   public let seenAt: Foundation.Date?
