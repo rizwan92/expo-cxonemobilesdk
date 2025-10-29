@@ -1,15 +1,15 @@
-import Foundation
 import CXoneChatSDK
+import Foundation
 
 // Generic JSON encoder for CXoneChatSDK objects and common Swift types.
 // Produces JSON-serializable structures ([String: Any], [Any], String, Double, Bool, NSNull).
 enum JSONBridge {
     private static let iso = ISO8601DateFormatter()
-    
+
     static func encode(_ value: Any) -> Any? {
         // Nil handling
         if let opt = value as? OptionalProtocol { return opt.isNil ? NSNull() : encode(opt.wrappedAny as Any) }
-        
+
         // Primitives
         switch value {
         case let v as String: return v
@@ -21,19 +21,19 @@ enum JSONBridge {
         case _ as NSNull: return NSNull()
         default: break
         }
-        
+
         // Common bridged types
         if let u = value as? UUID { return u.uuidString }
         if let d = value as? Date { return iso.string(from: d) }
         if let url = value as? URL { return url.absoluteString }
         if let data = value as? Data { return data.base64EncodedString() }
-        
+
         // Enums — encode as string representation
         let mirrorTop = Mirror(reflecting: value)
         if mirrorTop.displayStyle == .enum {
             return String(describing: value)
         }
-        
+
         // Arrays
         if let arr = value as? [Any] { return arr.compactMap { encode($0) } }
         // Dictionaries
@@ -42,12 +42,12 @@ enum JSONBridge {
             for (k, v) in dict { if let ev = encode(v) { out[k] = ev } }
             return out
         }
-        
+
         // Known SDK types with curated mapping
         if let m = value as? Message { return encodeMessage(m) }
         if let t = value as? ChatThread { return encodeThread(t) }
         if let a = value as? Agent { return encodeAgent(a) }
-        
+
         // Fallback: reflect fields
         let mirror = Mirror(reflecting: value)
         var out: [String: Any] = [:]
@@ -57,7 +57,7 @@ enum JSONBridge {
         }
         return out
     }
-    
+
     // MARK: Curated encoders for stability where UI expects specific fields
     private static func encodeAgent(_ a: Agent) -> [String: Any] {
         return [
@@ -69,7 +69,7 @@ enum JSONBridge {
             "imageUrl": a.imageUrl,
         ]
     }
-    
+
     private static func encodeAttachment(_ att: Attachment) -> [String: Any] {
         return [
             "url": att.url,
@@ -78,7 +78,7 @@ enum JSONBridge {
             "fileName": att.fileName,
         ]
     }
-    
+
     private static func encodeReplyButton(_ btn: MessageReplyButton) -> [String: Any] {
         return [
             "text": btn.text,
@@ -89,7 +89,7 @@ enum JSONBridge {
             "iconMimeType": btn.iconMimeType as Any,
         ]
     }
-    
+
     private static func encodeContent(_ c: MessageContentType) -> [String: Any] {
         switch c {
         case .text(let payload):
@@ -98,7 +98,7 @@ enum JSONBridge {
                 "payload": [
                     "text": payload.text,
                     "postback": payload.postback as Any,
-                ]
+                ],
             ]
         case .richLink(let link):
             return [
@@ -109,7 +109,7 @@ enum JSONBridge {
                     "fileName": link.fileName,
                     "fileUrl": link.fileUrl.absoluteString,
                     "mimeType": link.mimeType,
-                ]
+                ],
             ]
         case .quickReplies(let qr):
             let buttons: [[String: Any]] = qr.buttons.map { encodeReplyButton($0) }
@@ -118,7 +118,7 @@ enum JSONBridge {
                 "data": [
                     "title": qr.title,
                     "buttons": buttons,
-                ]
+                ],
             ]
         case .listPicker(let lp):
             let buttons: [[String: Any]] = lp.buttons.compactMap { sub in
@@ -133,13 +133,13 @@ enum JSONBridge {
                     "title": lp.title,
                     "text": lp.text,
                     "buttons": buttons,
-                ]
+                ],
             ]
         case .unknown:
             return ["type": "unknown"]
         }
     }
-    
+
     private static func encodeMessage(_ m: Message) -> [String: Any] {
         var author: [String: Any]? = nil
         if let a = m.authorUser { author = encodeAgent(a) }
@@ -187,21 +187,21 @@ enum JSONBridge {
             "contentType": content,
         ]
     }
-    
-  private static func encodeThread(_ t: ChatThread) -> [String: Any] {
-    var base: [String: Any] = [
-      "id": t.id.uuidString,
-      "name": t.name as Any,
-      "state": String(describing: t.state),
-      "hasMoreMessagesToLoad": t.hasMoreMessagesToLoad,
-      "positionInQueue": t.positionInQueue as Any,
-      "assignedAgent": encode(t.assignedAgent as Any) as Any,
-      "lastAssignedAgent": encode(t.lastAssignedAgent as Any) as Any,
-      "messagesCount": t.messages.count,
-    ]
-    // Return messages newest-first to match UI expectations (index 0 is newest with inverted lists)
-    let sorted = t.messages.sorted { $0.createdAt > $1.createdAt }
-    base["messages"] = sorted.map { encodeMessage($0) }
+
+    private static func encodeThread(_ t: ChatThread) -> [String: Any] {
+        var base: [String: Any] = [
+            "id": t.id.uuidString,
+            "name": t.name as Any,
+            "state": String(describing: t.state),
+            "hasMoreMessagesToLoad": t.hasMoreMessagesToLoad,
+            "positionInQueue": t.positionInQueue as Any,
+            "assignedAgent": encode(t.assignedAgent as Any) as Any,
+            "lastAssignedAgent": encode(t.lastAssignedAgent as Any) as Any,
+            "messagesCount": t.messages.count,
+        ]
+        // Return messages newest-first to match UI expectations (index 0 is newest with inverted lists)
+        let sorted = t.messages.sorted { $0.createdAt > $1.createdAt }
+        base["messages"] = sorted.map { encodeMessage($0) }
         // Grab scrollToken if exposed
         let mirror = Mirror(reflecting: t)
         for child in mirror.children {
@@ -214,7 +214,10 @@ enum JSONBridge {
 }
 
 // Utility to detect Optional without generic constraints
-private protocol OptionalProtocol { var isNil: Bool { get }; var wrappedAny: Any? { get } }
+private protocol OptionalProtocol {
+    var isNil: Bool { get }
+    var wrappedAny: Any? { get }
+}
 extension Optional: OptionalProtocol {
     var isNil: Bool { self == nil }
     var wrappedAny: Any? { self }
