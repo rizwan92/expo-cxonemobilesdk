@@ -1,0 +1,64 @@
+name: Publish npm package
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: publish-npm
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          registry-url: https://registry.npmjs.org
+          cache: yarn
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build package
+        run: yarn build
+
+      - name: Determine versions
+        id: versions
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          LOCAL=$(node -p "require('./package.json').version")
+          echo "name=$NAME" >> $GITHUB_OUTPUT
+          echo "local=$LOCAL" >> $GITHUB_OUTPUT
+          set +e
+          PUBLISHED=$(npm view "$NAME" version)
+          EXIT=$?
+          set -e
+          if [ $EXIT -ne 0 ]; then
+            echo "published=none" >> $GITHUB_OUTPUT
+          else
+            echo "published=$PUBLISHED" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Skip if version already published
+        if: ${{ steps.versions.outputs.published == steps.versions.outputs.local }}
+        run: |
+          echo "Version ${{ steps.versions.outputs.name }}@${{ steps.versions.outputs.local }} already on npm. Skipping publish." >> $GITHUB_STEP_SUMMARY
+
+      - name: Publish to npm
+        if: ${{ steps.versions.outputs.published != steps.versions.outputs.local }}
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
+
+      - name: Summary
+        if: ${{ steps.versions.outputs.published != steps.versions.outputs.local }}
+        run: |
+          echo "Published ${{ steps.versions.outputs.name }}@${{ steps.versions.outputs.local }}" >> $GITHUB_STEP_SUMMARY
+
