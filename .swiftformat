@@ -1,7 +1,6 @@
 # SwiftFormat configuration (see https://github.com/nicklockwood/SwiftFormat)
 
-# Exclude third-party and build outputs (comma-separated paths)
-exclude = ios/Frameworks,example/ios/Pods,build
+# Exclusions are configured in .swiftformatignore
 
 # General
 indent = 2
