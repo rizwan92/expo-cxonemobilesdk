@@ -17,20 +17,14 @@ Pod::Spec.new do |s|
   s.static_framework = true
 
   s.dependency 'ExpoModulesCore'
-  # CXoneChatSDK is provided as a vendored XCFramework checked into ios/Frameworks
 
   # Swift/Objective-C compatibility
   s.pod_target_xcconfig = {
     'DEFINES_MODULE' => 'YES',
   }
 
-  # Vendored XCFrameworks (built externally and committed under ios/Frameworks)
-  # Ensure these exist locally before running `pod install`.
-  s.vendored_frameworks = [
-    'Frameworks/CXoneChatSDK.xcframework',
-  ]
-
-
-  # Privacy manifest is embedded within the framework slices during build to avoid duplicate copy
-  s.source_files = "**/*.{h,m,mm,swift,hpp,cpp}"
+  # No native sources are compiled via CocoaPods any more.
+  # The iOS Swift files are injected into the app target via the Expo config plugin (SPM path).
+  # Provide a tiny placeholder source so CocoaPods is satisfied.
+  s.source_files = "Noop.m"
 end

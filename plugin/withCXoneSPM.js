@@ -2,6 +2,8 @@
 // Based on community patterns for mutating PBXProject to add XCRemoteSwiftPackageReference and XCSwiftPackageProductDependency.
 
 const { withXcodeProject, IOSConfig, createRunOncePlugin } = require('@expo/config-plugins');
+const fs = require('fs');
+const path = require('path');
 
 /**
  * @typedef {{ repositoryUrl: string; product: string; minVersion?: string; exactVersion?: string; branch?: string }} SPMDef
@@ -90,15 +92,51 @@ function addSwiftPackageToProject(project, { repositoryUrl, product, minVersion,
   }
 }
 
+function addSwiftSourcesToAppTarget(project, projectRoot, targetName) {
+  // Discover Swift sources from this package's ios/ folder
+  const pkgRoot = path.dirname(require.resolve('expo-cxonemobilesdk/plugin/withCXoneSPM.js'));
+  const iosDir = path.join(pkgRoot, '..', 'ios');
+  if (!fs.existsSync(iosDir)) return;
+  const files = fs.readdirSync(iosDir).filter((f) => f.endsWith('.swift'));
+  if (files.length === 0) return;
+
+  // Create/locate a group for sources
+  const groupName = 'ExpoCxonemobilesdk';
+  const group = project.addPbxGroup([], groupName, groupName);
+  const groupKey = group.uuid;
+  const mainGroupId = project.getFirstProject().firstProject.mainGroup;
+  const mainGroup = project.hash.project.objects.PBXGroup[mainGroupId];
+  if (!mainGroup.children.find((c) => c.value === groupKey)) {
+    mainGroup.children.push({ value: groupKey, comment: groupName });
+  }
+
+  // Add files and sources build phase entries
+  const nativeTargets = project.hash.project.objects.PBXNativeTarget;
+  const targetUuid = Object.keys(nativeTargets).find((k) => {
+    const t = nativeTargets[k];
+    return typeof t === 'object' && (t.name === targetName || t.productName === targetName);
+  });
+  if (!targetUuid) throw new Error(`Could not find iOS target named '${targetName}'.`);
+
+  files.forEach((fname) => {
+    const abs = path.join(iosDir, fname);
+    const rel = path.relative(projectRoot, abs);
+    if (!project.hasFile(rel)) {
+      project.addSourceFile(rel, { target: targetUuid, lastKnownFileType: 'sourcecode.swift' }, groupName);
+    }
+  });
+}
+
 const withCXoneSPM = (config, /** @type {PluginProps} */ props = {}) => {
   return withXcodeProject(config, (conf) => {
     const project = conf.modResults;
     const targetName = getAppTargetName(conf.modRequest.projectRoot, props.targetName);
     const pkgs = props.packages || [];
     pkgs.forEach((pkg) => addSwiftPackageToProject(project, pkg, targetName));
+    // Also add the Swift sources from this package to the app target so they compile against SPM deps
+    addSwiftSourcesToAppTarget(project, conf.modRequest.projectRoot, targetName);
     return conf;
   });
 };
 
 module.exports = createRunOncePlugin(withCXoneSPM, 'with-cxone-spm', '1.0.0');
-
