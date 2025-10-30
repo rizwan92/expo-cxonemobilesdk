@@ -31,6 +31,34 @@ Notes:
 - iOS frameworks are vendored (see below); minimum iOS 15.1.
 - Brand/environment values must match your CXone setup; environments are uppercased (e.g., `NA1`, `EU1`).
 
+### Optional: Add Swift Package (SPM) via Config Plugin (Experimental)
+
+This package ships a config plugin that can inject a Swift Package dependency for CXoneChatSDK at prebuild time. Add to your app config:
+
+```
+// app.json
+{
+  "expo": {
+    "plugins": [
+      [
+        "expo-cxonemobilesdk/plugin/withCXoneSPM",
+        {
+          "packages": [
+            {
+              "repositoryUrl": "https://github.com/your-org/your-cxonechat-spm",
+              "product": "CXoneChatSDK",
+              "minVersion": "1.0.0"
+            }
+          ]
+        }
+      ]
+    ]
+  }
+}
+```
+
+Important: CocoaPods and SPM targets are isolated. If your app uses this plugin, ensure the Expo module sources that import `CXoneChatSDK` are linked against the same package. We recommend continuing with the CocoaPods-based integration unless you fully migrate to SPM for the wrapper as well.
+
 ### Configure example credentials (.env)
 
 The example app reads credentials from `example/.env` via Expo public env variables. Copy the template and edit values:

@@ -32,6 +32,11 @@
   "author": "Rizwan Chauhan <chouhan.rizwan@gmail.com> (rizwan92)",
   "license": "MIT",
   "homepage": "https://github.com/rizwan92/expo-cxonemobilesdk#readme",
+  "expo": {
+    "plugins": [
+      "./plugin/withCXoneSPM"
+    ]
+  },
   "dependencies": {},
   "devDependencies": {
     "@types/react": "~19.1.0",
