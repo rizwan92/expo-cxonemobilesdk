@@ -23,8 +23,12 @@ Pod::Spec.new do |s|
     'DEFINES_MODULE' => 'YES',
   }
 
-  # No native sources are compiled via CocoaPods any more.
-  # The iOS Swift files are injected into the app target via the Expo config plugin (SPM path).
-  # Provide a tiny placeholder source so CocoaPods is satisfied.
-  s.source_files = "Noop.m"
+  spm_dependency(s,
+    url: 'https://github.com/nice-devone/nice-cxone-mobile-sdk-ios',
+    requirement: {kind: 'upToNextMajorVersion', minimumVersion: '3.0.1'},
+    products: ['CXoneChatSDK']
+  )  
+
+  # Privacy manifest is embedded within the framework slices during build to avoid duplicate copy
+  s.source_files = "**/*.{h,m,mm,swift,hpp,cpp}"
 end

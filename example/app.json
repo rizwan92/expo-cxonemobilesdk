@@ -29,19 +29,7 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router",
-      [
-        "expo-cxonemobilesdk/plugin/withCXoneSPM",
-        {
-          "packages": [
-            {
-              "repositoryUrl": "https://github.com/rizwan92/nice-cxone-mobile-sdk-ios",
-              "product": "CXoneChatSDK",
-              "minVersion": "1.0.0"
-            }
-          ]
-        }
-      ]
+      "expo-router"
     ]
   }
 }
