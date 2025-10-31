@@ -2613,6 +2613,9 @@ expo-constants@~18.0.10, expo-constants@~18.0.8, expo-constants@~18.0.9:
     "@expo/config" "~12.0.10"
     "@expo/env" "~2.0.7"
 
+"expo-cxonemobilesdk@file:..":
+  version "0.1.2"
+
 expo-file-system@~19.0.17:
   version "19.0.17"
   resolved "https://registry.yarnpkg.com/expo-file-system/-/expo-file-system-19.0.17.tgz#2555c05c26a19038d005f281b11dbda9722d0c0d"

@@ -28,6 +28,8 @@ PODS:
     - Yoga
   - ExpoAsset (12.0.9):
     - ExpoModulesCore
+  - ExpoCxonemobilesdk (0.1.2):
+    - ExpoModulesCore
   - ExpoFileSystem (19.0.17):
     - ExpoModulesCore
   - ExpoFont (14.0.9):
@@ -1984,6 +1986,7 @@ DEPENDENCIES:
   - EXConstants (from `../node_modules/expo-constants/ios`)
   - Expo (from `../node_modules/expo`)
   - ExpoAsset (from `../node_modules/expo-asset/ios`)
+  - ExpoCxonemobilesdk (from `../node_modules/expo-cxonemobilesdk/ios`)
   - ExpoFileSystem (from `../node_modules/expo-file-system/ios`)
   - ExpoFont (from `../node_modules/expo-font/ios`)
   - ExpoHead (from `../node_modules/expo-router/ios`)
@@ -2071,6 +2074,8 @@ EXTERNAL SOURCES:
     :path: "../node_modules/expo"
   ExpoAsset:
     :path: "../node_modules/expo-asset/ios"
+  ExpoCxonemobilesdk:
+    :path: "../node_modules/expo-cxonemobilesdk/ios"
   ExpoFileSystem:
     :path: "../node_modules/expo-file-system/ios"
   ExpoFont:
@@ -2233,6 +2238,7 @@ SPEC CHECKSUMS:
   EXConstants: e6e50cdfcb4524f40121d1fdcff24e97b7dcd2fd
   Expo: 7865a353c2c886eaaeed19db06bdd29ea9ee1cfc
   ExpoAsset: 3c3b7dd9b1318846a02ef05ce420e63d542aeb9f
+  ExpoCxonemobilesdk: 2ecc4eb692296624c67b3c955adc0c28ddfe8135
   ExpoFileSystem: 56f081328f5b48a6dcc8302eee51d4f2d9d0049b
   ExpoFont: b881d43057dceb7b31ff767b24f612609e80f60f
   ExpoHead: aa5f5a8afaa9bd4969bfdd6d5b76681e2490fe5b
