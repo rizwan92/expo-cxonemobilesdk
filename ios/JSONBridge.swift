@@ -4,11 +4,27 @@ import Foundation
 // Generic JSON encoder for CXoneChatSDK objects and common Swift types.
 // Produces JSON-serializable structures ([String: Any], [Any], String, Double, Bool, NSNull).
 enum JSONBridge {
+    // ISO8601DateFormatter is not guaranteed thread-safe; guard with a serial queue.
     private static let iso = ISO8601DateFormatter()
+    private static let isoQueue = DispatchQueue(label: "ExpoCxonemobilesdk.ISO8601DateFormatter")
+    private static let maxDepth = 8
 
     static func encode(_ value: Any) -> Any? {
-        // Nil handling
-        if let opt = value as? OptionalProtocol { return opt.isNil ? NSNull() : encode(opt.wrappedAny as Any) }
+        var visited = Set<ObjectIdentifier>()
+        return encode(value, visited: &visited, depth: 0)
+    }
+
+    // MARK: - Internal encoder with cycle/depth protection
+    private static func encode(_ value: Any, visited: inout Set<ObjectIdentifier>, depth: Int) -> Any? {
+        if depth > maxDepth { return nil }
+
+        // Optional handling via reflection (avoids fragile OptionalProtocol casting)
+        let mirrorTop = Mirror(reflecting: value)
+        if mirrorTop.displayStyle == .optional {
+            if mirrorTop.children.count == 0 { return NSNull() }
+            // Unwrap first child
+            if let first = mirrorTop.children.first { return encode(first.value, visited: &visited, depth: depth + 1) }
+        }
 
         // Primitives
         switch value {
@@ -24,22 +40,21 @@ enum JSONBridge {
 
         // Common bridged types
         if let u = value as? UUID { return u.uuidString }
-        if let d = value as? Date { return iso.string(from: d) }
+        if let d = value as? Date {
+            return isoQueue.sync { iso.string(from: d) }
+        }
         if let url = value as? URL { return url.absoluteString }
         if let data = value as? Data { return data.base64EncodedString() }
 
         // Enums — encode as string representation
-        let mirrorTop = Mirror(reflecting: value)
-        if mirrorTop.displayStyle == .enum {
-            return String(describing: value)
-        }
+        if mirrorTop.displayStyle == .enum { return String(describing: value) }
 
         // Arrays
-        if let arr = value as? [Any] { return arr.compactMap { encode($0) } }
+        if let arr = value as? [Any] { return arr.compactMap { encode($0, visited: &visited, depth: depth + 1) } }
         // Dictionaries
         if let dict = value as? [String: Any] {
             var out: [String: Any] = [:]
-            for (k, v) in dict { if let ev = encode(v) { out[k] = ev } }
+            for (k, v) in dict { if let ev = encode(v, visited: &visited, depth: depth + 1) { out[k] = ev } }
             return out
         }
 
@@ -49,11 +64,20 @@ enum JSONBridge {
         if let a = value as? Agent { return encodeAgent(a) }
 
         // Fallback: reflect fields
+
         let mirror = Mirror(reflecting: value)
+
+        // Prevent cycles for class instances
+        if let obj = value as AnyObject? {
+            let id = ObjectIdentifier(obj)
+            if visited.contains(id) { return nil }
+            visited.insert(id)
+        }
+
         var out: [String: Any] = [:]
         for child in mirror.children {
             guard let key = child.label else { continue }
-            if let ev = encode(child.value) { out[key] = ev }
+            if let ev = encode(child.value, visited: &visited, depth: depth + 1) { out[key] = ev }
         }
         return out
     }
@@ -164,10 +188,10 @@ enum JSONBridge {
         if let us = m.userStatistics {
             var dict: [String: Any] = [:]
             if let seen = us.seenAt {
-                dict["seenAt"] = iso.string(from: seen)
+                dict["seenAt"] = isoQueue.sync { iso.string(from: seen) }
             }
             if let read = us.readAt {
-                dict["readAt"] = iso.string(from: read)
+                dict["readAt"] = isoQueue.sync { iso.string(from: read) }
             }
             userStats = dict
         }
@@ -176,7 +200,7 @@ enum JSONBridge {
         return [
             "id": m.id.uuidString,
             "threadId": m.threadId.uuidString,
-            "createdAt": iso.string(from: m.createdAt),
+            "createdAt": isoQueue.sync { iso.string(from: m.createdAt) },
             "direction": String(describing: m.direction),
             "status": String(describing: m.status),
             "authorUser": author as Any,
@@ -211,14 +235,4 @@ enum JSONBridge {
         }
         return base
     }
-}
-
-// Utility to detect Optional without generic constraints
-private protocol OptionalProtocol {
-    var isNil: Bool { get }
-    var wrappedAny: Any? { get }
-}
-extension Optional: OptionalProtocol {
-    var isNil: Bool { self == nil }
-    var wrappedAny: Any? { self }
 }

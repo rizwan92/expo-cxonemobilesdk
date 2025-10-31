@@ -23,11 +23,11 @@ Pod::Spec.new do |s|
     'DEFINES_MODULE' => 'YES',
   }
 
-  spm_dependency(s,
-    url: 'https://github.com/nice-devone/nice-cxone-mobile-sdk-ios',
-    requirement: {kind: 'upToNextMajorVersion', minimumVersion: '3.0.1'},
-    products: ['CXoneChatSDK']
-  )  
+  # spm_dependency(s,
+  #   url: 'https://github.com/nice-devone/nice-cxone-mobile-sdk-ios',
+  #   requirement: {kind: 'upToNextMajorVersion', minimumVersion: '3.0.1'},
+  #   products: ['CXoneChatSDK']
+  # )  
 
   # Privacy manifest is embedded within the framework slices during build to avoid duplicate copy
   s.source_files = "**/*.{h,m,mm,swift,hpp,cpp}"
