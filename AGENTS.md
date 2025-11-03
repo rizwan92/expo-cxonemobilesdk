@@ -14,8 +14,25 @@ across Swift, TypeScript, podspecs, and the example app.
     - No events and no native views are currently enabled.
 - iOS packaging
   - `ios/ExpoCxonemobilesdk.podspec`
-    - Vendors `ios/Frameworks/CXoneChatSDK.xcframework`.
-    - XCFramework generation is handled in a separate repository; this repo only vendors the output.
+    - Declares the native module and an optional Swift Package dependency on `nice-cxone-mobile-sdk-ios`.
+    - Current strategy: prefer declaring the SDK as an SPM dependency in the podspec and use an Expo config-plugin in the example app to ensure the app project resolves the package product for the app/main target. This avoids relying on the `cocoapods-spm` plugin.
+    - Alternative (binary vendoring): you may still choose to vendor a prebuilt `ios/Frameworks/CXoneChatSDK.xcframework` and set `s.vendored_frameworks` in the podspec. That approach is the most robust for consumers who can't or don't want to rely on SPM resolution during CocoaPods install.
+
+  - Config plugin (SPM injection)
+    - File: `plugins/addSPMDependenciesToMainTarget.js`
+      - An Expo config plugin that injects an `XCRemoteSwiftPackageReference` and `XCSwiftPackageProductDependency` into the example app Xcode project at `expo prebuild` time so the app target links the `CXoneChatSDK` product.
+      - Registered in `example/app.json` (see example) and runs automatically during `npx expo prebuild`.
+    - Why we use it: it lets the example app (and dev machines) resolve the SPM product for the app target without requiring the `cocoapods-spm` Ruby plugin. It keeps SPM usage local to Xcode and the app, while the module's podspec also declares the SPM dependency so packaged consumers can opt-in to alternate flows.
+    - Location: `plugins/addSPMDependenciesToMainTarget.js` (already added in this repo). The plugin accepts options: `version`, `repositoryUrl`, `repoName`, and `productName`.
+
+  - Notes on linking & autolinking
+    - After `expo prebuild` (or when running `pod install`/`yarn ios`), the example app must include the module package in `example/node_modules` so `expo-modules-autolinking` can include it in the generated `ExpoModulesProvider.swift`.
+    - Run these commands when developing locally:
+      - `yarn` (from `example/`) — installs the local package into `node_modules`
+      - `npx expo prebuild -p ios` — runs config plugins and regenerates native projects
+      - `cd ios && pod install --repo-update` — installs Pods and resolves podspec SPM dependencies where supported
+      - `yarn ios` or open the workspace in Xcode and build.
+    - If CocoaPods does not resolve the podspec's SPM dependency on your machine (older CocoaPods), either upgrade CocoaPods (recommended) or vendor an XCFramework as a fallback.
 - TypeScript bindings
   - `src/ExpoCxonemobilesdkModule.ts`
     - JSI binding via `requireNativeModule("ExpoCxonemobilesdk")`.
