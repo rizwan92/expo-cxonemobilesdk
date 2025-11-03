@@ -59,6 +59,34 @@ This package ships a config plugin that can inject a Swift Package dependency fo
 
 Important: CocoaPods and SPM targets are isolated. If your app uses this plugin, ensure the Expo module sources that import `CXoneChatSDK` are linked against the same package. We recommend continuing with the CocoaPods-based integration unless you fully migrate to SPM for the wrapper as well.
 
+### Published config-plugin
+
+This package also ships a published config-plugin that consumers can reference directly from the installed package. The plugin path is exposed as `expo-cxonemobilesdk/plugin-spm` (also available at `expo-cxonemobilesdk/plugins/addSPMDependenciesToMainTarget.js`).
+
+Example usage (consumer `app.json`):
+
+```json
+{
+  "expo": {
+    "plugins": [
+      [
+        "expo-cxonemobilesdk/plugin-spm",
+        {
+          "version": "1.0.0",
+          "repositoryUrl": "https://github.com/nice/cxone-mobile-sdk-ios.git",
+          "repoName": "nice-cxone-mobile-sdk-ios",
+          "productName": "CXoneChatSDK"
+        }
+      ]
+    ]
+  }
+}
+```
+
+Notes:
+- The plugin will inject an XCRemoteSwiftPackageReference and a product dependency into the iOS Xcode project during `expo prebuild` so the SPM product resolves for the app target.
+- To avoid duplicate linking, either keep the podspec's `s.spm_dependency` (CocoaPods will link the product) and let the plugin only add a package reference, or remove `s.spm_dependency` and let the plugin provide the app-level package and linking. Do not have both the podspec and the app target both actively link the same product.
+
 ### Configure example credentials (.env)
 
 The example app reads credentials from `example/.env` via Expo public env variables. Copy the template and edit values:
