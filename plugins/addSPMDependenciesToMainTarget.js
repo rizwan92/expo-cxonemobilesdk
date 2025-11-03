@@ -4,32 +4,57 @@ const addSPMDependenciesToMainTarget = (config, options) => withXcodeProject(con
   const { version, repositoryUrl, repoName, productName } = options;
   const xcodeProject = config.modResults;
 
-  // Ensure XCRemoteSwiftPackageReference exists
+  // Ensure XCRemoteSwiftPackageReference exists and reuse existing one if present
   if (!xcodeProject.hash.project.objects['XCRemoteSwiftPackageReference']) {
     xcodeProject.hash.project.objects['XCRemoteSwiftPackageReference'] = {};
   }
 
-  const packageReferenceUUID = xcodeProject.generateUuid();
-  xcodeProject.hash.project.objects['XCRemoteSwiftPackageReference'][`${packageReferenceUUID} /* XCRemoteSwiftPackageReference "${repoName}" */`] = {
-    isa: 'XCRemoteSwiftPackageReference',
-    repositoryURL: repositoryUrl,
-    requirement: {
-      kind: 'upToNextMajorVersion',
-      minimumVersion: version,
-    },
-  };
+  // Try to find an existing package reference by repositoryURL to avoid duplicates
+  let packageReferenceUUID = null;
+  const existingPackageRefs = xcodeProject.hash.project.objects['XCRemoteSwiftPackageReference'];
+  for (const key of Object.keys(existingPackageRefs)) {
+    const ref = existingPackageRefs[key];
+    if (ref && ref.repositoryURL === repositoryUrl) {
+      packageReferenceUUID = key.split(' ')[0];
+      break;
+    }
+  }
 
-  // Ensure XCSwiftPackageProductDependency exists
+  if (!packageReferenceUUID) {
+    packageReferenceUUID = xcodeProject.generateUuid();
+    xcodeProject.hash.project.objects['XCRemoteSwiftPackageReference'][`${packageReferenceUUID} /* XCRemoteSwiftPackageReference "${repoName}" */`] = {
+      isa: 'XCRemoteSwiftPackageReference',
+      repositoryURL: repositoryUrl,
+      requirement: {
+        kind: 'upToNextMajorVersion',
+        minimumVersion: version,
+      },
+    };
+  }
+
+  // Ensure XCSwiftPackageProductDependency exists and reuse existing product dependency
   if (!xcodeProject.hash.project.objects['XCSwiftPackageProductDependency']) {
     xcodeProject.hash.project.objects['XCSwiftPackageProductDependency'] = {};
   }
 
-  const packageUUID = xcodeProject.generateUuid();
-  xcodeProject.hash.project.objects['XCSwiftPackageProductDependency'][`${packageUUID} /* ${productName} */`] = {
-    isa: 'XCSwiftPackageProductDependency',
-    package: `${packageReferenceUUID} /* XCRemoteSwiftPackageReference "${repoName}" */`,
-    productName: productName,
-  };
+  let packageUUID = null;
+  const existingProducts = xcodeProject.hash.project.objects['XCSwiftPackageProductDependency'];
+  for (const key of Object.keys(existingProducts)) {
+    const prod = existingProducts[key];
+    if (prod && prod.productName === productName && prod.package && prod.package.includes(packageReferenceUUID)) {
+      packageUUID = key.split(' ')[0];
+      break;
+    }
+  }
+
+  if (!packageUUID) {
+    packageUUID = xcodeProject.generateUuid();
+    xcodeProject.hash.project.objects['XCSwiftPackageProductDependency'][`${packageUUID} /* ${productName} */`] = {
+      isa: 'XCSwiftPackageProductDependency',
+      package: `${packageReferenceUUID} /* XCRemoteSwiftPackageReference "${repoName}" */`,
+      productName: productName,
+    };
+  }
 
   // Add package reference to PBXProject.packageReferences
   const projectId = Object.keys(xcodeProject.hash.project.objects['PBXProject'])[0];
@@ -42,25 +67,12 @@ const addSPMDependenciesToMainTarget = (config, options) => withXcodeProject(con
     `${packageReferenceUUID} /* XCRemoteSwiftPackageReference "${repoName}" */`,
   ];
 
-  // Wire product into Frameworks build phase so the main target links the package product
-  const frameworkUUID = xcodeProject.generateUuid();
-  xcodeProject.hash.project.objects['PBXBuildFile'] = xcodeProject.hash.project.objects['PBXBuildFile'] || {};
-  xcodeProject.hash.project.objects['PBXBuildFile'][`${frameworkUUID}_comment`] = `${productName} in Frameworks`;
-  xcodeProject.hash.project.objects['PBXBuildFile'][frameworkUUID] = {
-    isa: 'PBXBuildFile',
-    productRef: packageUUID,
-    productRef_comment: productName,
-  };
-
-  const buildPhaseId = Object.keys(xcodeProject.hash.project.objects['PBXFrameworksBuildPhase'])[0];
-  if (!xcodeProject.hash.project.objects['PBXFrameworksBuildPhase'][buildPhaseId]['files']) {
-    xcodeProject.hash.project.objects['PBXFrameworksBuildPhase'][buildPhaseId]['files'] = [];
-  }
-
-  xcodeProject.hash.project.objects['PBXFrameworksBuildPhase'][buildPhaseId]['files'] = [
-    ...xcodeProject.hash.project.objects['PBXFrameworksBuildPhase'][buildPhaseId]['files'],
-    `${frameworkUUID} /* ${productName} in Frameworks */`,
-  ];
+  // IMPORTANT: do NOT add a PBXBuildFile / Frameworks build-phase entry here.
+  // If the package is declared in the podspec (CocoaPods SPM) the Pods target
+  // will link the package product. Creating a second build file in the app
+  // target causes duplicate-symbol / duplicate-framework link errors.
+  // We only ensure the package reference and product dependency exist so Xcode
+  // can resolve the package, but leave linking to CocoaPods.
 
   return config;
 });

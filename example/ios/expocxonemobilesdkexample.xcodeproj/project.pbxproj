@@ -8,11 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		14264E0A4BBD1345C7AF11FA /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = E1582DB91C99BC686637203A /* PrivacyInfo.xcprivacy */; };
+		3A95FF31806769134B469F81 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = DCC38EBB8C174482B6E50085 /* PrivacyInfo.xcprivacy */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		5540570502155D0EE32BB645 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3754220C61CB7C4F88926E3F /* ExpoModulesProvider.swift */; };
-		7246B18F4FC8812450E7A140 /* libPods-expocxonemobilesdkexample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 4E1904CB26C6465BBB7D3F29 /* libPods-expocxonemobilesdkexample.a */; };
-		951386AAC18746B5B5593962 /* CXoneChatSDK in Frameworks */ = {isa = PBXBuildFile; productRef = BBA8ACB4D84849EB98C15024 /* CXoneChatSDK */; };
+		45151384EEB01F53834CC591 /* libPods-expocxonemobilesdkexample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = F69AAAF17636F288A21374F7 /* libPods-expocxonemobilesdkexample.a */; };
+		6A45E2369415CB7E68954974 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4786266396F9D7EAAD859022 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
 /* End PBXBuildFile section */
@@ -21,16 +20,16 @@
 		13B07F961A680F5B00A75B9A /* expocxonemobilesdkexample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = expocxonemobilesdkexample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = expocxonemobilesdkexample/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = expocxonemobilesdkexample/Info.plist; sourceTree = "<group>"; };
-		3754220C61CB7C4F88926E3F /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-expocxonemobilesdkexample/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		4E1904CB26C6465BBB7D3F29 /* libPods-expocxonemobilesdkexample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-expocxonemobilesdkexample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		503D8289DAD0EF7DA6A9ABA8 /* Pods-expocxonemobilesdkexample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-expocxonemobilesdkexample.release.xcconfig"; path = "Target Support Files/Pods-expocxonemobilesdkexample/Pods-expocxonemobilesdkexample.release.xcconfig"; sourceTree = "<group>"; };
-		816E9355A7E37EE0B3B6A4BE /* Pods-expocxonemobilesdkexample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-expocxonemobilesdkexample.debug.xcconfig"; path = "Target Support Files/Pods-expocxonemobilesdkexample/Pods-expocxonemobilesdkexample.debug.xcconfig"; sourceTree = "<group>"; };
+		4786266396F9D7EAAD859022 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-expocxonemobilesdkexample/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
+		7AFC9920FA363CFFECDCF378 /* Pods-expocxonemobilesdkexample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-expocxonemobilesdkexample.debug.xcconfig"; path = "Target Support Files/Pods-expocxonemobilesdkexample/Pods-expocxonemobilesdkexample.debug.xcconfig"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = expocxonemobilesdkexample/SplashScreen.storyboard; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		E1582DB91C99BC686637203A /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = expocxonemobilesdkexample/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		CE2EE78337A9F35AB6D2C0FA /* Pods-expocxonemobilesdkexample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-expocxonemobilesdkexample.release.xcconfig"; path = "Target Support Files/Pods-expocxonemobilesdkexample/Pods-expocxonemobilesdkexample.release.xcconfig"; sourceTree = "<group>"; };
+		DCC38EBB8C174482B6E50085 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = expocxonemobilesdkexample/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = expocxonemobilesdkexample/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* expocxonemobilesdkexample-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "expocxonemobilesdkexample-Bridging-Header.h"; path = "expocxonemobilesdkexample/expocxonemobilesdkexample-Bridging-Header.h"; sourceTree = "<group>"; };
+		F69AAAF17636F288A21374F7 /* libPods-expocxonemobilesdkexample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-expocxonemobilesdkexample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -38,14 +37,23 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				951386AAC18746B5B5593962 /* CXoneChatSDK in Frameworks */,
-				7246B18F4FC8812450E7A140 /* libPods-expocxonemobilesdkexample.a in Frameworks */,
+				45151384EEB01F53834CC591 /* libPods-expocxonemobilesdkexample.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		1032AFCA4F73918F43CBD6B1 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				7AFC9920FA363CFFECDCF378 /* Pods-expocxonemobilesdkexample.debug.xcconfig */,
+				CE2EE78337A9F35AB6D2C0FA /* Pods-expocxonemobilesdkexample.release.xcconfig */,
+			);
+			name = Pods;
+			path = Pods;
+			sourceTree = "<group>";
+		};
 		13B07FAE1A68108700A75B9A /* expocxonemobilesdkexample */ = {
 			isa = PBXGroup;
 			children = (
@@ -55,15 +63,7 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				E1582DB91C99BC686637203A /* PrivacyInfo.xcprivacy */,
-			);
-			name = expocxonemobilesdkexample;
-			sourceTree = "<group>";
-		};
-		167E0C5C5417A960625EAE32 /* expocxonemobilesdkexample */ = {
-			isa = PBXGroup;
-			children = (
-				3754220C61CB7C4F88926E3F /* ExpoModulesProvider.swift */,
+				DCC38EBB8C174482B6E50085 /* PrivacyInfo.xcprivacy */,
 			);
 			name = expocxonemobilesdkexample;
 			sourceTree = "<group>";
@@ -72,19 +72,17 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				4E1904CB26C6465BBB7D3F29 /* libPods-expocxonemobilesdkexample.a */,
+				F69AAAF17636F288A21374F7 /* libPods-expocxonemobilesdkexample.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		44A4084B3A449A95308D8E64 /* Pods */ = {
+		4E5ACA3A3C17A91656FF0C40 /* ExpoModulesProviders */ = {
 			isa = PBXGroup;
 			children = (
-				816E9355A7E37EE0B3B6A4BE /* Pods-expocxonemobilesdkexample.debug.xcconfig */,
-				503D8289DAD0EF7DA6A9ABA8 /* Pods-expocxonemobilesdkexample.release.xcconfig */,
+				FF04834CCF28F5E18BC12FDE /* expocxonemobilesdkexample */,
 			);
-			name = Pods;
-			path = Pods;
+			name = ExpoModulesProviders;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -101,8 +99,8 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				44A4084B3A449A95308D8E64 /* Pods */,
-				CD86A6DB9D9EAD6851E49D6F /* ExpoModulesProviders */,
+				1032AFCA4F73918F43CBD6B1 /* Pods */,
+				4E5ACA3A3C17A91656FF0C40 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -126,12 +124,12 @@
 			path = expocxonemobilesdkexample/Supporting;
 			sourceTree = "<group>";
 		};
-		CD86A6DB9D9EAD6851E49D6F /* ExpoModulesProviders */ = {
+		FF04834CCF28F5E18BC12FDE /* expocxonemobilesdkexample */ = {
 			isa = PBXGroup;
 			children = (
-				167E0C5C5417A960625EAE32 /* expocxonemobilesdkexample */,
+				4786266396F9D7EAAD859022 /* ExpoModulesProvider.swift */,
 			);
-			name = ExpoModulesProviders;
+			name = expocxonemobilesdkexample;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -142,13 +140,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "expocxonemobilesdkexample" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				E4C26651C4512698EA988149 /* [Expo] Configure project */,
+				5E8B30452371B7237A058DC3 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				886C1CCE5C5D1A3A1141276F /* [CP] Embed Pods Frameworks */,
+				F8DC33770AF36B01C1FD9EAC /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -182,7 +180,7 @@
 			);
 			mainGroup = 83CBB9F61A601CBA00E9B192;
 			packageReferences = (
-				085D609B099A4DD6AF52B740 /* XCRemoteSwiftPackageReference "nice-cxone-mobile-sdk-ios" */,
+				D211B3FC8C4444518A008038 /* XCRemoteSwiftPackageReference "nice-cxone-mobile-sdk-ios" */,
 			);
 			productRefGroup = 83CBBA001A601CBA00E9B192 /* Products */;
 			projectDirPath = "";
@@ -201,7 +199,7 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				14264E0A4BBD1345C7AF11FA /* PrivacyInfo.xcprivacy in Resources */,
+				3A95FF31806769134B469F81 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -247,6 +245,30 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
+		5E8B30452371B7237A058DC3 /* [Expo] Configure project */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"$(SRCROOT)/.xcode.env",
+				"$(SRCROOT)/.xcode.env.local",
+				"$(SRCROOT)/expocxonemobilesdkexample/expocxonemobilesdkexample.entitlements",
+				"$(SRCROOT)/Pods/Target Support Files/Pods-expocxonemobilesdkexample/expo-configure-project.sh",
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(SRCROOT)/Pods/Target Support Files/Pods-expocxonemobilesdkexample/ExpoModulesProvider.swift",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-expocxonemobilesdkexample/expo-configure-project.sh\"\n";
+		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -273,7 +295,7 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-expocxonemobilesdkexample/Pods-expocxonemobilesdkexample-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		886C1CCE5C5D1A3A1141276F /* [CP] Embed Pods Frameworks */ = {
+		F8DC33770AF36B01C1FD9EAC /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -295,30 +317,6 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-expocxonemobilesdkexample/Pods-expocxonemobilesdkexample-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		E4C26651C4512698EA988149 /* [Expo] Configure project */ = {
-			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-			);
-			inputPaths = (
-				"$(SRCROOT)/.xcode.env",
-				"$(SRCROOT)/.xcode.env.local",
-				"$(SRCROOT)/expocxonemobilesdkexample/expocxonemobilesdkexample.entitlements",
-				"$(SRCROOT)/Pods/Target Support Files/Pods-expocxonemobilesdkexample/expo-configure-project.sh",
-			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
-			outputPaths = (
-				"$(SRCROOT)/Pods/Target Support Files/Pods-expocxonemobilesdkexample/ExpoModulesProvider.swift",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-expocxonemobilesdkexample/expo-configure-project.sh\"\n";
-		};
 /* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -327,7 +325,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				5540570502155D0EE32BB645 /* ExpoModulesProvider.swift in Sources */,
+				6A45E2369415CB7E68954974 /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -336,7 +334,7 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 816E9355A7E37EE0B3B6A4BE /* Pods-expocxonemobilesdkexample.debug.xcconfig */;
+			baseConfigurationReference = 7AFC9920FA363CFFECDCF378 /* Pods-expocxonemobilesdkexample.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -372,7 +370,7 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 503D8289DAD0EF7DA6A9ABA8 /* Pods-expocxonemobilesdkexample.release.xcconfig */;
+			baseConfigurationReference = CE2EE78337A9F35AB6D2C0FA /* Pods-expocxonemobilesdkexample.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
@@ -542,7 +540,7 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
-		085D609B099A4DD6AF52B740 /* XCRemoteSwiftPackageReference "nice-cxone-mobile-sdk-ios" */ = {
+		D211B3FC8C4444518A008038 /* XCRemoteSwiftPackageReference "nice-cxone-mobile-sdk-ios" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/nice-devone/nice-cxone-mobile-sdk-ios";
 			requirement = {
@@ -551,14 +549,6 @@
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
-
-/* Begin XCSwiftPackageProductDependency section */
-		BBA8ACB4D84849EB98C15024 /* CXoneChatSDK */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = 085D609B099A4DD6AF52B740 /* XCRemoteSwiftPackageReference "nice-cxone-mobile-sdk-ios" */;
-			productName = CXoneChatSDK;
-		};
-/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 83CBB9F71A601CBA00E9B192 /* Project object */;
 }
