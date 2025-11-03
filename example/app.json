@@ -29,7 +29,16 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-router"
+      "expo-router",
+      [
+        "../plugins/addSPMDependenciesToMainTarget.js",
+        {
+          "version": "3.0.1",
+          "repositoryUrl": "https://github.com/nice-devone/nice-cxone-mobile-sdk-ios",
+          "repoName": "nice-cxone-mobile-sdk-ios",
+          "productName": "CXoneChatSDK"
+        }
+      ]
     ]
   }
 }
