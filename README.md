@@ -18,13 +18,33 @@ npm install expo-cxonemobilesdk
 Expo (managed/bare):
 
 - iOS: `npx pod-install` (or `npx expo run:ios` which runs pods)
-- Android: no additional setup
+- Android: add the NICE GitHub Packages Maven repo and credentials so Gradle can resolve `com.nice.cxone:chat-sdk-core`. In your app's `android/build.gradle` under `allprojects.repositories` add:
+
+```
+maven {
+  name 'github-nice-devone-cxone-mobile'
+  url 'https://maven.pkg.github.com/nice-devone/nice-cxone-mobile-sdk-android'
+  credentials {
+    username = project.findProperty('github.user') ?: System.getenv('GPR_USERNAME')
+    password = project.findProperty('github.key') ?: System.getenv('GPR_TOKEN')
+  }
+}
+```
+
+Then set credentials in `android/local.properties`:
+
+```
+github.user=your_github_username
+github.key=your_github_token
+```
+
+Public packages still require an access token for GitHub Packages. Any token with read:packages works.
 
 React Native (bare):
 
 - Ensure you’ve set up Expo Modules: https://docs.expo.dev/bare/installing-expo-modules/
 - iOS: `cd ios && pod install`
-- Android: no additional setup
+- Android: same GitHub Packages setup as above
 
 Notes:
 
