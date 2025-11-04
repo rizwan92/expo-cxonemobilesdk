@@ -18,6 +18,7 @@ export default function App() {
   const customEventMessage = useEvent(ExpoCxonemobilesdk, 'customEventMessage');
   const proactivePopupAction = useEvent(ExpoCxonemobilesdk, 'proactivePopupAction');
   const errorEvent = useEvent(ExpoCxonemobilesdk, 'error');
+  const connectionError = useEvent(ExpoCxonemobilesdk, 'connectionError');
 
   return (
     <SafeAreaView style={styles.container}>
@@ -41,6 +42,9 @@ export default function App() {
             proactivePopupAction: {proactivePopupAction ? `${proactivePopupAction.actionId}` : '—'}
           </Text>
           <Text>error: {errorEvent ? `${errorEvent.message}` : '—'}</Text>
+          <Text>
+            connectionError: {connectionError ? `${connectionError.phase}:${connectionError.message}` : '—'}
+          </Text>
           <Button
             title="prepare (env=NA1, brandId=123, channel=demo)"
             onPress={async () => {

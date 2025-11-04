@@ -21,6 +21,7 @@ export default function ChatAppHome() {
   const chatUpdated = useEvent(ExpoCxonemobilesdk, 'chatUpdated');
   const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
   const errorEvent = useEvent(ExpoCxonemobilesdk, 'error');
+  const connectionError = useEvent(ExpoCxonemobilesdk, 'connectionError');
   const { connected, chatState, checking, connectAndSync, refresh } = useConnectionStatus({
     attempts: 5,
     intervalMs: 800,
@@ -42,25 +43,9 @@ export default function ChatAppHome() {
     let cancelled = false;
     (async () => {
       try {
-        const st = Connection.getChatState();
-        if (st === 'ready' || st === 'connected') {
-          if (cancelled) return;
-          setPrepareDone(true);
-          refresh();
-          return;
-        }
-
-        if (st === 'prepared') {
-          if (cancelled) return;
-          setPrepareDone(true);
-          await connectAndSync();
-          return;
-        }
-
-        await Connection.prepare(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
+        await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
         if (cancelled) return;
         setPrepareDone(true);
-        await connectAndSync();
       } catch (e) {
         console.error('[ChatAppHome] prepare/connect failed', e);
         setLastError(String((e as any)?.message ?? e));
@@ -86,6 +71,9 @@ export default function ChatAppHome() {
   useEffect(() => {
     if (errorEvent?.message) setLastError(errorEvent.message);
   }, [errorEvent?.message]);
+  useEffect(() => {
+    if (connectionError?.message) setLastError(`${connectionError.phase}: ${connectionError.message}`);
+  }, [connectionError?.message]);
 
   const headerStatus = useMemo(
     () => `${chatState} ${connected ? '• Online' : '• Offline'} • Mode: ${chatMode}`,
@@ -164,8 +152,7 @@ export default function ChatAppHome() {
                   Customer.setName(u.firstName, u.lastName);
                   setVisitorId(Customer.getVisitorId());
 
-                  await Connection.prepare(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
-                  await connectAndSync();
+                  await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
                 } catch (e) {
                   setLastError(String((e as any)?.message ?? e));
                 }

@@ -7,6 +7,7 @@ import com.nice.cxonechat.ChatState.*
 import com.nice.cxonechat.analytics.ActionMetadata
 import com.nice.cxonechat.exceptions.RuntimeChatException
 import com.nice.cxonechat.message.ContentDescriptor
+import com.nice.cxonechat.log.LoggerAndroid
 import com.nice.cxonechat.thread.ChatThread
 import com.nice.cxonechat.thread.ChatThreadState
 import java.lang.ref.WeakReference
@@ -35,16 +36,24 @@ object CXoneManager : ChatInstanceProvider.Listener {
   private var pendingAuthCode: String? = null
   private var pendingVerifier: String? = null
 
+  // Last captured error for quick diagnostics
+  @Volatile
+  private var lastError: String? = null
+
   fun initialize(context: Context, cfg: SocketFactoryConfiguration, module: ExpoCxonemobilesdkModule) {
     appContext = context.applicationContext
     moduleRef = WeakReference(module)
     // Replace singleton provider with our configuration
-    provider = ChatInstanceProvider.create(cfg)
+    provider = ChatInstanceProvider.create(
+      configuration = cfg,
+      authorization = null,
+      userName = null,
+      developmentMode = true,
+      deviceTokenProvider = null,
+      logger = LoggerAndroid("CXoneChat"),
+      customerId = null,
+    )
     provider?.addListener(this)
-    // Enable development mode for more verbose internal logging (if logger is present)
-    provider?.configure(appContext!!) {
-      developmentMode = true
-    }
   }
 
   fun prepare() {
@@ -70,11 +79,18 @@ object CXoneManager : ChatInstanceProvider.Listener {
             if (cont.isActive) cont.resume(Unit) {}
           } else if (chatState == ChatState.Initial && sawPreparing) {
             provider?.removeListener(this)
-            if (cont.isActive) cont.resumeWith(Result.failure(IllegalStateException("Prepare failed: returned to Initial")))
+            val msg = "Prepare failed: returned to Initial"
+            lastError = msg
+            moduleRef?.get()?.sendEvent("connectionError", mapOf("phase" to "prepare", "message" to msg))
+            moduleRef?.get()?.sendEvent("error", mapOf("message" to msg))
+            if (cont.isActive) cont.resumeWith(Result.failure(IllegalStateException(msg)))
           }
         }
         override fun onChatRuntimeException(exception: RuntimeChatException) {
           // Keep listening; state callback will follow. Do not fail here.
+          lastError = exception.message ?: "unknown"
+          moduleRef?.get()?.sendEvent("connectionError", mapOf("phase" to "prepare", "message" to lastError!!))
+          moduleRef?.get()?.sendEvent("error", mapOf("message" to (exception.message ?: "unknown")))
         }
       }
       provider?.addListener(listener)
@@ -87,7 +103,58 @@ object CXoneManager : ChatInstanceProvider.Listener {
         kotlinx.coroutines.delay(7000)
         if (cont.isActive) {
           provider?.removeListener(listener)
-          cont.resumeWith(Result.failure(IllegalStateException("Prepare timeout")))
+          val msg = "Prepare timeout"
+          lastError = msg
+          moduleRef?.get()?.sendEvent("connectionError", mapOf("phase" to "prepare", "message" to msg))
+          moduleRef?.get()?.sendEvent("error", mapOf("message" to msg))
+          cont.resumeWith(Result.failure(IllegalStateException(msg)))
+        }
+      }
+      cont.invokeOnCancellation { provider?.removeListener(listener); timeoutJob.cancel() }
+    }
+  }
+
+  suspend fun connectAwait() {
+    val prov = requireNotNull(provider) { "Provider not initialized" }
+    // If already connected or ready, no-op
+    if (prov.chatState in setOf(ChatState.Connected, ChatState.Ready)) return
+    // Only connect from valid states
+    when (prov.chatState) {
+      ChatState.Prepared, ChatState.Offline -> prov.connect()
+      ChatState.Preparing -> { /* wait below */ }
+      ChatState.Initial -> {
+        val msg = "Connect called before prepare"
+        lastError = msg
+        throw IllegalStateException(msg)
+      }
+      else -> { /* ConnectionLost also handled by connect below */ prov.connect() }
+    }
+
+    return kotlinx.coroutines.suspendCancellableCoroutine { cont ->
+      val listener = object : ChatInstanceProvider.Listener {
+        override fun onChatChanged(chat: Chat?) {}
+        override fun onChatStateChanged(chatState: ChatState) {
+          if (chatState in setOf(ChatState.Connected, ChatState.Ready)) {
+            provider?.removeListener(this)
+            if (cont.isActive) cont.resume(Unit) {}
+          }
+        }
+        override fun onChatRuntimeException(exception: RuntimeChatException) {
+          lastError = exception.message ?: "unknown"
+          moduleRef?.get()?.sendEvent("connectionError", mapOf("phase" to "connect", "message" to lastError!!))
+          moduleRef?.get()?.sendEvent("error", mapOf("message" to (exception.message ?: "unknown")))
+        }
+      }
+      provider?.addListener(listener)
+      val timeoutJob = GlobalScope.launch(Dispatchers.Default) {
+        delay(7000)
+        if (cont.isActive) {
+          provider?.removeListener(listener)
+          val msg = "Connect timeout"
+          lastError = msg
+          moduleRef?.get()?.sendEvent("connectionError", mapOf("phase" to "connect", "message" to msg))
+          moduleRef?.get()?.sendEvent("error", mapOf("message" to msg))
+          cont.resumeWith(Result.failure(IllegalStateException(msg)))
         }
       }
       cont.invokeOnCancellation { provider?.removeListener(listener); timeoutJob.cancel() }
@@ -293,6 +360,8 @@ object CXoneManager : ChatInstanceProvider.Listener {
   }
 
   override fun onChatRuntimeException(exception: RuntimeChatException) {
+    lastError = exception.message ?: "unknown"
+    moduleRef?.get()?.sendEvent("connectionError", mapOf("phase" to "runtime", "message" to lastError!!))
     moduleRef?.get()?.sendEvent("error", mapOf("message" to (exception.message ?: "unknown")))
   }
 }

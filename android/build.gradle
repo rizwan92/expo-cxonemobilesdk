@@ -49,12 +49,12 @@ dependencies {
 
   // Hybrid dev mode: resolve third‑party dependencies from Maven Central while keeping CXone AARs vendored
   // These match chat-sdk-core's external deps
-  implementation "androidx.core:core-ktx:1.12.0"
-  implementation "androidx.security:security-crypto:1.1.0-alpha06"
-  implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3"
+  implementation "androidx.core:core-ktx:1.16.0"
+  implementation "androidx.security:security-crypto:1.0.0"
+  implementation "org.jetbrains.kotlinx:kotlinx-serialization-json:1.8.1"
   implementation "com.squareup.okhttp3:okhttp:4.12.0"
-  implementation "com.squareup.retrofit2:retrofit:2.11.0"
-  implementation "com.squareup.retrofit2:converter-kotlinx-serialization:2.11.0"
+  implementation "com.squareup.retrofit2:retrofit:3.0.0"
+  implementation "com.squareup.retrofit2:converter-kotlinx-serialization:3.0.0"
 }
 
 // Re-enable only Google + Maven Central to fetch the above third‑party deps.

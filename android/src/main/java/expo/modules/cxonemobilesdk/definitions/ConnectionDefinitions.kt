@@ -68,4 +68,22 @@ internal fun ModuleDefinitionBuilder.addConnectionDefinitions(owner: ExpoCxonemo
     val ctx = requireNotNull(owner.appContext.reactContext) { "No React context" }
     JSONBridge.fetchChannelConfiguration(ctx, environment, brandId.toLong(), channelId)
   }
+
+  // Android-first convenience: prepare + connect with preflight
+  AsyncFunction("prepareAndConnect") Coroutine { env: String, brandId: Int, channelId: String ->
+    Log.i(tag, "Connection.prepareAndConnect env=$env brandId=$brandId channelId=$channelId")
+    val environment = runCatching { CXoneEnvironment.valueOf(env.uppercase(Locale.ROOT)).value }
+      .getOrElse { throw IllegalArgumentException("Unsupported CXone environment '$env'") }
+    val cfg = SocketFactoryConfiguration(environment, brandId.toLong(), channelId)
+    val ctx = requireNotNull(owner.appContext.reactContext) { "No React context" }
+    CXoneManager.initialize(ctx.applicationContext, cfg, owner)
+    // Preflight (best-effort) — surface network/config issues early
+    runCatching { JSONBridge.fetchChannelConfiguration(ctx, environment, brandId.toLong(), channelId) }
+    CXoneManager.prepareAwait()
+    CXoneManager.connectAwait()
+    // Return final state string
+    CXoneManager.getChatStateString()
+  }
+
+  // Removed getLastError in favor of 'connectionError' event
 }

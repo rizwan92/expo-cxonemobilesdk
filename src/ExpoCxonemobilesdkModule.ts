@@ -4,6 +4,8 @@ import type { ChatThreadDetails, OutboundMessage } from './types';
 import { ExpoCxonemobilesdkModuleEvents } from './ExpoCxonemobilesdk.types';
 
 declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkModuleEvents> {
+  // Android-first convenience that preflights, prepares and connects, returns final state
+  prepareAndConnect(env: string, brandId: number, channelId: string): Promise<string>;
   prepare(env: string, brandId: number, channelId: string): Promise<void>;
   prepareWithURLs(
     chatURL: string,
