@@ -60,24 +60,7 @@ public class ExpoCxonemobilesdkModule: Module {
                 throw error
             }
             // Handle current state to avoid invalid-state errors when called concurrently
-            let state = CXoneChat.shared.state
-            switch state {
-            case .connected, .ready:
-                return
-            case .preparing:
-                // Wait until preparing finishes, then proceed
-                do {
-                    try await self.waitUntil(7000) {
-                        let s = CXoneChat.shared.state
-                        return s != .preparing && s != .initial
-                    }
-                } catch {
-                    self.sendEvent("connectionError", ["phase": "prepare", "message": "Timeout waiting for preparing to finish"])
-                    self.sendEvent("error", ["message": "Timeout waiting for preparing to finish"])
-                    throw error
-                }
-                fallthrough
-            case .prepared, .offline:
+            func connectNow() async throws {
                 do {
                     try await ConnectionBridge.connect()
                 } catch {
@@ -85,6 +68,54 @@ public class ExpoCxonemobilesdkModule: Module {
                     self.sendEvent("error", ["message": String(describing: error)])
                     throw error
                 }
+            }
+
+            let state = CXoneChat.shared.state
+            switch state {
+            case .connected, .ready:
+                return
+            case .preparing:
+                // Wait until preparing finishes, then re-evaluate
+                do {
+                    try await self.waitUntil(7000) {
+                        CXoneChat.shared.state != .preparing
+                    }
+                } catch {
+                    self.sendEvent("connectionError", ["phase": "prepare", "message": "Timeout waiting for preparing to finish"])
+                    self.sendEvent("error", ["message": "Timeout waiting for preparing to finish"])
+                    throw error
+                }
+                let s = CXoneChat.shared.state
+                if s == .connected || s == .ready { return }
+                if s == .prepared || s == .offline { try await connectNow(); return }
+                if s == .connecting {
+                    do {
+                        try await self.waitUntil(7000) {
+                            let st = CXoneChat.shared.state
+                            return st == .connected || st == .ready
+                        }
+                    } catch {
+                        self.sendEvent("connectionError", ["phase": "connect", "message": "Timeout waiting for connection"])
+                        self.sendEvent("error", ["message": "Timeout waiting for connection"])
+                        throw error
+                    }
+                    return
+                }
+                if s == .initial {
+                    // Preparing reverted to initial; run prepare + connect
+                    do {
+                        try await ConnectionBridge.prepare(env: env, brandId: brandId, channelId: channelId)
+                    } catch {
+                        self.sendEvent("connectionError", ["phase": "prepare", "message": String(describing: error)])
+                        self.sendEvent("error", ["message": String(describing: error)])
+                        throw error
+                    }
+                    try await connectNow()
+                    return
+                }
+            case .prepared, .offline:
+                try await connectNow()
+                return
             case .connecting:
                 // Wait for connection to complete
                 do {
@@ -97,6 +128,7 @@ public class ExpoCxonemobilesdkModule: Module {
                     self.sendEvent("error", ["message": "Timeout waiting for connection"])
                     throw error
                 }
+                return
             case .initial:
                 do {
                     try await ConnectionBridge.prepare(env: env, brandId: brandId, channelId: channelId)
@@ -105,13 +137,8 @@ public class ExpoCxonemobilesdkModule: Module {
                     self.sendEvent("error", ["message": String(describing: error)])
                     throw error
                 }
-                do {
-                    try await ConnectionBridge.connect()
-                } catch {
-                    self.sendEvent("connectionError", ["phase": "connect", "message": String(describing: error)])
-                    self.sendEvent("error", ["message": String(describing: error)])
-                    throw error
-                }
+                try await connectNow()
+                return
             @unknown default:
                 do {
                     try await ConnectionBridge.prepare(env: env, brandId: brandId, channelId: channelId)
@@ -121,6 +148,7 @@ public class ExpoCxonemobilesdkModule: Module {
                     self.sendEvent("error", ["message": String(describing: error)])
                     throw error
                 }
+                return
             }
         }
 
