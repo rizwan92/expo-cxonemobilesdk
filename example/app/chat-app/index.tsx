@@ -120,20 +120,15 @@ export default function ChatAppHome() {
     setLastError(null);
     setStarting(true);
     try {
-      // Ask native to load the default thread (nil)
-      await Threads.load();
+      // Create a new thread explicitly and navigate to it
+      const details = await Threads.create();
+      router.push(`/chat-app/thread/${details.id}`);
     } catch (e) {
       setLastError(String((e as any)?.message ?? e));
-    }
-  }, [router]);
-
-  // Navigate to the first thread when it appears (no direct Threads.get in handler)
-  useEffect(() => {
-    if (starting && threadList.length > 0) {
-      router.push(`/chat-app/thread/${threadList[0].id}`);
+    } finally {
       setStarting(false);
     }
-  }, [starting, threadList.length]);
+  }, [router]);
 
   return (
     <SafeAreaView style={styles.container}>
