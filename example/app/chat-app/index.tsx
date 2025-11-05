@@ -17,7 +17,7 @@ import { CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID } from './config';
 
 export default function ChatAppHome() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ auth?: string }>();
+  const params = useLocalSearchParams<{ auth?: string; uid?: string; fn?: string; ln?: string }>();
   const chatUpdated = useEvent(ExpoCxonemobilesdk, 'chatUpdated');
   const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
   const errorEvent = useEvent(ExpoCxonemobilesdk, 'error');
@@ -73,7 +73,26 @@ export default function ChatAppHome() {
     if (is) reload();
   }, [prepareDone, chatUpdated?.state, threadsUpdated?.threadIds?.length]);
 
-  // Set identity to auth token AFTER we are connected
+  // Set identity (id, first, last) AFTER we are connected
+  useEffect(() => {
+    const id = typeof params.uid === 'string' ? params.uid : '';
+    const fn = typeof params.fn === 'string' ? params.fn : undefined;
+    const ln = typeof params.ln === 'string' ? params.ln : undefined;
+    if (!id) return;
+    const is = chatState === 'connected' || chatState === 'ready';
+    if (is) {
+      try {
+        Customer.setIdentity(id, fn, ln);
+        // refresh identity from native for display
+        setTimeout(() => reload(), 100);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('[ChatAppHome] setIdentity failed', e);
+      }
+    }
+  }, [chatState, params.uid, params.fn, params.ln]);
+
+  // Optionally set authorization code AFTER connected (if provided)
   useEffect(() => {
     const token = typeof params.auth === 'string' ? params.auth : '';
     if (!token) return;
@@ -83,7 +102,7 @@ export default function ChatAppHome() {
         Customer.setAuthorizationCode(token);
       } catch (e) {
         // eslint-disable-next-line no-console
-        console.error('[ChatAppHome] setIdentity failed', e);
+        console.error('[ChatAppHome] setAuthorizationCode failed', e);
       }
     }
   }, [chatState, params.auth]);
