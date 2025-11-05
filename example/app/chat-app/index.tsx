@@ -36,11 +36,23 @@ export default function ChatAppHome() {
   );
   const [starting, setStarting] = useState(false);
 
-  // Prepare + connect on open, identity set after connection
+  // Set identity/auth first (if provided), then prepare + connect on open
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
+        const id = typeof params.uid === 'string' ? params.uid : '';
+        const fn = typeof params.fn === 'string' ? params.fn : undefined;
+        const ln = typeof params.ln === 'string' ? params.ln : undefined;
+        const token = typeof params.auth === 'string' ? params.auth : '';
+
+        if (id) {
+          try { Customer.setIdentity(id, fn, ln); } catch {}
+        }
+        if (token) {
+          try { Customer.setAuthorizationCode(token); } catch {}
+        }
+
         await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
         if (cancelled) return;
         setPrepareDone(true);
@@ -52,7 +64,7 @@ export default function ChatAppHome() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [params.uid, params.fn, params.ln, params.auth]);
 
   // Load visitor id and thread list
   const reload = useCallback(() => {
@@ -73,34 +85,7 @@ export default function ChatAppHome() {
     if (is) reload();
   }, [prepareDone, chatUpdated?.state, threadsUpdated?.threadIds?.length]);
 
-  // Set identity and optional authorization AFTER we are connected
-  useEffect(() => {
-    if (!(chatState === 'connected' || chatState === 'ready')) return;
-    const id = typeof params.uid === 'string' ? params.uid : '';
-    const fn = typeof params.fn === 'string' ? params.fn : undefined;
-    const ln = typeof params.ln === 'string' ? params.ln : undefined;
-    const token = typeof params.auth === 'string' ? params.auth : '';
-
-    let refreshed = false;
-    try {
-      if (id) {
-        Customer.setIdentity(id, fn, ln);
-        refreshed = true;
-      }
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error('[ChatAppHome] setIdentity failed', e);
-    }
-    try {
-      if (token) {
-        Customer.setAuthorizationCode(token);
-      }
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error('[ChatAppHome] setAuthorizationCode failed', e);
-    }
-    if (refreshed) setTimeout(() => reload(), 100);
-  }, [chatState, params.uid, params.fn, params.ln, params.auth]);
+  // (Identity/auth now set before connecting to satisfy iOS state requirements)
 
   // Surface native error events in UI status
   useEffect(() => {
