@@ -58,6 +58,8 @@ public class ExpoCxonemobilesdkModule: Module {
 
         AsyncFunction("prepareAndConnect") { (env: String, brandId: Int, channelId: String) async throws in
             self.registerDelegateIfNeeded()
+
+            // Preflight fetch to surface server-side configuration errors early
             do {
                 _ = try await ConnectionBridge.getChannelConfiguration(env: env, brandId: brandId, channelId: channelId)
             } catch {
@@ -65,69 +67,25 @@ public class ExpoCxonemobilesdkModule: Module {
                 self.sendEvent("error", ["message": String(describing: error)])
                 throw error
             }
-            // Handle current state to avoid invalid-state errors when called concurrently
+
+            // Small helpers for clarity
+            func prepareNow() async throws {
+                do { try await ConnectionBridge.prepare(env: env, brandId: brandId, channelId: channelId) }
+                catch {
+                    self.sendEvent("connectionError", ["phase": "prepare", "message": String(describing: error)])
+                    self.sendEvent("error", ["message": String(describing: error)])
+                    throw error
+                }
+            }
             func connectNow() async throws {
-                do {
-                    try await ConnectionBridge.connect()
-                } catch {
+                do { try await ConnectionBridge.connect() }
+                catch {
                     self.sendEvent("connectionError", ["phase": "connect", "message": String(describing: error)])
                     self.sendEvent("error", ["message": String(describing: error)])
                     throw error
                 }
             }
-
-            let state = CXoneChat.shared.state
-            switch state {
-            case .connected, .ready:
-                self.emitChatSnapshot()
-                return
-            case .preparing:
-                // Wait until preparing finishes, then re-evaluate
-                do {
-                    try await self.waitUntil(7000) {
-                        CXoneChat.shared.state != .preparing
-                    }
-                } catch {
-                    self.sendEvent("connectionError", ["phase": "prepare", "message": "Timeout waiting for preparing to finish"])
-                    self.sendEvent("error", ["message": "Timeout waiting for preparing to finish"])
-                    throw error
-                }
-                let s = CXoneChat.shared.state
-                if s == .connected || s == .ready { self.emitChatSnapshot(); return }
-                if s == .prepared || s == .offline { try await connectNow(); self.emitChatSnapshot(); return }
-                if s == .connecting {
-                    do {
-                        try await self.waitUntil(7000) {
-                            let st = CXoneChat.shared.state
-                            return st == .connected || st == .ready
-                        }
-                    } catch {
-                        self.sendEvent("connectionError", ["phase": "connect", "message": "Timeout waiting for connection"])
-                        self.sendEvent("error", ["message": "Timeout waiting for connection"])
-                        throw error
-                    }
-                    self.emitChatSnapshot();
-                    return
-                }
-                if s == .initial {
-                    // Preparing reverted to initial; run prepare + connect
-                    do {
-                        try await ConnectionBridge.prepare(env: env, brandId: brandId, channelId: channelId)
-                    } catch {
-                        self.sendEvent("connectionError", ["phase": "prepare", "message": String(describing: error)])
-                        self.sendEvent("error", ["message": String(describing: error)])
-                        throw error
-                    }
-                    try await connectNow()
-                    self.emitChatSnapshot();
-                    return
-                }
-            case .prepared, .offline:
-                try await connectNow()
-                self.emitChatSnapshot();
-                return
-            case .connecting:
-                // Wait for connection to complete
+            func waitForConnected() async throws {
                 do {
                     try await self.waitUntil(7000) {
                         let s = CXoneChat.shared.state
@@ -138,30 +96,35 @@ public class ExpoCxonemobilesdkModule: Module {
                     self.sendEvent("error", ["message": "Timeout waiting for connection"])
                     throw error
                 }
-                self.emitChatSnapshot();
-                return
-            case .initial:
+            }
+            func waitWhilePreparing() async throws {
                 do {
-                    try await ConnectionBridge.prepare(env: env, brandId: brandId, channelId: channelId)
+                    try await self.waitUntil(7000) { CXoneChat.shared.state != .preparing }
                 } catch {
-                    self.sendEvent("connectionError", ["phase": "prepare", "message": String(describing: error)])
-                    self.sendEvent("error", ["message": String(describing: error)])
+                    self.sendEvent("connectionError", ["phase": "prepare", "message": "Timeout waiting for preparing to finish"])
+                    self.sendEvent("error", ["message": "Timeout waiting for preparing to finish"])
                     throw error
                 }
-                try await connectNow()
-                self.emitChatSnapshot();
-                return
-            @unknown default:
-                do {
-                    try await ConnectionBridge.prepare(env: env, brandId: brandId, channelId: channelId)
-                    try await ConnectionBridge.connect()
-                } catch {
-                    self.sendEvent("connectionError", ["phase": "connect", "message": String(describing: error)])
-                    self.sendEvent("error", ["message": String(describing: error)])
-                    throw error
+            }
+
+            // Loop until connected/ready with minimal state transitions
+            while true {
+                switch CXoneChat.shared.state {
+                case .connected, .ready:
+                    self.emitChatSnapshot();
+                    return
+                case .initial:
+                    try await prepareNow()
+                    // next iteration will handle connect based on new state
+                case .prepared, .offline:
+                    try await connectNow()
+                case .preparing:
+                    try await waitWhilePreparing()
+                case .connecting:
+                    try await waitForConnected()
+                @unknown default:
+                    try await prepareNow(); try await connectNow()
                 }
-                self.emitChatSnapshot();
-                return
             }
         }
 
