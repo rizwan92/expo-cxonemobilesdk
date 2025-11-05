@@ -73,39 +73,34 @@ export default function ChatAppHome() {
     if (is) reload();
   }, [prepareDone, chatUpdated?.state, threadsUpdated?.threadIds?.length]);
 
-  // Set identity (id, first, last) AFTER we are connected
+  // Set identity and optional authorization AFTER we are connected
   useEffect(() => {
+    if (!(chatState === 'connected' || chatState === 'ready')) return;
     const id = typeof params.uid === 'string' ? params.uid : '';
     const fn = typeof params.fn === 'string' ? params.fn : undefined;
     const ln = typeof params.ln === 'string' ? params.ln : undefined;
-    if (!id) return;
-    const is = chatState === 'connected' || chatState === 'ready';
-    if (is) {
-      try {
-        Customer.setIdentity(id, fn, ln);
-        // refresh identity from native for display
-        setTimeout(() => reload(), 100);
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error('[ChatAppHome] setIdentity failed', e);
-      }
-    }
-  }, [chatState, params.uid, params.fn, params.ln]);
-
-  // Optionally set authorization code AFTER connected (if provided)
-  useEffect(() => {
     const token = typeof params.auth === 'string' ? params.auth : '';
-    if (!token) return;
-    const is = chatState === 'connected' || chatState === 'ready';
-    if (is) {
-      try {
-        Customer.setAuthorizationCode(token);
-      } catch (e) {
-        // eslint-disable-next-line no-console
-        console.error('[ChatAppHome] setAuthorizationCode failed', e);
+
+    let refreshed = false;
+    try {
+      if (id) {
+        Customer.setIdentity(id, fn, ln);
+        refreshed = true;
       }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('[ChatAppHome] setIdentity failed', e);
     }
-  }, [chatState, params.auth]);
+    try {
+      if (token) {
+        Customer.setAuthorizationCode(token);
+      }
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('[ChatAppHome] setAuthorizationCode failed', e);
+    }
+    if (refreshed) setTimeout(() => reload(), 100);
+  }, [chatState, params.uid, params.fn, params.ln, params.auth]);
 
   // Surface native error events in UI status
   useEffect(() => {
@@ -125,10 +120,20 @@ export default function ChatAppHome() {
     setLastError(null);
     setStarting(true);
     try {
-      // Ensure connected before trying to load (combined)
+      // Ensure connected before trying to load
       const st = Connection.getChatState();
       if (!(st === 'connected' || st === 'ready')) {
-        await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
+        if (st === 'initial' || st === 'prepared' || st === 'offline') {
+          await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
+        } else {
+          // Already preparing/connecting: wait briefly for connection
+          for (let i = 0; i < 10; i++) {
+            // eslint-disable-next-line no-await-in-loop
+            await new Promise((r) => setTimeout(r, 300));
+            const s = Connection.getChatState();
+            if (s === 'connected' || s === 'ready') break;
+          }
+        }
       }
 
       // Ask native to load the default thread (nil)
@@ -223,7 +228,16 @@ export default function ChatAppHome() {
               // Ensure connected/ready before creating
               const st = Connection.getChatState();
               if (!(st === 'connected' || st === 'ready')) {
-                await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
+                if (st === 'initial' || st === 'prepared' || st === 'offline') {
+                  await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
+                } else {
+                  for (let i = 0; i < 10; i++) {
+                    // eslint-disable-next-line no-await-in-loop
+                    await new Promise((r) => setTimeout(r, 300));
+                    const s = Connection.getChatState();
+                    if (s === 'connected' || s === 'ready') break;
+                  }
+                }
               }
               const details = await Threads.create();
               setThreadList(Threads.get());

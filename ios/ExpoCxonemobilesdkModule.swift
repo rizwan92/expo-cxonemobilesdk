@@ -10,6 +10,16 @@ public class ExpoCxonemobilesdkModule: Module {
         }
     }
 
+    private func waitUntil(_ timeoutMs: Int = 7000, _ predicate: @escaping () -> Bool) async throws {
+        let start = Date()
+        while !predicate() {
+            try await Task.sleep(nanoseconds: 200_000_000) // 200ms
+            if Date().timeIntervalSince(start) * 1000.0 > Double(timeoutMs) {
+                throw NSError(domain: "ExpoCxonemobilesdk", code: -10, userInfo: [NSLocalizedDescriptionKey: "Timeout while waiting for state"]) as Error
+            }
+        }
+    }
+
     // Each module class must implement the definition function. The definition consists of components
     // that describes the module's functionality and behavior.
     // See https://docs.expo.dev/modules/module-api for more details about available components.
@@ -49,19 +59,68 @@ public class ExpoCxonemobilesdkModule: Module {
                 self.sendEvent("error", ["message": String(describing: error)])
                 throw error
             }
-            do {
-                try await ConnectionBridge.prepare(env: env, brandId: brandId, channelId: channelId)
-            } catch {
-                self.sendEvent("connectionError", ["phase": "prepare", "message": String(describing: error)])
-                self.sendEvent("error", ["message": String(describing: error)])
-                throw error
-            }
-            do {
-                try await ConnectionBridge.connect()
-            } catch {
-                self.sendEvent("connectionError", ["phase": "connect", "message": String(describing: error)])
-                self.sendEvent("error", ["message": String(describing: error)])
-                throw error
+            // Handle current state to avoid invalid-state errors when called concurrently
+            let state = CXoneChat.shared.state
+            switch state {
+            case .connected, .ready:
+                return
+            case .preparing:
+                // Wait until preparing finishes, then proceed
+                do {
+                    try await self.waitUntil(7000) {
+                        let s = CXoneChat.shared.state
+                        return s != .preparing && s != .initial
+                    }
+                } catch {
+                    self.sendEvent("connectionError", ["phase": "prepare", "message": "Timeout waiting for preparing to finish"])
+                    self.sendEvent("error", ["message": "Timeout waiting for preparing to finish"])
+                    throw error
+                }
+                fallthrough
+            case .prepared, .offline:
+                do {
+                    try await ConnectionBridge.connect()
+                } catch {
+                    self.sendEvent("connectionError", ["phase": "connect", "message": String(describing: error)])
+                    self.sendEvent("error", ["message": String(describing: error)])
+                    throw error
+                }
+            case .connecting:
+                // Wait for connection to complete
+                do {
+                    try await self.waitUntil(7000) {
+                        let s = CXoneChat.shared.state
+                        return s == .connected || s == .ready
+                    }
+                } catch {
+                    self.sendEvent("connectionError", ["phase": "connect", "message": "Timeout waiting for connection"])
+                    self.sendEvent("error", ["message": "Timeout waiting for connection"])
+                    throw error
+                }
+            case .initial:
+                do {
+                    try await ConnectionBridge.prepare(env: env, brandId: brandId, channelId: channelId)
+                } catch {
+                    self.sendEvent("connectionError", ["phase": "prepare", "message": String(describing: error)])
+                    self.sendEvent("error", ["message": String(describing: error)])
+                    throw error
+                }
+                do {
+                    try await ConnectionBridge.connect()
+                } catch {
+                    self.sendEvent("connectionError", ["phase": "connect", "message": String(describing: error)])
+                    self.sendEvent("error", ["message": String(describing: error)])
+                    throw error
+                }
+            @unknown default:
+                do {
+                    try await ConnectionBridge.prepare(env: env, brandId: brandId, channelId: channelId)
+                    try await ConnectionBridge.connect()
+                } catch {
+                    self.sendEvent("connectionError", ["phase": "connect", "message": String(describing: error)])
+                    self.sendEvent("error", ["message": String(describing: error)])
+                    throw error
+                }
             }
         }
 
