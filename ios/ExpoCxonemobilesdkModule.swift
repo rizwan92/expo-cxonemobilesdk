@@ -10,6 +10,12 @@ public class ExpoCxonemobilesdkModule: Module {
         }
     }
 
+    private func emitChatSnapshot() {
+        let stateStr = (JSONBridge.encode(ConnectionBridge.state()) as? String) ?? "unknown"
+        let modeStr = (JSONBridge.encode(ConnectionBridge.mode()) as? String) ?? "unknown"
+        self.sendEvent("chatUpdated", ["state": stateStr, "mode": modeStr])
+    }
+
     private func waitUntil(_ timeoutMs: Int = 7000, _ predicate: @escaping () -> Bool) async throws {
         let start = Date()
         while !predicate() {
@@ -73,6 +79,7 @@ public class ExpoCxonemobilesdkModule: Module {
             let state = CXoneChat.shared.state
             switch state {
             case .connected, .ready:
+                self.emitChatSnapshot()
                 return
             case .preparing:
                 // Wait until preparing finishes, then re-evaluate
@@ -86,8 +93,8 @@ public class ExpoCxonemobilesdkModule: Module {
                     throw error
                 }
                 let s = CXoneChat.shared.state
-                if s == .connected || s == .ready { return }
-                if s == .prepared || s == .offline { try await connectNow(); return }
+                if s == .connected || s == .ready { self.emitChatSnapshot(); return }
+                if s == .prepared || s == .offline { try await connectNow(); self.emitChatSnapshot(); return }
                 if s == .connecting {
                     do {
                         try await self.waitUntil(7000) {
@@ -99,6 +106,7 @@ public class ExpoCxonemobilesdkModule: Module {
                         self.sendEvent("error", ["message": "Timeout waiting for connection"])
                         throw error
                     }
+                    self.emitChatSnapshot();
                     return
                 }
                 if s == .initial {
@@ -111,10 +119,12 @@ public class ExpoCxonemobilesdkModule: Module {
                         throw error
                     }
                     try await connectNow()
+                    self.emitChatSnapshot();
                     return
                 }
             case .prepared, .offline:
                 try await connectNow()
+                self.emitChatSnapshot();
                 return
             case .connecting:
                 // Wait for connection to complete
@@ -128,6 +138,7 @@ public class ExpoCxonemobilesdkModule: Module {
                     self.sendEvent("error", ["message": "Timeout waiting for connection"])
                     throw error
                 }
+                self.emitChatSnapshot();
                 return
             case .initial:
                 do {
@@ -138,6 +149,7 @@ public class ExpoCxonemobilesdkModule: Module {
                     throw error
                 }
                 try await connectNow()
+                self.emitChatSnapshot();
                 return
             @unknown default:
                 do {
@@ -148,6 +160,7 @@ public class ExpoCxonemobilesdkModule: Module {
                     self.sendEvent("error", ["message": String(describing: error)])
                     throw error
                 }
+                self.emitChatSnapshot();
                 return
             }
         }

@@ -32,6 +32,14 @@ internal fun ModuleDefinitionBuilder.addConnectionDefinitions(owner: ExpoCxonemo
     runCatching { JSONBridge.fetchChannelConfiguration(ctx, environment, brandId.toLong(), channelId) }
     CXoneManager.prepareAwait()
     CXoneManager.connectAwait()
+    // Emit a snapshot so callers always get an update even if already connected
+    owner.sendEvent(
+      "chatUpdated",
+      mapOf(
+        "state" to CXoneManager.getChatStateString(),
+        "mode" to CXoneManager.getChatModeString(),
+      )
+    )
   }
 
   AsyncFunction("prepareWithURLs") Coroutine { chatURL: String, socketURL: String, brandId: Int, channelId: String ->
