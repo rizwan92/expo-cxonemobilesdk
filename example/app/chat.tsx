@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { SafeAreaView, ScrollView, View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import ExpoCxonemobilesdk, {
   Connection,
@@ -8,12 +8,13 @@ import ExpoCxonemobilesdk, {
   Analytics,
 } from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
-import { useConnectionStatus } from 'expo-cxonemobilesdk';
 
 export default function ChatScreen() {
   const TAG = '[ChatScreen]';
   const chatUpdated = useEvent(ExpoCxonemobilesdk, 'chatUpdated');
   const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
+  const [chatState, setChatState] = useState<string>('initial');
+  const connected = chatState === 'connected' || chatState === 'ready';
   const [env, setEnv] = useState('EU1');
   const [brandId, setBrandId] = useState('1086');
   const [channelId, setChannelId] = useState('chat_15bf234b-d6a8-4ce0-8b90-e8cf3c6f3748');
@@ -52,11 +53,15 @@ export default function ChatScreen() {
   const [convType, setConvType] = useState('purchase');
   const [convValue, setConvValue] = useState('99.99');
 
-  const mode = useMemo(() => Connection.getChatMode(), [threadsUpdated, chatUpdated]);
-  const { connected, chatState, checking, connectAndSync, refresh } = useConnectionStatus({
-    attempts: 3,
-    intervalMs: 1000,
-  });
+  const mode = useMemo(
+    () => (connected ? Connection.getChatMode() : (chatUpdated?.mode as any) ?? 'unknown'),
+    [connected, threadsUpdated, chatUpdated]
+  );
+
+  // Keep local state in sync with native events
+  useEffect(() => {
+    if (chatUpdated?.state) setChatState(chatUpdated.state);
+  }, [chatUpdated?.state]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -83,34 +88,18 @@ export default function ChatScreen() {
             <TextInput style={styles.input} value={channelId} onChangeText={setChannelId} />
           </Row>
           <Button
-            title="Prepare"
+            title="Prepare & Connect"
             onPress={async () => {
-              console.log(TAG, 'prepare');
-              await Connection.prepare(env, Number(brandId), channelId);
-            }}
-          />
-          <View style={styles.spacer} />
-          <Button
-            title={checking ? 'Connecting…' : 'Connect'}
-            onPress={async () => {
-              console.log(TAG, 'connect (with status checks)');
-              await connectAndSync();
+              console.log(TAG, 'prepareAndConnect');
+              await Connection.prepareAndConnect(env, Number(brandId), channelId);
             }}
           />
           <View style={styles.spacer} />
           <Button title="Disconnect" onPress={() => Connection.disconnect()} />
           <View style={styles.spacer} />
-          <Button
-            title="Check Connection"
-            onPress={() => {
-              console.log(TAG, 'manual connection check');
-              refresh();
-            }}
-          />
           <Text style={styles.meta}>Mode: {mode}</Text>
           <Text style={styles.meta}>State: {chatState}</Text>
           <Text style={styles.meta}>Connected: {String(connected)}</Text>
-          <Text style={styles.meta}>Checking: {String(checking)}</Text>
           <Text style={styles.meta}>
             chatUpdated: {chatUpdated ? `${chatUpdated.state}/${chatUpdated.mode}` : '—'}
           </Text>
@@ -134,6 +123,7 @@ export default function ChatScreen() {
           <Text style={styles.header}>Threads</Text>
           <Button
             title="List Threads"
+            disabled={!connected}
             onPress={() => {
               const ids = Threads.get().map((t) => t.id);
               console.log(TAG, 'threads', ids);
@@ -143,6 +133,7 @@ export default function ChatScreen() {
           <View style={styles.spacer} />
           <Button
             title="Create Thread"
+            disabled={!connected}
             onPress={async () => {
               const details = await Threads.create();
               console.log(TAG, 'created thread id', details.id);

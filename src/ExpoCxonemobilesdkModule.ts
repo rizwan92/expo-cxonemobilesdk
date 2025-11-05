@@ -4,14 +4,15 @@ import type { ChatThreadDetails, OutboundMessage } from './types';
 import { ExpoCxonemobilesdkModuleEvents } from './ExpoCxonemobilesdk.types';
 
 declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkModuleEvents> {
-  prepare(env: string, brandId: number, channelId: string): Promise<void>;
-  prepareWithURLs(
+  // Combined connection entry (Android & iOS)
+  prepareAndConnect(env: string, brandId: number, channelId: string): Promise<void>;
+  // Optional URL-based combined variant (iOS)
+  prepareAndConnectWithURLs?(
     chatURL: string,
     socketURL: string,
     brandId: number,
     channelId: string,
   ): Promise<void>;
-  connect(): Promise<void>;
   disconnect(): void;
   getChatMode(): 'singlethread' | 'multithread' | 'liveChat' | 'unknown';
   getChatState():

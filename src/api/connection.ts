@@ -3,26 +3,25 @@ import type { ChannelConfiguration } from '../types';
 
 const TAG = '[CXone/Connection]';
 
-export async function prepare(env: string, brandId: number, channelId: string) {
-  console.log(TAG, 'prepare', { env, brandId, channelId });
-  await Native.prepare(env, brandId, channelId);
+// Unified entrypoint: preflight (best-effort) + prepare + connect
+export async function prepareAndConnect(env: string, brandId: number, channelId: string) {
+  console.log(TAG, 'prepareAndConnect', { env, brandId, channelId });
+  await (Native as any).prepareAndConnect(env, brandId, channelId);
 }
 
-// Note: keep only prepare + connect for minimal, cross-platform surface
-
-export async function prepareWithURLs(
+// Optional URL-based combined variant (when native exposes it)
+export async function prepareAndConnectWithURLs(
   chatURL: string,
   socketURL: string,
   brandId: number,
   channelId: string,
 ) {
-  console.log(TAG, 'prepareWithURLs', { chatURL, socketURL, brandId, channelId });
-  await (Native as any).prepareWithURLs(chatURL, socketURL, brandId, channelId);
-}
-
-export async function connect() {
-  console.log(TAG, 'connect');
-  await Native.connect();
+  console.log(TAG, 'prepareAndConnectWithURLs', { chatURL, socketURL, brandId, channelId });
+  const fn = (Native as any).prepareAndConnectWithURLs;
+  if (typeof fn !== 'function') {
+    throw new Error('prepareAndConnectWithURLs is not supported on this platform');
+  }
+  await fn(chatURL, socketURL, brandId, channelId);
 }
 
 export function disconnect() {

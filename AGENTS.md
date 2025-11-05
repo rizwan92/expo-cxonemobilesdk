@@ -1,17 +1,25 @@
 # Agent Guide for expo-cxonemobilesdk
 
-This repository exposes a thin Expo module around the native CXoneChat iOS SDK.
+This repository exposes a thin Expo module around the native CXoneChat SDKs for iOS and Android.
 Use this guide when adding or modifying functionality so changes stay consistent
-across Swift, TypeScript, podspecs, and the example app.
+across Swift/Kotlin, TypeScript, podspecs/Gradle, and the example app.
 
 ## Layout Overview
 
 - Native module (iOS)
   - `ios/ExpoCxonemobilesdkModule.swift`
-    - Exposes JS-callable methods: `prepare`, `connect`, `disconnect`.
+    - Exposes JS-callable methods: `prepareAndConnect`, `prepareAndConnectWithURLs`, `disconnect`.
     - Uses `CXoneChat.shared.connection` APIs.
     - Logs with `NSLog("[ExpoCxonemobilesdk] …")` for traceability.
-    - No events and no native views are currently enabled.
+    - Emits events: `chatUpdated`, `threadsUpdated`, `threadUpdated`, `agentTyping`,
+      `unexpectedDisconnect`, `customEventMessage`, `contactCustomFieldsSet`,
+      `customerCustomFieldsSet`, `connectionError`, `error`, `tokenRefreshFailed`,
+      `proactivePopupAction`.
+- Native module (Android)
+  - `android/src/main/java/expo/modules/cxonemobilesdk/*`
+    - Definitions split by feature under `definitions/` (connection, threads, custom fields, analytics).
+    - Exposes `prepareAndConnect` (and URL variant), `disconnect`, utilities, and thread operations.
+    - Bridges SDK state and events to JS, mirroring iOS.
 - iOS packaging
   - `ios/ExpoCxonemobilesdk.podspec`
     - Declares the native module and an optional Swift Package dependency on `nice-cxone-mobile-sdk-ios`.
@@ -36,14 +44,14 @@ across Swift, TypeScript, podspecs, and the example app.
 - TypeScript bindings
   - `src/ExpoCxonemobilesdkModule.ts`
     - JSI binding via `requireNativeModule("ExpoCxonemobilesdk")`.
-    - Declares the TS signatures for the native functions.
+    - Declares the TS signatures for the native functions (combined `prepareAndConnect`).
   - `src/ExpoCxonemobilesdk.types.ts`
-    - Module event/type definitions (currently empty events).
+    - Module event/type definitions (listener-first surface).
   - `src/index.ts`
     - Re-exports the TS module and types.
 - Example App
   - `example/App.tsx`
-    - Demonstrates calling `prepare`, `connect`, `disconnect` with console logs.
+    - Demonstrates calling `prepareAndConnect`, `disconnect` with console logs and event-driven UI.
 
 ## Add a New Native Function (Checklist)
 
@@ -84,6 +92,17 @@ TypeScript
 - Keep `src/ExpoCxonemobilesdkModule.ts` as the typed native binding only.
 - Add `src/api/` wrappers per feature (e.g., `connection.ts`, `threads.ts`, `messages.ts`) that call the native module and implement logging, argument shaping, and error handling.
 - Re-export your public API from `src/index.ts`.
+
+## Listener-First Surface (Unified)
+
+- Prefer events for long-running native flows and state transitions. The module emits:
+  - `chatUpdated({ state, mode })` on every state change
+  - `connectionError({ phase, message })` on preflight/prepare/connect/runtime errors
+  - Threads- and analytics-related events (see typings)
+- JS should generally await the single combined call and then react to events:
+  - `await Connection.prepareAndConnect(env, brandId, channelId)`
+  - Update UI from `chatUpdated` and surface failures from `connectionError`
+- Where iOS and Android APIs diverge, keep JS permissive and rely on events to provide parity.
 
 ## Return Shape and Typing Strategy (SDK JSON First)
 
@@ -138,14 +157,14 @@ README
 
 ## Platform Support
 
-- This package targets native (iOS). No web module is shipped. Do not re-introduce
+- iOS and Android native. No web module is shipped. Do not re-introduce
   `src/ExpoCxonemobilesdkModule.web.ts` unless explicitly needed.
 
 ## Do / Don’t
 
-- Do: Keep API surface focused on chat functionality: `prepare`, `connect`, `disconnect`.
-- Do: Keep types aligned between Swift and TypeScript.
-- Do: Update the example app to reflect any new API.
+- Do: Keep API surface focused on chat functionality with the combined `prepareAndConnect` plus `disconnect`.
+- Do: Keep types aligned between Swift/Kotlin and TypeScript.
+- Do: Update the example app to reflect any new API and rely on events for state.
 - Don’t: Re-add previous sample pieces (e.g., `PI`, `setValueAsync`, native view) unless
   there is a product requirement.
 
@@ -156,8 +175,8 @@ platform’s native state machine. Prefer method parity first; use listener‑ba
 to bridge unavoidable timing/state differences.
 
 - Baseline native methods (both platforms)
-  - Keep the minimal, shared surface: `prepare(env, brandId, channelId)`, `connect()`,
-    and “getter” style sync functions like `getChatState()`, `getChatMode()`.
+  - Keep the minimal, shared surface: combined `prepareAndConnect(env, brandId, channelId)`
+    and sync getters like `getChatState()`, `getChatMode()`, plus `disconnect()`.
   - Maintain similar signatures and semantics on iOS and Android whenever possible.
 
 - Events as source of truth (used when there are dissimilarities)
@@ -174,13 +193,8 @@ to bridge unavoidable timing/state differences.
     prefer an event‑driven wrapper on the JS layer that waits for the relevant events
     instead of polling or duplicating native logic.
 
-- Optional JS wrappers (non‑blocking)
-  - `ensurePrepared(env, brandId, channelId, timeoutMs?)` — wraps `prepare`, resolves when
-    `chatUpdated` indicates `prepared` | `ready` | `offline`, rejects on `connectionError`/timeout.
-  - `ensureConnected(timeoutMs?)` — calls `connect` if needed and resolves when `chatUpdated`
-    reports `connected` | `ready`.
-  - Keep these helpers in `src/api/connection.ts`; they should not hide native differences,
-    only smooth sequencing for app code.
+// Optional JS wrappers have been removed to simplify the public surface; prefer
+// listening to `chatUpdated`/`connectionError` from app code instead of polling helpers.
 
 - Don’ts
   - Don’t reintroduce background polling to detect state. Use events.
@@ -188,8 +202,7 @@ to bridge unavoidable timing/state differences.
 
 - Example app
   - Drive header state from `chatUpdated` and show failures from `connectionError`.
-  - Call `prepare` → `connect` explicitly in flows that need sequencing; use wrappers where
-    convenient; no long‑running polling hooks.
+  - Use the single `prepareAndConnect` entry for initialisation or recovery; no long‑running polling hooks.
 
 ### API Categorization (Where To Use Listeners vs Async/Await)
 
@@ -207,8 +220,7 @@ to bridge unavoidable timing/state differences.
 - Async/await (single, scoped operations)
   - Use when the action has a clear completion and similar semantics on both platforms:
   - Connection/Config
-    - `prepare(env, brandId, channelId)`
-    - `connect()`
+    - `prepareAndConnect(env, brandId, channelId)`
     - `getChannelConfiguration(env, brandId, channelId)`
     - `getChannelConfigurationByURL(chatURL, brandId, channelId)`
     - `executeTrigger(triggerId)`
@@ -235,10 +247,7 @@ to bridge unavoidable timing/state differences.
   - `customerCustomFieldsGet()`, `threadCustomFieldsGet(threadId)`
   - `signOut()`
 
-- Optional TS helpers (await on events, not on polling)
-  - `ensurePrepared(env, brandId, channelId, timeoutMs?)`
-  - `ensureConnected(timeoutMs?)`
-  - Wrappers subscribe once to `chatUpdated`/`connectionError`, resolve on success states or reject on error/timeout.
+// Optional TS helpers (await-on-events) intentionally omitted from the shipped API to keep the surface minimal.
 
 - Principle to remember
   - Prefer method parity for both platforms first.

@@ -39,22 +39,60 @@ public class ExpoCxonemobilesdkModule: Module {
             ConnectionBridge.disconnect()
         }
 
-        AsyncFunction("prepare") { (env: String, brandId: Int, channelId: String) async throws in
+        AsyncFunction("prepareAndConnect") { (env: String, brandId: Int, channelId: String) async throws in
             self.registerDelegateIfNeeded()
-            try await ConnectionBridge.prepare(env: env, brandId: brandId, channelId: channelId)
+            do {
+                _ = try await ConnectionBridge.getChannelConfiguration(env: env, brandId: brandId, channelId: channelId)
+            } catch {
+                self.sendEvent("connectionError", ["phase": "preflight", "message": String(describing: error)])
+                self.sendEvent("error", ["message": String(describing: error)])
+                throw error
+            }
+            do {
+                try await ConnectionBridge.prepare(env: env, brandId: brandId, channelId: channelId)
+            } catch {
+                self.sendEvent("connectionError", ["phase": "prepare", "message": String(describing: error)])
+                self.sendEvent("error", ["message": String(describing: error)])
+                throw error
+            }
+            do {
+                try await ConnectionBridge.connect()
+            } catch {
+                self.sendEvent("connectionError", ["phase": "connect", "message": String(describing: error)])
+                self.sendEvent("error", ["message": String(describing: error)])
+                throw error
+            }
         }
 
-        AsyncFunction("prepareWithURLs") {
+        // Optional combined URL variant
+        AsyncFunction("prepareAndConnectWithURLs") {
             (chatURL: String, socketURL: String, brandId: Int, channelId: String) async throws in
             self.registerDelegateIfNeeded()
-            try await ConnectionBridge.prepare(
-                chatURL: chatURL, socketURL: socketURL, brandId: brandId, channelId: channelId)
+            do {
+                _ = try await ConnectionBridge.getChannelConfiguration(chatURL: chatURL, brandId: brandId, channelId: channelId)
+            } catch {
+                self.sendEvent("connectionError", ["phase": "preflight", "message": String(describing: error)])
+                self.sendEvent("error", ["message": String(describing: error)])
+                throw error
+            }
+            do {
+                try await ConnectionBridge.prepare(
+                    chatURL: chatURL, socketURL: socketURL, brandId: brandId, channelId: channelId)
+            } catch {
+                self.sendEvent("connectionError", ["phase": "prepare", "message": String(describing: error)])
+                self.sendEvent("error", ["message": String(describing: error)])
+                throw error
+            }
+            do {
+                try await ConnectionBridge.connect()
+            } catch {
+                self.sendEvent("connectionError", ["phase": "connect", "message": String(describing: error)])
+                self.sendEvent("error", ["message": String(describing: error)])
+                throw error
+            }
         }
 
-        AsyncFunction("connect") { () async throws in
-            self.registerDelegateIfNeeded()
-            try await ConnectionBridge.connect()
-        }
+        // (prepare/connect were removed in favor of combined API)
 
         // MARK: Connection utilities
         Function("getChatMode") { () -> String in

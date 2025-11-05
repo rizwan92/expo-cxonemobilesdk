@@ -18,7 +18,7 @@ npm install expo-cxonemobilesdk
 Expo (managed/bare):
 
 - iOS: `npx pod-install` (or `npx expo run:ios` which runs pods)
-- Android: add the NICE GitHub Packages Maven repo and credentials so Gradle can resolve `com.nice.cxone:chat-sdk-core`. In your app's `android/build.gradle` under `allprojects.repositories` add:
+- Android: add the NICE GitHub Packages Maven repo and credentials so Gradle can resolve `com.nice.cxone:chat-sdk-core` (if not vendoring AARs). In your app's `android/build.gradle` under `allprojects.repositories` add:
 
 ```
 maven {
@@ -119,7 +119,7 @@ EXPO_PUBLIC_CHAT_BRAND_ID=1086
 EXPO_PUBLIC_CHAT_CHANNEL_ID=chat_xxx
 ```
 
-These are consumed in `example/app/chat-app/config.ts` and passed to `Connection.prepare`.
+These are consumed in `example/app/chat-app/config.ts` and passed to `Connection.prepareAndConnect`.
 
 # Contributing
 
@@ -159,16 +159,14 @@ yarn format:swift:check
 
 ## Usage (Modular API)
 
-Import the modular wrappers that mirror common CXoneChat SDK features:
+Minimal unified connection (iOS + Android):
 
 ```
-import { Connection, Customer, Analytics, Threads, CustomFields, useConnectionStatus } from 'expo-cxonemobilesdk';
+import { Connection, Customer, Analytics, Threads, CustomFields } from 'expo-cxonemobilesdk';
 
-// Connection
-await Connection.prepare('NA1', 123, 'demo');
-await Connection.connect();
+// Prepare and connect in a single call
+await Connection.prepareAndConnect('NA1', 123, 'demo');
 const mode = Connection.getChatMode(); // 'singlethread' | 'multithread' | 'liveChat' | 'unknown'
-const { connected, chatState, checking, refresh, connectAndSync } = useConnectionStatus({ attempts: 5, intervalMs: 800 });
 
 // Threads (multithread)
 const ids = Threads.get().map(t => t.id);
@@ -178,7 +176,7 @@ await Threads.markRead(details.id);
 
 // Rich content
 await Threads.sendAttachmentURL(
-  newId,
+  details.id,
   'https://example.com/file.pdf',
   'application/pdf',
   'file.pdf',
@@ -208,7 +206,7 @@ await Connection.executeTrigger('00000000-0000-0000-0000-000000000001');
 import ExpoCxonemobilesdk from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
 const chatUpdated = useEvent(ExpoCxonemobilesdk, 'chatUpdated');
-const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
+const connectionError = useEvent(ExpoCxonemobilesdk, 'connectionError');
 ```
 
 See `example/App.tsx` for a runnable demo.
@@ -216,11 +214,12 @@ See `example/App.tsx` for a runnable demo.
 ## API (JS)
 
 - Connection
-  - `prepare(env: string, brandId: number, channelId: string): Promise<void>`
-  - `prepareWithURLs(chatURL: string, socketURL: string, brandId: number, channelId: string): Promise<void>`
-  - `connect(): Promise<void>`
+  - `prepareAndConnect(env: string, brandId: number, channelId: string): Promise<void>`
+  - `prepareAndConnectWithURLs?(chatURL: string, socketURL: string, brandId: number, channelId: string): Promise<void>`
   - `disconnect(): void`
   - `getChatMode(): 'singlethread' | 'multithread' | 'liveChat' | 'unknown'`
+  - `getChatState(): 'initial' | 'preparing' | 'prepared' | 'offline' | 'connecting' | 'connected' | 'ready' | 'closed'`
+  - `isConnected(): boolean`
   - `getChannelConfiguration(env: string, brandId: number, channelId: string): Promise<ChannelConfiguration>`
   - `getChannelConfigurationByURL(chatURL: string, brandId: number, channelId: string): Promise<ChannelConfiguration>`
   - `executeTrigger(triggerId: string): Promise<void>`
@@ -258,7 +257,7 @@ See `example/App.tsx` for a runnable demo.
   - `chatWindowOpen(): Promise<void>`
   - `conversion(type: string, value: number): Promise<void>`
 
-Events (subscribe with `useEvent(ExpoCxonemobilesdk, 'eventName')`) and Hook:
+Events (subscribe with `useEvent(ExpoCxonemobilesdk, 'eventName')`):
 
 - `chatUpdated({ state, mode })`
 - `threadsUpdated({ threadIds })`, `threadUpdated({ threadId })`
@@ -266,7 +265,7 @@ Events (subscribe with `useEvent(ExpoCxonemobilesdk, 'eventName')`) and Hook:
 - `customEventMessage({ base64 })`
 - `contactCustomFieldsSet()`, `customerCustomFieldsSet()`
 - `unexpectedDisconnect()`, `tokenRefreshFailed()`, `error({ message })`, `proactivePopupAction({ actionId, data })`
-- Hook: `useConnectionStatus({ attempts?, intervalMs? })` → `{ connected, chatState, checking, refresh, connectAndSync }`
+  - `connectionError({ phase, message })` (phase can be `preflight`, `prepare`, `connect`, or `runtime`)
 
 ## Notes
 
@@ -275,7 +274,8 @@ Events (subscribe with `useEvent(ExpoCxonemobilesdk, 'eventName')`) and Hook:
 
 ## Platform Support
 
-- iOS only (minimum iOS 15.1). No web or Android implementation.
+- iOS (minimum iOS 15.1)
+- Android (vendored AARs or GitHub Packages)
 
 ## Feature Coverage
 

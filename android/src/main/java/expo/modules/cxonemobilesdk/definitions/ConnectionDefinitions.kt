@@ -21,14 +21,17 @@ internal fun ModuleDefinitionBuilder.addConnectionDefinitions(owner: ExpoCxonemo
     CXoneManager.disconnect()
   }
 
-  AsyncFunction("prepare") Coroutine { env: String, brandId: Int, channelId: String ->
-    Log.i(tag, "Connection.prepare env=$env brandId=$brandId channelId=$channelId")
+  // Combined convenience: preflight (best-effort) + prepare + connect
+  AsyncFunction("prepareAndConnect") Coroutine { env: String, brandId: Int, channelId: String ->
+    Log.i(tag, "Connection.prepareAndConnect env=$env brandId=$brandId channelId=$channelId")
     val environment = runCatching { CXoneEnvironment.valueOf(env.uppercase(Locale.ROOT)).value }
       .getOrElse { throw IllegalArgumentException("Unsupported CXone environment '$env'") }
     val cfg = SocketFactoryConfiguration(environment, brandId.toLong(), channelId)
     val ctx = requireNotNull(owner.appContext.reactContext) { "No React context" }
     CXoneManager.initialize(ctx.applicationContext, cfg, owner)
+    runCatching { JSONBridge.fetchChannelConfiguration(ctx, environment, brandId.toLong(), channelId) }
     CXoneManager.prepareAwait()
+    CXoneManager.connectAwait()
   }
 
   AsyncFunction("prepareWithURLs") Coroutine { chatURL: String, socketURL: String, brandId: Int, channelId: String ->
@@ -38,11 +41,7 @@ internal fun ModuleDefinitionBuilder.addConnectionDefinitions(owner: ExpoCxonemo
     val ctx = requireNotNull(owner.appContext.reactContext) { "No React context" }
     CXoneManager.initialize(ctx.applicationContext, cfg, owner)
     CXoneManager.prepareAwait()
-  }
-
-  AsyncFunction("connect") {
-    Log.i(tag, "Connection.connect")
-    CXoneManager.connect()
+    CXoneManager.connectAwait()
   }
 
   Function("getChatMode") { CXoneManager.getChatModeString() }

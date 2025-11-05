@@ -22,7 +22,7 @@ export default function ChatAppHome() {
   const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
   const errorEvent = useEvent(ExpoCxonemobilesdk, 'error');
   const connectionError = useEvent(ExpoCxonemobilesdk, 'connectionError');
-  const [chatState, setChatState] = useState<string>(() => Connection.getChatState());
+  const [chatState, setChatState] = useState<string>('initial');
   const connected = chatState === 'connected' || chatState === 'ready';
 
   const [visitorId, setVisitorId] = useState<string | null>(null);
@@ -30,19 +30,18 @@ export default function ChatAppHome() {
   const [prepareDone, setPrepareDone] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
   const [chatMode, setChatMode] = useState<'singlethread' | 'multithread' | 'liveChat' | 'unknown'>(
-    () => Connection.getChatMode(),
+    'unknown',
   );
   const [starting, setStarting] = useState(false);
   const [selectedUser, setSelectedUser] = useState(USERS[0]);
   const [selectedAgent, setSelectedAgent] = useState(AGENTS[0]);
 
-  // Prepare + connect on open (explicit two-step, platform-unified)
+  // Prepare + connect on open (combined API)
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        await Connection.prepare(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
-        await Connection.connect();
+        await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
         if (cancelled) return;
         setPrepareDone(true);
       } catch (e) {
@@ -57,6 +56,10 @@ export default function ChatAppHome() {
 
   // Load visitor id and thread list
   const reload = useCallback(() => {
+    // Only query native once fully connected/ready
+    const st = Connection.getChatState();
+    const is = st === 'connected' || st === 'ready';
+    if (!is) return;
     setVisitorId(Customer.getVisitorId());
     setThreadList(Threads.get());
     setChatMode(Connection.getChatMode());
@@ -64,7 +67,9 @@ export default function ChatAppHome() {
 
   useEffect(() => {
     if (chatUpdated?.state) setChatState(chatUpdated.state);
-    reload();
+    // Only reload data after we’re connected
+    const is = (chatUpdated?.state ?? chatState) === 'connected' || (chatUpdated?.state ?? chatState) === 'ready';
+    if (is) reload();
   }, [prepareDone, chatUpdated?.state, threadsUpdated?.threadIds?.length]);
 
   // Surface native error events in UI status
@@ -85,10 +90,10 @@ export default function ChatAppHome() {
     setLastError(null);
     setStarting(true);
     try {
-      // Ensure connected before trying to load
+      // Ensure connected before trying to load (combined)
       const st = Connection.getChatState();
       if (!(st === 'connected' || st === 'ready')) {
-        await Connection.connect();
+        await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
       }
 
       // Ask native to load the default thread (nil)
@@ -152,8 +157,11 @@ export default function ChatAppHome() {
                   Customer.setName(u.firstName, u.lastName);
                   setVisitorId(Customer.getVisitorId());
 
-                  await Connection.prepare(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
-                  await Connection.connect();
+                  await Connection.prepareAndConnect(
+                    CHAT_ENV,
+                    CHAT_BRAND_ID,
+                    CHAT_CHANNEL_ID,
+                  );
                 } catch (e) {
                   setLastError(String((e as any)?.message ?? e));
                 }
@@ -220,7 +228,7 @@ export default function ChatAppHome() {
               // Ensure connected/ready before creating
               const st = Connection.getChatState();
               if (!(st === 'connected' || st === 'ready')) {
-                await Connection.connect();
+                await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
               }
               const details = await Threads.create({
                 requestedAgentId: selectedAgent.id,
