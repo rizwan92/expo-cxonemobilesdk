@@ -120,22 +120,6 @@ export default function ChatAppHome() {
     setLastError(null);
     setStarting(true);
     try {
-      // Ensure connected before trying to load
-      const st = Connection.getChatState();
-      if (!(st === 'connected' || st === 'ready')) {
-        if (st === 'initial' || st === 'prepared' || st === 'offline') {
-          await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
-        } else {
-          // Already preparing/connecting: wait briefly for connection
-          for (let i = 0; i < 10; i++) {
-            // eslint-disable-next-line no-await-in-loop
-            await new Promise((r) => setTimeout(r, 300));
-            const s = Connection.getChatState();
-            if (s === 'connected' || s === 'ready') break;
-          }
-        }
-      }
-
       // Ask native to load the default thread (nil)
       await Threads.load();
 
@@ -209,7 +193,11 @@ export default function ChatAppHome() {
       <View style={styles.card}>
         <Text style={styles.title}>Threads</Text>
         {!isMultithread && (
-          <Button title={starting ? 'Starting…' : 'Start Chat'} onPress={startSingleThread} />
+          <Button
+            title={starting ? 'Starting…' : 'Start Chat'}
+            onPress={startSingleThread}
+            disabled={!connected || starting}
+          />
         )}
         {!isMultithread && (
           <Text style={[styles.meta, { marginTop: 8 }]}>
@@ -225,20 +213,8 @@ export default function ChatAppHome() {
           disabled={!isMultithread}
           onPress={async () => {
             try {
-              // Ensure connected/ready before creating
-              const st = Connection.getChatState();
-              if (!(st === 'connected' || st === 'ready')) {
-                if (st === 'initial' || st === 'prepared' || st === 'offline') {
-                  await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
-                } else {
-                  for (let i = 0; i < 10; i++) {
-                    // eslint-disable-next-line no-await-in-loop
-                    await new Promise((r) => setTimeout(r, 300));
-                    const s = Connection.getChatState();
-                    if (s === 'connected' || s === 'ready') break;
-                  }
-                }
-              }
+              // Ensure connected with a single state-aware native call
+              await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
               const details = await Threads.create();
               setThreadList(Threads.get());
               router.push(`/chat-app/thread/${details.id}`);
