@@ -23,6 +23,7 @@ class ExpoCxonemobilesdkModule : Module() {
       "customEventMessage",
       "contactCustomFieldsSet",
       "customerCustomFieldsSet",
+      "authorizationChanged",
       "connectionError",
       "error",
       "tokenRefreshFailed",

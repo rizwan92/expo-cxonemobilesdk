@@ -13,7 +13,13 @@ internal fun ModuleDefinitionBuilder.addCustomerDefinitions(owner: ExpoCxonemobi
   }
   Function("clearCustomerIdentity") { CXoneManager.clearCustomerIdentity() }
   Function("setDeviceToken") { token: String -> CXoneManager.setDeviceToken(token) }
-  Function("setAuthorizationCode") { code: String -> CXoneManager.setAuthorizationCode(code) }
-  Function("setCodeVerifier") { verifier: String -> CXoneManager.setCodeVerifier(verifier) }
+  Function("setAuthorizationCode") { code: String ->
+    CXoneManager.setAuthorizationCode(code)
+    owner.sendEvent("authorizationChanged", mapOf("status" to "pending", "code" to true))
+  }
+  Function("setCodeVerifier") { verifier: String ->
+    CXoneManager.setCodeVerifier(verifier)
+    owner.sendEvent("authorizationChanged", mapOf("status" to "pending", "verifier" to true))
+  }
   Function("getVisitorId") { CXoneManager.getVisitorId() }
 }

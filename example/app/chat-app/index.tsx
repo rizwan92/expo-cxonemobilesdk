@@ -8,7 +8,7 @@ import {
   FlatList,
   TouchableOpacity,
 } from 'react-native';
-import { Link, useRouter } from 'expo-router';
+import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import ExpoCxonemobilesdk, { Connection, Threads, Customer } from 'expo-cxonemobilesdk';
 import type { ChatThreadDetails } from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
@@ -17,10 +17,12 @@ import { CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID } from './config';
 
 export default function ChatAppHome() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ auth?: string }>();
   const chatUpdated = useEvent(ExpoCxonemobilesdk, 'chatUpdated');
   const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
   const errorEvent = useEvent(ExpoCxonemobilesdk, 'error');
   const connectionError = useEvent(ExpoCxonemobilesdk, 'connectionError');
+  const authorizationChanged = useEvent(ExpoCxonemobilesdk, 'authorizationChanged');
   const [chatState, setChatState] = useState<string>('initial');
   const connected = chatState === 'connected' || chatState === 'ready';
 
@@ -33,7 +35,7 @@ export default function ChatAppHome() {
   );
   const [starting, setStarting] = useState(false);
 
-  // Prepare + connect on open (combined API)
+  // Prepare + connect on open, identity set after connection
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -68,6 +70,21 @@ export default function ChatAppHome() {
     const is = (chatUpdated?.state ?? chatState) === 'connected' || (chatUpdated?.state ?? chatState) === 'ready';
     if (is) reload();
   }, [prepareDone, chatUpdated?.state, threadsUpdated?.threadIds?.length]);
+
+  // Set identity to auth token AFTER we are connected
+  useEffect(() => {
+    const token = typeof params.auth === 'string' ? params.auth : '';
+    if (!token) return;
+    const is = chatState === 'connected' || chatState === 'ready';
+    if (is) {
+      try {
+        Customer.setAuthorizationCode(token);
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.error('[ChatAppHome] setIdentity failed', e);
+      }
+    }
+  }, [chatState, params.auth]);
 
   // Surface native error events in UI status
   useEffect(() => {
@@ -137,11 +154,24 @@ export default function ChatAppHome() {
         />
       </View>
 
+      {/* Authentication handled on the home screen */}
+
       {/* Profiles and Preferred Agent sections removed per request */}
 
       <View style={styles.card}>
         <Text style={styles.title}>Visitor</Text>
         <Text style={styles.meta}>Visitor ID: {visitorId ?? '—'}</Text>
+        {typeof params.auth === 'string' && params.auth.length > 0 ? (
+          <Text style={styles.meta}>Customer ID: {params.auth.slice(-3)}</Text>
+        ) : null}
+        <Text style={styles.meta}>
+          Authorization:
+          {authorizationChanged
+            ? ` ${authorizationChanged.status}${authorizationChanged.code ? ' • code' : ''}${
+                authorizationChanged.verifier ? ' • verifier' : ''
+              }`
+            : ' —'}
+        </Text>
       </View>
 
       <View style={styles.card}>

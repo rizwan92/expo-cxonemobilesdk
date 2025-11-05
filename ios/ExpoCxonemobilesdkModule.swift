@@ -27,6 +27,7 @@ public class ExpoCxonemobilesdkModule: Module {
             "customEventMessage",
             "contactCustomFieldsSet",
             "customerCustomFieldsSet",
+            "authorizationChanged",
             "connectionError",
             "error",
             "tokenRefreshFailed",
@@ -145,10 +146,12 @@ public class ExpoCxonemobilesdkModule: Module {
 
         Function("setAuthorizationCode") { (code: String) in
             CustomerBridge.setAuthorizationCode(code)
+            self.sendEvent("authorizationChanged", ["status": "pending", "code": true])
         }
 
         Function("setCodeVerifier") { (verifier: String) in
             CustomerBridge.setCodeVerifier(verifier)
+            self.sendEvent("authorizationChanged", ["status": "pending", "verifier": true])
         }
 
         Function("getVisitorId") { () -> String? in

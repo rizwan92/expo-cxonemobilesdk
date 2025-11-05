@@ -7,6 +7,7 @@ export type ExpoCxonemobilesdkModuleEvents = {
   customEventMessage: (params: { base64: string }) => void;
   contactCustomFieldsSet: () => void;
   customerCustomFieldsSet: () => void;
+  authorizationChanged: (params: { status: 'pending' | 'configured'; code?: boolean; verifier?: boolean }) => void;
   connectionError: (params: { phase: 'preflight' | 'prepare' | 'connect' | 'runtime'; message: string }) => void;
   error: (params: { message: string }) => void;
   tokenRefreshFailed: () => void;
