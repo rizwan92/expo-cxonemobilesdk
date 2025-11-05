@@ -249,8 +249,35 @@ object CXoneManager : ChatInstanceProvider.Listener {
   }
 
   fun getVisitorId(): String? {
-    // Not exposed publicly by SDK; return null for now.
-    return null
+    // Try SDK analytics visitorId via reflection (not part of public API in 3.0.0)
+    try {
+      val chat = provider?.chat
+      if (chat != null) {
+        val analyticsMethod = chat.javaClass.methods.firstOrNull { it.name == "analytics" }
+        val analytics = analyticsMethod?.invoke(chat)
+        if (analytics != null) {
+          val getVisitorId = analytics.javaClass.methods.firstOrNull { it.name == "getVisitorId" || it.name == "visitorId" }
+          val value = getVisitorId?.invoke(analytics)
+          val id = when (value) {
+            is java.util.UUID -> value.toString()
+            else -> value?.toString()
+          }
+          if (!id.isNullOrBlank()) return id
+        }
+      }
+    } catch (_: Throwable) {
+      // ignore and fallback
+    }
+
+    // Fallback: persistent app-scoped UUID to mirror iOS analytics.visitorId semantics
+    val ctx = appContext ?: return null
+    val prefs = ctx.getSharedPreferences("expo_cxone_prefs", Context.MODE_PRIVATE)
+    var id = prefs.getString("visitor_id", null)
+    if (id.isNullOrBlank()) {
+      id = java.util.UUID.randomUUID().toString()
+      prefs.edit().putString("visitor_id", id).apply()
+    }
+    return id
   }
 
   fun getThreads(): List<ChatThread> = synchronized(threads) { threads.toList() }
