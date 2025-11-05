@@ -122,24 +122,18 @@ export default function ChatAppHome() {
     try {
       // Ask native to load the default thread (nil)
       await Threads.load();
-
-      // Poll for a thread to appear
-      for (let i = 0; i < 6; i++) {
-        // eslint-disable-next-line no-await-in-loop
-        await new Promise((r) => setTimeout(r, 500));
-        const list = Threads.get();
-        setThreadList(list);
-        if (list.length > 0) {
-          router.push(`/chat-app/thread/${list[0].id}`);
-          break;
-        }
-      }
     } catch (e) {
       setLastError(String((e as any)?.message ?? e));
-    } finally {
-      setStarting(false);
     }
   }, [router]);
+
+  // Navigate to the first thread when it appears (no direct Threads.get in handler)
+  useEffect(() => {
+    if (starting && threadList.length > 0) {
+      router.push(`/chat-app/thread/${threadList[0].id}`);
+      setStarting(false);
+    }
+  }, [starting, threadList.length]);
 
   return (
     <SafeAreaView style={styles.container}>
