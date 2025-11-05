@@ -8,17 +8,7 @@ export async function prepare(env: string, brandId: number, channelId: string) {
   await Native.prepare(env, brandId, channelId);
 }
 
-export async function prepareAndConnect(env: string, brandId: number, channelId: string) {
-  console.log(TAG, 'prepareAndConnect', { env, brandId, channelId });
-  // Call native combined path when available (Android-first)
-  if ((Native as any).prepareAndConnect) {
-    return await (Native as any).prepareAndConnect(env, brandId, channelId);
-  }
-  // Fallback (iOS): separate steps
-  await Native.prepare(env, brandId, channelId);
-  await Native.connect();
-  return getChatState();
-}
+// Note: keep only prepare + connect for minimal, cross-platform surface
 
 export async function prepareWithURLs(
   chatURL: string,

@@ -27,6 +27,7 @@ public class ExpoCxonemobilesdkModule: Module {
             "customEventMessage",
             "contactCustomFieldsSet",
             "customerCustomFieldsSet",
+            "connectionError",
             "error",
             "tokenRefreshFailed",
             "proactivePopupAction"
@@ -299,3 +300,4 @@ public class ExpoCxonemobilesdkModule: Module {
 
     }
 }
+        // Keep minimal surface: prepare + connect + events

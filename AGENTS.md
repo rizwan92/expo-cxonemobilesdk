@@ -148,3 +148,98 @@ README
 - Do: Update the example app to reflect any new API.
 - Don’t: Re-add previous sample pieces (e.g., `PI`, `setValueAsync`, native view) unless
   there is a product requirement.
+
+## Listener-First Design (Cross‑Platform Guidance)
+
+Goal: Provide a unified JS experience across iOS and Android, while respecting each
+platform’s native state machine. Prefer method parity first; use listener‑based patterns
+to bridge unavoidable timing/state differences.
+
+- Baseline native methods (both platforms)
+  - Keep the minimal, shared surface: `prepare(env, brandId, channelId)`, `connect()`,
+    and “getter” style sync functions like `getChatState()`, `getChatMode()`.
+  - Maintain similar signatures and semantics on iOS and Android whenever possible.
+
+- Events as source of truth (used when there are dissimilarities)
+  - Use events to unify timing/state across platforms:
+    - `chatUpdated` — announce state/mode transitions.
+    - `connectionError` — announce phase‑specific failures (`preflight` | `prepare` | `connect` | `runtime`).
+    - `error` — generic/native error.
+  - Derive UI connection status from events instead of polling.
+
+- When to choose listener‑based approach
+  - Default: If an operation behaves the same on iOS and Android, expose it as a direct
+    function and return/throw as appropriate.
+  - If behavior/timing differs (e.g., Android provider state machine vs iOS async calls),
+    prefer an event‑driven wrapper on the JS layer that waits for the relevant events
+    instead of polling or duplicating native logic.
+
+- Optional JS wrappers (non‑blocking)
+  - `ensurePrepared(env, brandId, channelId, timeoutMs?)` — wraps `prepare`, resolves when
+    `chatUpdated` indicates `prepared` | `ready` | `offline`, rejects on `connectionError`/timeout.
+  - `ensureConnected(timeoutMs?)` — calls `connect` if needed and resolves when `chatUpdated`
+    reports `connected` | `ready`.
+  - Keep these helpers in `src/api/connection.ts`; they should not hide native differences,
+    only smooth sequencing for app code.
+
+- Don’ts
+  - Don’t reintroduce background polling to detect state. Use events.
+  - Don’t add platform‑specific branching to app code when an event‑driven wrapper suffices.
+
+- Example app
+  - Drive header state from `chatUpdated` and show failures from `connectionError`.
+  - Call `prepare` → `connect` explicitly in flows that need sequencing; use wrappers where
+    convenient; no long‑running polling hooks.
+
+### API Categorization (Where To Use Listeners vs Async/Await)
+
+- Listener‑based (events as source of truth)
+  - Use for ongoing or externally driven state changes; avoids polling and races.
+  - Events we emit/consume:
+    - `chatUpdated` — state/mode transitions
+    - `connectionError` — phase‑specific failures (`preflight` | `prepare` | `connect` | `runtime`)
+    - `error` — generic/native error
+    - `threadsUpdated`, `threadUpdated`
+    - `agentTyping`, `unexpectedDisconnect`
+    - `customEventMessage`, `contactCustomFieldsSet`, `customerCustomFieldsSet`
+    - `tokenRefreshFailed`, `proactivePopupAction`
+
+- Async/await (single, scoped operations)
+  - Use when the action has a clear completion and similar semantics on both platforms:
+  - Connection/Config
+    - `prepare(env, brandId, channelId)`
+    - `connect()`
+    - `getChannelConfiguration(env, brandId, channelId)`
+    - `getChannelConfigurationByURL(chatURL, brandId, channelId)`
+    - `executeTrigger(triggerId)`
+  - Analytics
+    - `analyticsViewPage(title, url)`
+    - `analyticsViewPageEnded(title, url)`
+    - `analyticsChatWindowOpen()`
+    - `analyticsConversion(type, value)`
+  - Threads
+    - `threadsCreate(customFields?)`, `threadsLoad(threadId?)`, `threadsSend(threadId, message)`
+    - `threadsLoadMore(threadId)`, `threadsMarkRead(threadId)`
+    - `threadsUpdateName(threadId, name)`, `threadsArchive(threadId)`, `threadsEndContact(threadId)`
+    - `threadsReportTypingStart(threadId, didStart)`
+    - `threadsSendAttachmentURL(...)`, `threadsSendAttachmentBase64(...)`
+  - Custom Fields
+    - `customerCustomFieldsSet(fields)`, `threadCustomFieldsSet(threadId, fields)`
+
+- Sync getters/setters (no await)
+  - `disconnect()`, `getChatMode()`, `getChatState()`, `isConnected()`
+  - `setCustomerName()`, `setCustomerIdentity()`, `clearCustomerIdentity()`
+  - `setDeviceToken()`, `setAuthorizationCode()`, `setCodeVerifier()`
+  - `getVisitorId()`
+  - `threadsGet()`, `threadsGetDetails(threadId)`
+  - `customerCustomFieldsGet()`, `threadCustomFieldsGet(threadId)`
+  - `signOut()`
+
+- Optional TS helpers (await on events, not on polling)
+  - `ensurePrepared(env, brandId, channelId, timeoutMs?)`
+  - `ensureConnected(timeoutMs?)`
+  - Wrappers subscribe once to `chatUpdated`/`connectionError`, resolve on success states or reject on error/timeout.
+
+- Principle to remember
+  - Prefer method parity for both platforms first.
+  - Only when platform timing/state differs, introduce listener‑based wrappers at the JS layer.

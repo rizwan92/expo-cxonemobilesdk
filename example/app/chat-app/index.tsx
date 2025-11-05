@@ -13,7 +13,7 @@ import ExpoCxonemobilesdk, { Connection, Threads, Customer } from 'expo-cxonemob
 import { USERS, AGENTS } from './profiles';
 import type { ChatThreadDetails } from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
-import { useConnectionStatus } from 'expo-cxonemobilesdk';
+// Unified connection (no polling hook)
 import { CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID } from './config';
 
 export default function ChatAppHome() {
@@ -22,10 +22,8 @@ export default function ChatAppHome() {
   const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
   const errorEvent = useEvent(ExpoCxonemobilesdk, 'error');
   const connectionError = useEvent(ExpoCxonemobilesdk, 'connectionError');
-  const { connected, chatState, checking, connectAndSync, refresh } = useConnectionStatus({
-    attempts: 5,
-    intervalMs: 800,
-  });
+  const [chatState, setChatState] = useState<string>(() => Connection.getChatState());
+  const connected = chatState === 'connected' || chatState === 'ready';
 
   const [visitorId, setVisitorId] = useState<string | null>(null);
   const [threadList, setThreadList] = useState<ChatThreadDetails[]>([]);
@@ -38,12 +36,13 @@ export default function ChatAppHome() {
   const [selectedUser, setSelectedUser] = useState(USERS[0]);
   const [selectedAgent, setSelectedAgent] = useState(AGENTS[0]);
 
-  // Prepare + connect on open, depending on current state
+  // Prepare + connect on open (explicit two-step, platform-unified)
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
-        await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
+        await Connection.prepare(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
+        await Connection.connect();
         if (cancelled) return;
         setPrepareDone(true);
       } catch (e) {
@@ -64,6 +63,7 @@ export default function ChatAppHome() {
   }, []);
 
   useEffect(() => {
+    if (chatUpdated?.state) setChatState(chatUpdated.state);
     reload();
   }, [prepareDone, chatUpdated?.state, threadsUpdated?.threadIds?.length]);
 
@@ -88,7 +88,7 @@ export default function ChatAppHome() {
       // Ensure connected before trying to load
       const st = Connection.getChatState();
       if (!(st === 'connected' || st === 'ready')) {
-        await connectAndSync();
+        await Connection.connect();
       }
 
       // Ask native to load the default thread (nil)
@@ -110,7 +110,7 @@ export default function ChatAppHome() {
     } finally {
       setStarting(false);
     }
-  }, [connectAndSync, router]);
+  }, [router]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -129,7 +129,7 @@ export default function ChatAppHome() {
           title="Refresh"
           onPress={() => {
             setLastError(null);
-            refresh();
+            setChatState(Connection.getChatState());
             reload();
           }}
         />
@@ -152,7 +152,8 @@ export default function ChatAppHome() {
                   Customer.setName(u.firstName, u.lastName);
                   setVisitorId(Customer.getVisitorId());
 
-                  await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
+                  await Connection.prepare(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
+                  await Connection.connect();
                 } catch (e) {
                   setLastError(String((e as any)?.message ?? e));
                 }
@@ -219,7 +220,7 @@ export default function ChatAppHome() {
               // Ensure connected/ready before creating
               const st = Connection.getChatState();
               if (!(st === 'connected' || st === 'ready')) {
-                await connectAndSync();
+                await Connection.connect();
               }
               const details = await Threads.create({
                 requestedAgentId: selectedAgent.id,
