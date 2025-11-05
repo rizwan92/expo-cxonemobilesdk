@@ -10,7 +10,6 @@ import {
 } from 'react-native';
 import { Link, useRouter } from 'expo-router';
 import ExpoCxonemobilesdk, { Connection, Threads, Customer } from 'expo-cxonemobilesdk';
-import { USERS, AGENTS } from './profiles';
 import type { ChatThreadDetails } from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
 // Unified connection (no polling hook)
@@ -33,8 +32,6 @@ export default function ChatAppHome() {
     'unknown',
   );
   const [starting, setStarting] = useState(false);
-  const [selectedUser, setSelectedUser] = useState(USERS[0]);
-  const [selectedAgent, setSelectedAgent] = useState(AGENTS[0]);
 
   // Prepare + connect on open (combined API)
   useEffect(() => {
@@ -140,66 +137,7 @@ export default function ChatAppHome() {
         />
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.title}>Profiles</Text>
-        <Text style={styles.meta}>Select Customer</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 8 }}>
-          {USERS.map((u) => (
-            <TouchableOpacity
-              key={u.id}
-              onPress={async () => {
-                try {
-                  // Fully reset session and set identity BEFORE prepare/connect
-                  await Connection.signOut();
-
-                  setSelectedUser(u);
-                  Customer.setIdentity(u.id, u.firstName, u.lastName);
-                  Customer.setName(u.firstName, u.lastName);
-                  setVisitorId(Customer.getVisitorId());
-
-                  await Connection.prepareAndConnect(
-                    CHAT_ENV,
-                    CHAT_BRAND_ID,
-                    CHAT_CHANNEL_ID,
-                  );
-                } catch (e) {
-                  setLastError(String((e as any)?.message ?? e));
-                }
-              }}
-              style={{
-                paddingHorizontal: 10,
-                paddingVertical: 6,
-                borderRadius: 8,
-                backgroundColor: selectedUser.id === u.id ? '#111827' : '#e5e7eb',
-              }}
-            >
-              <Text style={{ color: selectedUser.id === u.id ? '#fff' : '#111827' }}>
-                {u.firstName} {u.lastName}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-
-        <Text style={[styles.meta, { marginTop: 8 }]}>Preferred Agent (optional)</Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginVertical: 8 }}>
-          {AGENTS.map((a) => (
-            <TouchableOpacity
-              key={a.id}
-              onPress={() => setSelectedAgent(a)}
-              style={{
-                paddingHorizontal: 10,
-                paddingVertical: 6,
-                borderRadius: 8,
-                backgroundColor: selectedAgent.id === a.id ? '#111827' : '#e5e7eb',
-              }}
-            >
-              <Text style={{ color: selectedAgent.id === a.id ? '#fff' : '#111827' }}>
-                {a.fullName}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      </View>
+      {/* Profiles and Preferred Agent sections removed per request */}
 
       <View style={styles.card}>
         <Text style={styles.title}>Visitor</Text>
@@ -230,11 +168,7 @@ export default function ChatAppHome() {
               if (!(st === 'connected' || st === 'ready')) {
                 await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
               }
-              const details = await Threads.create({
-                requestedAgentId: selectedAgent.id,
-                requestedAgentName: selectedAgent.fullName,
-                startedByUserId: selectedUser.id,
-              });
+              const details = await Threads.create();
               setThreadList(Threads.get());
               router.push(`/chat-app/thread/${details.id}`);
             } catch (e) {
