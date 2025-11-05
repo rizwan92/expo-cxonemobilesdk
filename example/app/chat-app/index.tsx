@@ -27,6 +27,7 @@ export default function ChatAppHome() {
   const connected = chatState === 'connected' || chatState === 'ready';
 
   const [visitorId, setVisitorId] = useState<string | null>(null);
+  const [identity, setIdentity] = useState<{ id: string; firstName?: string | null; lastName?: string | null } | null>(null);
   const [threadList, setThreadList] = useState<ChatThreadDetails[]>([]);
   const [prepareDone, setPrepareDone] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
@@ -60,6 +61,7 @@ export default function ChatAppHome() {
     const is = st === 'connected' || st === 'ready';
     if (!is) return;
     setVisitorId(Customer.getVisitorId());
+    setIdentity(Customer.getIdentity());
     setThreadList(Threads.get());
     setChatMode(Connection.getChatMode());
   }, []);
@@ -161,9 +163,15 @@ export default function ChatAppHome() {
       <View style={styles.card}>
         <Text style={styles.title}>Visitor</Text>
         <Text style={styles.meta}>Visitor ID: {visitorId ?? '—'}</Text>
-        {typeof params.auth === 'string' && params.auth.length > 0 ? (
-          <Text style={styles.meta}>Customer ID: {params.auth.slice(-3)}</Text>
-        ) : null}
+        {identity ? (
+          <Text style={styles.meta}>
+            Identity: {identity.id}
+            {identity.firstName ? `, ${identity.firstName}` : ''}
+            {identity.lastName ? ` ${identity.lastName}` : ''}
+          </Text>
+        ) : (
+          <Text style={styles.meta}>Identity: —</Text>
+        )}
         <Text style={styles.meta}>
           Authorization:
           {authorizationChanged

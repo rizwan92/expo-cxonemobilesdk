@@ -43,6 +43,7 @@ declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkMo
   setAuthorizationCode(code: string): void;
   setCodeVerifier(verifier: string): void;
   getVisitorId(): string | null;
+  getCustomerIdentity(): { id: string; firstName?: string | null; lastName?: string | null } | null;
   analyticsViewPage(title: string, url: string): Promise<void>;
   analyticsViewPageEnded(title: string, url: string): Promise<void>;
   analyticsChatWindowOpen(): Promise<void>;

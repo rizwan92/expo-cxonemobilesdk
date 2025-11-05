@@ -37,3 +37,9 @@ export function getVisitorId() {
   console.log(TAG, 'getVisitorId ->', id);
   return id;
 }
+
+export function getIdentity() {
+  const ident = (Native as any).getCustomerIdentity?.();
+  console.log(TAG, 'getIdentity ->', ident);
+  return ident as { id: string; firstName?: string | null; lastName?: string | null } | null;
+}

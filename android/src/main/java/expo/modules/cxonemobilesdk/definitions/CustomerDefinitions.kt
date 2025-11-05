@@ -22,4 +22,5 @@ internal fun ModuleDefinitionBuilder.addCustomerDefinitions(owner: ExpoCxonemobi
     owner.sendEvent("authorizationChanged", mapOf("status" to "pending", "verifier" to true))
   }
   Function("getVisitorId") { CXoneManager.getVisitorId() }
+  Function("getCustomerIdentity") { CXoneManager.getCustomerIdentity() }
 }

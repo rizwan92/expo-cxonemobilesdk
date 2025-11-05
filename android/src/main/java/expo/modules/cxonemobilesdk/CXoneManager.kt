@@ -35,6 +35,10 @@ object CXoneManager : ChatInstanceProvider.Listener {
   // Pending auth codes
   private var pendingAuthCode: String? = null
   private var pendingVerifier: String? = null
+  // Cache last identity we set (SDK has no public getter)
+  private var lastCustomerId: String? = null
+  private var lastFirstName: String? = null
+  private var lastLastName: String? = null
 
   // Last captured error for quick diagnostics
   @Volatile
@@ -219,11 +223,17 @@ object CXoneManager : ChatInstanceProvider.Listener {
       customerId = id
       userName = if (firstName != null || lastName != null) UserName(lastName ?: "", firstName ?: "") else userName
     }
+    lastCustomerId = id
+    lastFirstName = firstName
+    lastLastName = lastName
   }
 
   fun clearCustomerIdentity() {
     val ctx = appContext ?: return
     provider?.configure(ctx) { customerId = null }
+    lastCustomerId = null
+    lastFirstName = null
+    lastLastName = null
   }
 
   fun setDeviceToken(token: String) {
@@ -281,6 +291,16 @@ object CXoneManager : ChatInstanceProvider.Listener {
   }
 
   fun getThreads(): List<ChatThread> = synchronized(threads) { threads.toList() }
+
+  fun getCustomerIdentity(): Map<String, Any>? {
+    val id = lastCustomerId ?: return null
+    val map = mutableMapOf<String, Any>("id" to id)
+    lastFirstName?.let { map["firstName"] = it }
+    lastLastName?.let { map["lastName"] = it }
+    return map
+  }
+
+  // No direct getter for identity available
 
   fun createThread(customFields: Map<String, String>): ChatThread {
     val chat = provider?.chat ?: throw IllegalStateException("Chat not ready")

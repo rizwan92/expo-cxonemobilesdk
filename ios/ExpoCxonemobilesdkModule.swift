@@ -157,6 +157,9 @@ public class ExpoCxonemobilesdkModule: Module {
         Function("getVisitorId") { () -> String? in
             CustomerBridge.visitorId()
         }
+        Function("getCustomerIdentity") { () -> [String: Any]? in
+            CustomerBridge.identityDict()
+        }
 
         // MARK: Analytics
         AsyncFunction("analyticsViewPage") { (title: String, url: String) async throws in
