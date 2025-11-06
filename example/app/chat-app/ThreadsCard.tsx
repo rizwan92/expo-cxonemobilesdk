@@ -29,9 +29,10 @@ export default function ThreadsCard({ connected, chatMode }: Props) {
   }, [connected, refreshThreads]);
 
   useEffect(() => {
-    if (threadsUpdated && connected) refreshThreads();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [threadsUpdated?.threadIds?.length, connected]);
+    if (connected && threadsUpdated?.threads) {
+      setThreadList(threadsUpdated.threads);
+    }
+  }, [threadsUpdated?.threads, connected]);
 
   const startSingleThread = useCallback(async () => {
     setStarting(true);
@@ -66,8 +67,8 @@ export default function ThreadsCard({ connected, chatMode }: Props) {
         disabled={!isMultithread || !connected}
         onPress={async () => {
           try {
-            await Threads.create();
-            refreshThreads();
+            const details = await Threads.create();
+            setThreadList((prev) => [details, ...prev.filter((t) => t.id !== details.id)]);
           } catch (e) {
             // eslint-disable-next-line no-console
             console.error('[ThreadsCard] create failed', e);
@@ -82,7 +83,7 @@ export default function ThreadsCard({ connected, chatMode }: Props) {
           <TouchableOpacity style={styles.thread} onPress={() => router.push(`/chat-app/thread/${item.id}`)}>
             <Text style={styles.threadText}>{item.name && item.name.length ? item.name : item.id}</Text>
             <Text style={styles.meta}>
-              State: {String(item.state)} • Messages: {item.messagesCount ?? item.messages?.length ?? 0} • More: {String(item.hasMoreMessagesToLoad)}
+              State: {String(item.state)} • Messages: {item.messagesCount} • More: {String(item.hasMoreMessagesToLoad)}
             </Text>
             {item.assignedAgent?.fullName ? (
               <Text style={styles.meta}>Agent: {item.assignedAgent.fullName}</Text>
@@ -109,4 +110,3 @@ const styles = StyleSheet.create({
   thread: { padding: 12, backgroundColor: '#f3f4f6', borderRadius: 10 },
   threadText: { color: '#111827' },
 });
-

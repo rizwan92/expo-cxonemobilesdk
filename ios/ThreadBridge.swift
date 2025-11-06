@@ -1,7 +1,7 @@
 import CXoneChatSDK
 import Foundation
 
-// Bridge mirroring CXoneChatSDK.ChatThreadProvider
+/// Bridge mirroring `ChatThreadProvider`, exposing the handful of operations we use in JS.
 enum ThreadBridge {
     static func provider(for threadId: UUID) throws -> any ChatThreadProvider {
         try ThreadListBridge.provider(for: threadId)
@@ -12,7 +12,7 @@ enum ThreadBridge {
         try await p.send(message)
     }
 
-    static func loadMore(threadId: UUID) async throws {
+    static func loadMore(threadId: UUID) async throws -> ChatThread {
         let p = try provider(for: threadId)
         let before = p.chatThread.messages.count
         try await p.loadMoreMessages()
@@ -25,6 +25,7 @@ enum ThreadBridge {
             try? await Task.sleep(nanoseconds: 100_000_000)  // 100ms
             tries += 1
         }
+        return p.chatThread
     }
 
     static func markRead(threadId: UUID) async throws {

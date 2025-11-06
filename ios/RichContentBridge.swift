@@ -1,6 +1,7 @@
 import CXoneChatSDK
 import Foundation
 
+/// Convenience wrappers for sending rich content attachments.
 enum RichContentBridge {
     static func sendAttachmentURL(threadId: UUID, url: URL, mimeType: String, fileName: String, friendlyName: String)
         async throws

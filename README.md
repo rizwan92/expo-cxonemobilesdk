@@ -280,11 +280,13 @@ Guidance
 Events (subscribe with `useEvent(ExpoCxonemobilesdk, 'eventName')`):
 
 - `chatUpdated({ state, mode })`
-- `threadsUpdated({ threadIds })`, `threadUpdated({ threadId })`
+- `threadsUpdated({ threads })`, `threadUpdated({ thread })`
+- `agentTyping({ isTyping, threadId, agent })`
+- `proactivePopupAction({ actionId, action })`
 - `agentTyping({ isTyping, threadId })`
 - `customEventMessage({ base64 })`
 - `contactCustomFieldsSet()`, `customerCustomFieldsSet()`
-- `unexpectedDisconnect()`, `tokenRefreshFailed()`, `error({ message })`, `proactivePopupAction({ actionId, data })`
+- `unexpectedDisconnect()`, `tokenRefreshFailed()`, `error({ message })`, `proactivePopupAction({ actionId, action })`
   - `connectionError({ phase, message })` (phase can be `preflight`, `prepare`, `connect`, or `runtime`)
 
 ## Notes

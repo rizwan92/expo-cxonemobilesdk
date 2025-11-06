@@ -23,8 +23,8 @@ export type ChatMessage = {
   authorEndUserIdentity?: CustomerIdentity | null;
   senderInfo?: SenderInfo | null;
   userStatistics?: UserStatistics | null;
-  attachments?: Attachment[];
-  contentType?: MessageContent;
+  attachments: Attachment[];
+  contentType: MessageContent;
 };
 
 export type CustomerIdentity = { id: string; firstName?: string | null; lastName?: string | null };
@@ -38,9 +38,7 @@ export type SenderInfo = {
 
 export type UserStatistics = {
   seenAt?: string;
-  seenAtMs?: number;
   readAt?: string;
-  readAtMs?: number;
 };
 
 export type Attachment = {
@@ -98,9 +96,9 @@ export type ChatThreadDetails = {
   positionInQueue?: number | null;
   assignedAgent?: ChatAuthor | null;
   lastAssignedAgent?: ChatAuthor | null;
-  messagesCount?: number;
+  messagesCount: number;
   scrollToken?: string;
-  messages?: ChatMessage[];
+  messages: ChatMessage[];
 };
 
 // Channel configuration (broad but with common fields)
@@ -125,4 +123,19 @@ export interface ChannelConfiguration {
   features: ChannelFeatures;
   isOnline: boolean;
   isLiveChat: boolean;
+}
+
+export interface ProactiveActionContent {
+  bodyText?: string | null;
+  headlineText?: string | null;
+  headlineSecondaryText?: string | null;
+  image?: string | null;
+}
+
+export interface ProactiveAction {
+  actionId: string;
+  eventId?: string | null;
+  name?: string | null;
+  type?: string | null;
+  content?: ProactiveActionContent | null;
 }

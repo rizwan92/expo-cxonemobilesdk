@@ -110,18 +110,15 @@ Goal: For values that originate in CXoneChatSDK (threads, messages, agents, stat
 
 Swift (iOS)
 
-- Prefer returning `[String: Any]` (JSON-serializable dictionaries) for SDK objects rather than mapping to narrow primitives.
-- When feasible, include “full details” variants that return everything the SDK exposes (e.g., `threadsGetFullDetails`).
-- Log the full JSON (pretty printed) when adding new endpoints so we can shape TS helpers later: `NSLog("[ExpoCxonemobilesdk] …\n<json>")`.
-- Keep small helpers to extract common fields, but do not strip properties from the returned JSON.
-- Exception: `Connection.getChannelConfiguration` uses a dedicated DTO that mirrors the minimal runtime struct (booleans + `fileRestrictions` + `features`). Do not reintroduce the reflective encoder for this path; keep it aligned with the SDK contract.
+- Use dedicated `Encodable` DTOs (under `ios/DTO/`) for every payload we bridge to JS. Map directly from CXoneChatSDK models into those DTOs and serialize with `asDictionary()` helpers. Avoid reflective or generic JSON encoders.
+- Include nested DTOs for complex types (threads, messages, attachments, analytics payloads, etc.) so the shapes stay explicit and forward-compatible.
+- When reusing SDK enums or structs, convert them to descriptive primitives (e.g., strings for enums, ISO strings for dates) inside the DTOs.
+- Continue to document any platform differences and extend DTOs in lockstep with the native SDKs rather than introducing ad-hoc dictionaries.
 
 TypeScript
 
-- In `src/ExpoCxonemobilesdkModule.ts` declare return types as broad JSON shapes, e.g. `Record<string, any>` or dedicated interfaces with index signatures.
-- In `src/api/*` you MAY add optional “curated” helpers that parse the JSON into stricter types for app code, but the native binding should tolerate unknown fields.
-- Favor forward-compatible types over strict enums for SDK-driven fields (use `string` plus docs, or union with fallback `string`).
-- Exception: `ChannelConfiguration` is now a strict interface that matches the DTO (shared by iOS and Android). Update both platforms together when the native SDK adds fields.
+- Mirror the DTO surfaces in TypeScript so the JS API exposes typed objects rather than loose dictionaries. When the native SDK adds fields, update both the DTO and the TS interface together.
+- Keep the public types permissive where the SDK is stringly-typed (e.g., union of known string literals plus fallback `string`).
 
 Examples
 
@@ -221,8 +218,8 @@ to bridge unavoidable timing/state differences.
     - `chatUpdated` — state/mode transitions
     - `connectionError` — phase‑specific failures (`preflight` | `prepare` | `connect` | `runtime`)
     - `error` — generic/native error
-    - `threadsUpdated`, `threadUpdated`
-    - `agentTyping`, `unexpectedDisconnect`
+    - `threadsUpdated`, `threadUpdated` (emit serialized `ChatThreadDTO` payloads for direct UI use)
+    - `agentTyping` (includes `AgentDTO`), `proactivePopupAction` (emits `ProactiveActionDTO`), `unexpectedDisconnect`
     - `customEventMessage`, `contactCustomFieldsSet`, `customerCustomFieldsSet`
     - `tokenRefreshFailed`, `proactivePopupAction`
 

@@ -13,6 +13,7 @@ export default function ChatScreen() {
   const TAG = '[ChatScreen]';
   const chatUpdated = useEvent(ExpoCxonemobilesdk, 'chatUpdated');
   const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
+  const proactivePopup = useEvent(ExpoCxonemobilesdk, 'proactivePopupAction');
   const [chatState, setChatState] = useState<string>('initial');
   const connected = chatState === 'connected' || chatState === 'ready';
   const [env, setEnv] = useState('EU1');
@@ -104,7 +105,10 @@ export default function ChatScreen() {
             chatUpdated: {chatUpdated ? `${chatUpdated.state}/${chatUpdated.mode}` : '—'}
           </Text>
           <Text style={styles.meta}>
-            threadsUpdated: {threadsUpdated ? `${threadsUpdated.threadIds?.length ?? 0}` : '—'}
+            threadsUpdated: {threadsUpdated ? `${threadsUpdated.threads.length}` : '—'}
+          </Text>
+          <Text style={styles.meta}>
+            proactivePopup: {proactivePopup ? `${proactivePopup.action.name ?? proactivePopup.action.actionId}` : '—'}
           </Text>
           <Row label="Trigger ID">
             <TextInput style={styles.input} value={triggerId} onChangeText={setTriggerId} />
@@ -155,7 +159,8 @@ export default function ChatScreen() {
           <Button
             title="Load More"
             onPress={async () => {
-              if (activeThread) await Threads.loadMore(activeThread);
+              if (!activeThread) return;
+              await Threads.loadMore(activeThread);
             }}
           />
           <View style={styles.spacer} />

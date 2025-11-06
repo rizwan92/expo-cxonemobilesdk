@@ -2,6 +2,8 @@ import CXoneChatSDK
 import Foundation
 import ExpoModulesCore
 
+/// Entry point exposed to Expo/JS. Keeps the module definition readable by delegating
+/// to the various bridge helpers and DTO mappers.
 public class ExpoCxonemobilesdkModule: Module {
     private var delegateRegistered = false
     private func registerDelegateIfNeeded() {
@@ -11,12 +13,14 @@ public class ExpoCxonemobilesdkModule: Module {
         }
     }
 
+    /// Convenience helper for waiting on SDK state transitions.
     private func emitChatSnapshot() {
-        let stateStr = (JSONBridge.encode(ConnectionBridge.state()) as? String) ?? "unknown"
-        let modeStr = (JSONBridge.encode(ConnectionBridge.mode()) as? String) ?? "unknown"
+        let stateStr = String(describing: ConnectionBridge.state())
+        let modeStr = String(describing: ConnectionBridge.mode())
         self.sendEvent("chatUpdated", ["state": stateStr, "mode": modeStr])
     }
 
+    /// Blocks until `predicate` returns true or the timeout elapses.
     private func waitUntil(_ timeoutMs: Int = 7000, _ predicate: @escaping () -> Bool) async throws {
         let start = Date()
         while !predicate() {
@@ -181,10 +185,10 @@ public class ExpoCxonemobilesdkModule: Module {
 
         // MARK: Connection utilities
         Function("getChatMode") { () -> String in
-            (JSONBridge.encode(ConnectionBridge.mode()) as? String) ?? "unknown"
+            String(describing: ConnectionBridge.mode())
         }
         Function("getChatState") { () -> String in
-            (JSONBridge.encode(ConnectionBridge.state()) as? String) ?? "unknown"
+            String(describing: ConnectionBridge.state())
         }
         Function("isConnected") { () -> Bool in
             ConnectionBridge.isConnected()
@@ -269,12 +273,14 @@ public class ExpoCxonemobilesdkModule: Module {
         // Matches ChatThreadListProvider.get()
         Function("threadsGet") { () -> [[String: Any]] in
             let threads = ThreadListBridge.get()
-            return threads.compactMap { JSONBridge.encode($0) as? [String: Any] }
+            return threads.map { thread in
+                (try? ChatThreadDTO(thread).asDictionary()) ?? [:]
+            }
         }
         AsyncFunction("threadsCreate") {
             (customFields: [String: String]?) async throws -> [String: Any] in
             let thread = try await ThreadListBridge.create(customFields: customFields)
-            return (JSONBridge.encode(thread) as? [String: Any]) ?? [:]
+            return try ChatThreadDTO(thread).asDictionary()
         }
         AsyncFunction("threadsLoad") { (threadId: String?) async throws in
             let uuid = threadId.flatMap(UUID.init(uuidString:))
@@ -287,7 +293,7 @@ public class ExpoCxonemobilesdkModule: Module {
                     userInfo: [NSLocalizedDescriptionKey: "Invalid UUID: \(threadId)"])
             }
             let t = try ThreadListBridge.getDetails(threadId: uuid)
-            return (JSONBridge.encode(t) as? [String: Any]) ?? [:]
+            return try ChatThreadDTO(t).asDictionary()
         }
         AsyncFunction("threadsSend") { (threadId: String, message: [String: Any]) async throws in
             guard let uuid = UUID(uuidString: threadId) else {
@@ -323,13 +329,14 @@ public class ExpoCxonemobilesdkModule: Module {
             let outbound = OutboundMessage(text: text, attachments: descs, postback: postback)
             try await ThreadBridge.send(threadId: uuid, message: outbound)
         }
-        AsyncFunction("threadsLoadMore") { (threadId: String) async throws in
+        AsyncFunction("threadsLoadMore") { (threadId: String) async throws -> [String: Any] in
             guard let uuid = UUID(uuidString: threadId) else {
                 throw NSError(
                     domain: "ExpoCxonemobilesdk", code: -3,
                     userInfo: [NSLocalizedDescriptionKey: "Invalid UUID: \(threadId)"])
             }
-            try await ThreadBridge.loadMore(threadId: uuid)
+            let thread = try await ThreadBridge.loadMore(threadId: uuid)
+            return try ChatThreadDTO(thread).asDictionary()
         }
         AsyncFunction("threadsMarkRead") { (threadId: String) async throws in
             guard let uuid = UUID(uuidString: threadId) else {

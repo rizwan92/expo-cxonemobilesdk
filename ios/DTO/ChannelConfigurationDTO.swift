@@ -1,6 +1,9 @@
 import CXoneChatSDK
 import Foundation
 
+/// Lightweight, serialisable representation of `ChannelConfiguration` exposing only the
+/// properties surfaced by both iOS and Android SDKs. Keeping the DTO small avoids leaking
+/// internal SDK details into the JS layer while still preserving future extensibility.
 struct ChannelConfigurationDTO: Encodable {
   let hasMultipleThreadsPerEndUser: Bool
   let isProactiveChatEnabled: Bool
@@ -21,6 +24,7 @@ struct ChannelConfigurationDTO: Encodable {
   }
 }
 
+/// Describes attachment limits that the channel exposes.
 struct FileRestrictionsDTO: Encodable {
   let allowedFileSize: AllowedFileSizeDTO?
   let isAttachmentsEnabled: Bool
@@ -32,6 +36,8 @@ struct FileRestrictionsDTO: Encodable {
     self.allowedFileTypes = FileRestrictionsDTO.buildAllowedFileTypes(restrictions.allowedFileTypes)
   }
 
+  /// The SDK exposes `allowedFileTypes` as an opaque collection, so we reflectively map the
+  /// values into DTOs while filtering out unknown entries.
   private static func buildAllowedFileTypes(_ value: Any?) -> [AllowedFileTypeDTO] {
     guard let value else { return [] }
     if let swiftArray = value as? [Any] {
@@ -43,6 +49,7 @@ struct FileRestrictionsDTO: Encodable {
   }
 }
 
+/// Attachment size boundaries are represented either as a plain integer or as min/max values.
 enum AllowedFileSizeDTO: Encodable {
   case number(Int)
   case range(minKb: Int?, maxKb: Int?)
@@ -98,6 +105,7 @@ enum AllowedFileSizeDTO: Encodable {
   }
 }
 
+/// MIME types users are allowed to upload through the chat widget.
 struct AllowedFileTypeDTO: Encodable {
   let mimeType: String
   let details: String?
@@ -120,14 +128,5 @@ struct AllowedFileTypeDTO: Encodable {
     guard let mime else { return nil }
     self.mimeType = mime
     self.details = details
-  }
-}
-
-extension Encodable {
-  func asDictionary() throws -> [String: Any] {
-    let encoder = JSONEncoder()
-    let data = try encoder.encode(self)
-    let object = try JSONSerialization.jsonObject(with: data, options: [])
-    return object as? [String: Any] ?? [:]
   }
 }

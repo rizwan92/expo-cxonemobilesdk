@@ -1,6 +1,7 @@
 import CXoneChatSDK
 import Foundation
 
+/// Helper entry points for customer and thread custom fields.
 enum CustomFieldsBridge {
     // Customer-level custom fields
     static func getCustomer() -> [String: String] {

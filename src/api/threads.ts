@@ -4,12 +4,8 @@ import type { ChatThreadDetails, OutboundMessage } from '../types';
 const TAG = '[CXone/Threads]';
 
 export function get(): ChatThreadDetails[] {
-  const details = (Native as any).threadsGet() as ChatThreadDetails[];
-  console.log(
-    TAG,
-    'get ->',
-    details?.map?.((d) => d.id),
-  );
+  const details = Native.threadsGet() as ChatThreadDetails[];
+  console.log(TAG, 'get ->', details.map((d) => d.id));
   return details;
 }
 
@@ -18,9 +14,9 @@ export function get(): ChatThreadDetails[] {
 export async function create(customFields?: Record<string, string>): Promise<ChatThreadDetails> {
   console.log(TAG, 'create', customFields ?? '(no custom fields)');
   try {
-    const details = await Native.threadsCreate(customFields);
-    console.log(TAG, 'create -> id', (details as any)?.id);
-    return details as ChatThreadDetails;
+    const details = (await Native.threadsCreate(customFields)) as ChatThreadDetails;
+    console.log(TAG, 'create -> id', details.id);
+    return details;
   } catch (e) {
     console.error(TAG, 'create failed', e);
     throw e;
@@ -41,9 +37,10 @@ export async function send(threadId: string, message: OutboundMessage) {
   await (Native as any).threadsSend(threadId, message);
 }
 
-export async function loadMore(threadId: string): Promise<void> {
+export async function loadMore(threadId: string): Promise<ChatThreadDetails> {
   console.log(TAG, 'loadMore', threadId);
-  await (Native as any).threadsLoadMore(threadId);
+  const result = await Native.threadsLoadMore(threadId);
+  return result as ChatThreadDetails;
 }
 
 export async function markRead(threadId: string) {
@@ -109,17 +106,17 @@ export async function sendAttachmentBase64(
 // Limited variants removed at native layer
 
 export function getDetails(threadId: string): ChatThreadDetails {
-  const d = Native.threadsGetDetails(threadId) as any;
+  const d = Native.threadsGetDetails(threadId) as ChatThreadDetails;
   console.log(
     TAG,
     'getDetails -> id',
-    d?.id,
+    d.id,
     'messages',
-    Array.isArray(d?.messages) ? d.messages.length : 0,
+    d.messages.length,
     'hasMore',
-    d?.hasMoreMessagesToLoad,
+    d.hasMoreMessagesToLoad,
   );
-  return d as any;
+  return d;
 }
 // messagesPage removed; use loadMore() + getDetails(threadId)
 // Limited variants removed at native layer

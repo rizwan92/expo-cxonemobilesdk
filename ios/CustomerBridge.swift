@@ -1,18 +1,17 @@
 import CXoneChatSDK
 import Foundation
 
+/// Customer-related helpers used by the module definition.
 enum CustomerBridge {
-    // Return current identity from SDK if available
+    /// Returns the current identity, normalised for JS consumption.
     static func identityDict() -> [String: Any]? {
         // CXoneChat.shared.customer conforms to a provider exposing get()
         if let ident = CXoneChat.shared.customer.get() {
-            var d: [String: Any] = ["id": ident.id]
-            if let f = ident.firstName { d["firstName"] = f }
-            if let l = ident.lastName { d["lastName"] = l }
-            return d
+            return try? CustomerIdentityDTO(ident).asDictionary()
         }
         return nil
     }
+
     static func setName(firstName: String, lastName: String) {
         NSLog("[ExpoCxonemobilesdk] Customer.setName first=\(firstName) last=\(lastName)")
         CXoneChat.shared.customer.setName(firstName: firstName, lastName: lastName)
@@ -50,5 +49,5 @@ enum CustomerBridge {
         CXoneChat.shared.analytics.visitorId?.uuidString
     }
 
-    // No direct getter provided by SDK; identity is not cached here.
+    // No direct getter provided by SDK; identity is not cached locally.
 }

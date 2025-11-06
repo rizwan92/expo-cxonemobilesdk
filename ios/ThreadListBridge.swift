@@ -1,7 +1,7 @@
 import CXoneChatSDK
 import Foundation
 
-// Bridge mirroring CXoneChatSDK.ChatThreadListProvider
+/// Bridge mirroring `ChatThreadListProvider` operations used by the JS surface.
 enum ThreadListBridge {
     static func get() -> [ChatThread] {
         CXoneChat.shared.threads.get()

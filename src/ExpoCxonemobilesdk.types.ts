@@ -1,8 +1,10 @@
+import type { ChatThreadDetails, ChatAuthor, ProactiveAction } from './types';
+
 export type ExpoCxonemobilesdkModuleEvents = {
   chatUpdated: (params: { state: string; mode: string }) => void;
-  threadUpdated: (params: { threadId?: string }) => void;
-  threadsUpdated: (params: { threadIds: string[] }) => void;
-  agentTyping: (params: { isTyping: boolean; threadId: string }) => void;
+  threadUpdated: (params: { thread: ChatThreadDetails }) => void;
+  threadsUpdated: (params: { threads: ChatThreadDetails[] }) => void;
+  agentTyping: (params: { isTyping: boolean; threadId: string; agent: ChatAuthor }) => void;
   unexpectedDisconnect: () => void;
   customEventMessage: (params: { base64: string }) => void;
   contactCustomFieldsSet: () => void;
@@ -11,5 +13,5 @@ export type ExpoCxonemobilesdkModuleEvents = {
   connectionError: (params: { phase: 'preflight' | 'prepare' | 'connect' | 'runtime'; message: string }) => void;
   error: (params: { message: string }) => void;
   tokenRefreshFailed: () => void;
-  proactivePopupAction: (params: { actionId: string; data: Record<string, any> }) => void;
+  proactivePopupAction: (params: { actionId: string; action: ProactiveAction }) => void;
 };

@@ -30,8 +30,7 @@ export default function ThreadScreen() {
   const reload = useCallback(async () => {
     if (!threadId) return;
     const details = await Threads.getDetails(threadId);
-    const list = details.messages ?? [];
-    setMessages(list);
+    setMessages(details.messages);
     setHasMore(!!details.hasMoreMessagesToLoad);
   }, [threadId]);
 
@@ -47,11 +46,21 @@ export default function ThreadScreen() {
 
   // Refresh when native notifies updates for this thread
   useEffect(() => {
-    if (threadUpdated?.threadId === threadId) reload();
-  }, [threadUpdated?.threadId]);
+    if (!threadId) return;
+    if (threadUpdated?.thread?.id === threadId) {
+      const details = threadUpdated.thread;
+      setMessages(details.messages);
+      setHasMore(!!details.hasMoreMessagesToLoad);
+    }
+  }, [threadUpdated?.thread?.id, threadId, threadUpdated?.thread]);
   useEffect(() => {
-    reload();
-  }, [threadsUpdated?.threadIds?.length]);
+    if (!threadId) return;
+    const match = threadsUpdated?.threads?.find((t) => t.id === threadId);
+    if (match) {
+      setMessages(match.messages);
+      setHasMore(!!match.hasMoreMessagesToLoad);
+    }
+  }, [threadsUpdated?.threads, threadId]);
 
   const onSend = useCallback(
     async (text: string) => {
@@ -74,9 +83,8 @@ export default function ThreadScreen() {
     if (!hasMore) return;
     setLoadingEarlier(true);
     try {
-      await Threads.loadMore(threadId);
-      const details = await Threads.getDetails(threadId);
-      setMessages(details.messages ?? []);
+      const details = await Threads.loadMore(threadId);
+      setMessages(details.messages);
       setHasMore(!!details.hasMoreMessagesToLoad);
     } finally {
       setLoadingEarlier(false);

@@ -2,24 +2,25 @@ import CXoneChatSDK
 import ExpoModulesCore
 import Foundation
 
+/// CXoneChat delegate that forwards SDK events to JS as serialised DTO payloads.
 extension ExpoCxonemobilesdkModule: CXoneChatDelegate {
     // Track chat state changes
     public func onChatUpdated(_ state: ChatState, mode: ChatMode) {
         let payload: [String: Any] = [
-            "state": JSONBridge.encode(state) as Any,
-            "mode": JSONBridge.encode(mode) as Any,
+            "state": String(describing: state),
+            "mode": String(describing: mode),
         ]
         self.sendEvent("chatUpdated", payload)
     }
 
     public func onThreadUpdated(_ chatThread: ChatThread) {
-        let id = DelegateBridgeUtils.threadIdString(chatThread)
-        self.sendEvent("threadUpdated", ["threadId": id as Any])
+        let threadDict = (try? ChatThreadDTO(chatThread).asDictionary()) ?? [:]
+        self.sendEvent("threadUpdated", ["thread": threadDict])
     }
 
     public func onThreadsUpdated(_ chatThreads: [ChatThread]) {
-        let ids = chatThreads.compactMap { DelegateBridgeUtils.threadIdString($0) }
-        self.sendEvent("threadsUpdated", ["threadIds": ids])
+        let threads = chatThreads.compactMap { try? ChatThreadDTO($0).asDictionary() }
+        self.sendEvent("threadsUpdated", ["threads": threads])
     }
 
     public func onCustomEventMessage(_ messageData: Data) {
@@ -31,6 +32,7 @@ extension ExpoCxonemobilesdkModule: CXoneChatDelegate {
         let payload: [String: Any] = [
             "isTyping": isTyping,
             "threadId": threadId.uuidString,
+            "agent": (try? AgentDTO(agent).asDictionary()) ?? [:],
         ]
         self.sendEvent("agentTyping", payload)
     }
@@ -56,23 +58,13 @@ extension ExpoCxonemobilesdkModule: CXoneChatDelegate {
     }
 
     public func onProactivePopupAction(data: [String: Any], actionId: UUID) {
+        let dto = ProactiveActionDTO(actionId: actionId, payload: data)
+        let dict = (try? dto.asDictionary()) ?? [:]
         self.sendEvent(
             "proactivePopupAction",
             [
                 "actionId": actionId.uuidString,
-                "data": data,
+                "action": dict,
             ])
-    }
-}
-
-enum DelegateBridgeUtils {
-    static func threadIdString(_ thread: ChatThread) -> String? {
-        let mirror = Mirror(reflecting: thread)
-        for child in mirror.children {
-            if child.label == "id", let id = child.value as? UUID {
-                return id.uuidString
-            }
-        }
-        return nil
     }
 }

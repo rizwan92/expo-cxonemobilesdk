@@ -1,6 +1,7 @@
 import CXoneChatSDK
 import Foundation
 
+/// Thin wrapper around `CXoneChat.shared.analytics` with consistent logging.
 enum AnalyticsBridge {
     static func viewPage(title: String, url: String) async throws {
         NSLog("[ExpoCxonemobilesdk] Analytics.viewPage title=\(title) url=\(url)")

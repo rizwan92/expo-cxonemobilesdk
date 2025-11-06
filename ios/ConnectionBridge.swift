@@ -1,6 +1,7 @@
 import CXoneChatSDK
 import Foundation
 
+/// Convenience wrapper around `CXoneChat.shared.connection` used by the module definition.
 enum ConnectionBridge {
     static func prepare(env: String, brandId: Int, channelId: String) async throws {
         NSLog("[ExpoCxonemobilesdk] Connection.prepare env=\(env) brandId=\(brandId) channelId=\(channelId)")
@@ -72,9 +73,8 @@ enum ConnectionBridge {
             )
             throw err
         }
-        let cfg = try await CXoneChat.shared.connection.getChannelConfiguration(
+        return try await CXoneChat.shared.connection.getChannelConfiguration(
             environment: environment, brandId: brandId, channelId: channelId)
-        return cfg
     }
 
     static func getChannelConfiguration(chatURL: String, brandId: Int, channelId: String) async throws
@@ -83,8 +83,7 @@ enum ConnectionBridge {
         NSLog(
             "[ExpoCxonemobilesdk] Connection.getChannelConfiguration chatURL=\(chatURL) brandId=\(brandId) channelId=\(channelId)"
         )
-        let cfg = try await CXoneChat.shared.connection.getChannelConfiguration(
+        return try await CXoneChat.shared.connection.getChannelConfiguration(
             chatURL: chatURL, brandId: brandId, channelId: channelId)
-        return cfg
     }
 }
