@@ -271,6 +271,10 @@ public class ExpoCxonemobilesdkModule: Module {
 
         // MARK: Threads (multithread support)
         // Matches ChatThreadListProvider.get()
+        Function("threadsGetPreChatSurvey") { () -> [String: Any]? in
+            guard let survey = ThreadListBridge.preChatSurvey() else { return nil }
+            return try? PreChatSurveyDTO(survey).asDictionary()
+        }
         Function("threadsGet") { () -> [[String: Any]] in
             let threads = ThreadListBridge.get()
             return threads.map { thread in

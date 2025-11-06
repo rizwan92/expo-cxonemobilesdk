@@ -1,5 +1,10 @@
 import { NativeModule, requireNativeModule } from 'expo';
-import type { ChatThreadDetails, OutboundMessage, ChannelConfiguration } from './types';
+import type {
+  ChatThreadDetails,
+  OutboundMessage,
+  ChannelConfiguration,
+  PreChatSurvey,
+} from './types';
 
 import { ExpoCxonemobilesdkModuleEvents } from './ExpoCxonemobilesdk.types';
 
@@ -48,12 +53,13 @@ declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkMo
   analyticsViewPageEnded(title: string, url: string): Promise<void>;
   analyticsChatWindowOpen(): Promise<void>;
   analyticsConversion(type: string, value: number): Promise<void>;
+  threadsGetPreChatSurvey(): PreChatSurvey | null;
   threadsGet(): ChatThreadDetails[];
   threadsCreate(customFields?: Record<string, string>): Promise<ChatThreadDetails>;
   threadsLoad(threadId?: string): Promise<void>;
   threadsGetDetails(threadId: string): ChatThreadDetails;
   threadsSend(threadId: string, message: OutboundMessage): Promise<void>;
-  threadsLoadMore(threadId: string): Promise<void>;
+  threadsLoadMore(threadId: string): Promise<ChatThreadDetails>;
   threadsMarkRead(threadId: string): Promise<void>;
   threadsUpdateName(threadId: string, name: string): Promise<void>;
   threadsArchive(threadId: string): Promise<void>;

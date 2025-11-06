@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { View, Text, Button, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useEvent } from 'expo';
 import ExpoCxonemobilesdk, { Threads, Connection } from 'expo-cxonemobilesdk';
@@ -7,18 +7,13 @@ import type { ChatThreadDetails } from 'expo-cxonemobilesdk';
 
 type Props = {
   connected: boolean;
-  chatMode: 'singlethread' | 'multithread' | 'liveChat' | 'unknown';
 };
 
-export default function ThreadsCard({ connected, chatMode }: Props) {
+export default function ThreadsCard({ connected }: Props) {
   const router = useRouter();
   const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
 
   const [threadList, setThreadList] = useState<ChatThreadDetails[]>([]);
-  const [starting, setStarting] = useState(false);
-
-  const isMultithread = chatMode === 'multithread';
-
   const refreshThreads = useCallback(() => {
     if (!connected) return;
     setThreadList(Threads.get());
@@ -34,47 +29,9 @@ export default function ThreadsCard({ connected, chatMode }: Props) {
     }
   }, [threadsUpdated?.threads, connected]);
 
-  const startSingleThread = useCallback(async () => {
-    setStarting(true);
-    try {
-      const details = await Threads.create();
-      router.push(`/chat-app/thread/${details.id}`);
-    } catch (e) {
-      // eslint-disable-next-line no-console
-      console.error('[ThreadsCard] Start Chat failed', e);
-    } finally {
-      setStarting(false);
-    }
-  }, [router]);
-
   return (
     <View style={styles.card}>
       <Text style={styles.title}>Threads</Text>
-      {!isMultithread && (
-        <Button
-          title={starting ? 'Starting…' : 'Start Chat'}
-          onPress={startSingleThread}
-          disabled={!connected || starting}
-        />
-      )}
-      {!isMultithread && (
-        <Text style={[styles.meta, { marginTop: 8 }]}>This channel is {chatMode}. Use Start Chat to open the single active thread.</Text>
-      )}
-
-      <View style={{ height: 8 }} />
-      <Button
-        title={isMultithread ? 'Create New Thread' : 'Create New Thread (unsupported in this mode)'}
-        disabled={!isMultithread || !connected}
-        onPress={async () => {
-          try {
-            const details = await Threads.create();
-            setThreadList((prev) => [details, ...prev.filter((t) => t.id !== details.id)]);
-          } catch (e) {
-            // eslint-disable-next-line no-console
-            console.error('[ThreadsCard] create failed', e);
-          }
-        }}
-      />
       <FlatList
         data={threadList}
         keyExtractor={(t) => t.id}

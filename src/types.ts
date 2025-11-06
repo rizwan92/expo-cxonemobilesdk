@@ -139,3 +139,41 @@ export interface ProactiveAction {
   type?: string | null;
   content?: ProactiveActionContent | null;
 }
+
+export interface PreChatSurvey {
+  name: string;
+  fields: PreChatField[];
+}
+
+export type PreChatField =
+  | PreChatTextField
+  | PreChatSelectField
+  | PreChatHierarchicalField;
+
+export interface PreChatFieldBase {
+  id: string;
+  label: string;
+  required: boolean;
+  value?: string | null;
+}
+
+export interface PreChatTextField extends PreChatFieldBase {
+  type: 'text' | 'email';
+  isEmail?: boolean | null;
+}
+
+export interface PreChatSelectField extends PreChatFieldBase {
+  type: 'select';
+  options: Array<{ id: string; label: string }>;
+}
+
+export interface PreChatNode {
+  value: string;
+  label: string;
+  children: PreChatNode[];
+}
+
+export interface PreChatHierarchicalField extends PreChatFieldBase {
+  type: 'hierarchical';
+  nodes: PreChatNode[];
+}
