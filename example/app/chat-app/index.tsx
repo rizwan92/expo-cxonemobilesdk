@@ -139,6 +139,8 @@ export default function ChatAppHome() {
     }
   }, [router]);
 
+  console.log(JSON.stringify(channelCfg, null, 2));
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>

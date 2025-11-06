@@ -103,5 +103,59 @@ export type ChatThreadDetails = {
   messages?: ChatMessage[];
 };
 
-// Broad JSON for channel configuration as returned by native SDK
-export type ChannelConfiguration = Record<string, any>;
+// Channel configuration (broad but with common fields)
+export interface AllowedFileType {
+  mimeType: string;
+  details?: string;
+  [key: string]: any;
+}
+
+export interface FileRestrictions {
+  // Observed fields; SDK may include more
+  allowedFileSize?: {
+    minKb?: number;
+    maxKb?: number;
+    [key: string]: any;
+  };
+  isAttachmentsEnabled?: boolean;
+  allowedFileTypes?: AllowedFileType[];
+  [key: string]: any;
+}
+
+export interface ChannelFeatures {
+  isCreditCardMaskingEnabled?: boolean;
+  isFeatureImproveVisitorInactivityTrackingEnabled?: boolean;
+  securedSessions?: boolean;
+  isCoBrowsingEnabled?: boolean;
+  liveChatLogoHidden?: boolean;
+  disableAttachmentOnDfoChat?: boolean;
+  useStorageModuleInChat?: boolean;
+  isProactiveChatEnabled?: boolean;
+  enableClientSideEventsThrottling?: boolean;
+  chatExtendedLogging?: boolean;
+  mobileSdkClientLogs?: boolean;
+  chatInitializationWithoutWebsocket?: boolean;
+  isWebAnalyticsEnabled?: boolean;
+  cxoneMpowerNewLogo254?: boolean;
+  isRecoverLivechatDoesNotFailEnabled?: boolean;
+  isFeatureQueueCountingEnabled?: boolean;
+  chatOptimizeQueueCountingForChat?: boolean;
+  featureCustomFieldsSupportForAutocompleteAttribute?: boolean;
+  accessibleFormFields?: boolean;
+  [key: string]: any;
+}
+
+export interface ChannelConfiguration {
+  isLiveChat?: boolean;
+  isAuthorizationEnabled?: boolean;
+  hasMultipleThreadsPerEndUser?: boolean;
+  fileRestrictions?: FileRestrictions;
+  isProactiveChatEnabled?: boolean;
+  features?: ChannelFeatures;
+  isOnline?: boolean;
+  // Common optional metadata fields sometimes present
+  channelId?: string;
+  channelName?: string;
+  mode?: string;
+  [key: string]: any;
+}

@@ -1,5 +1,5 @@
 import { NativeModule, requireNativeModule } from 'expo';
-import type { ChatThreadDetails, OutboundMessage } from './types';
+import type { ChatThreadDetails, OutboundMessage, ChannelConfiguration } from './types';
 
 import { ExpoCxonemobilesdkModuleEvents } from './ExpoCxonemobilesdk.types';
 
@@ -30,12 +30,12 @@ declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkMo
     env: string,
     brandId: number,
     channelId: string,
-  ): Promise<Record<string, any>>;
+  ): Promise<ChannelConfiguration>;
   getChannelConfigurationByURL(
     chatURL: string,
     brandId: number,
     channelId: string,
-  ): Promise<Record<string, any>>;
+  ): Promise<ChannelConfiguration>;
   setCustomerName(firstName: string, lastName: string): void;
   setCustomerIdentity(id: string, firstName?: string, lastName?: string): void;
   clearCustomerIdentity(): void;
