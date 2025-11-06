@@ -1,5 +1,6 @@
 import CXoneChatSDK
 import Foundation
+import ObjectiveC.runtime
 
 // Generic JSON encoder for CXoneChatSDK objects and common Swift types.
 // Produces JSON-serializable structures ([String: Any], [Any], String, Double, Bool, NSNull).
@@ -7,7 +8,8 @@ enum JSONBridge {
     // ISO8601DateFormatter is not guaranteed thread-safe; guard with a serial queue.
     private static let iso = ISO8601DateFormatter()
     private static let isoQueue = DispatchQueue(label: "ExpoCxonemobilesdk.ISO8601DateFormatter")
-    private static let maxDepth = 8
+    // Allow deeper traversal for rich configuration payloads
+    private static let maxDepth = 12
 
     static func encode(_ value: Any) -> Any? {
         var visited = Set<ObjectIdentifier>()
@@ -49,13 +51,66 @@ enum JSONBridge {
         // Enums — encode as string representation
         if mirrorTop.displayStyle == .enum { return String(describing: value) }
 
-        // Arrays
-        if let arr = value as? [Any] { return arr.compactMap { encode($0, visited: &visited, depth: depth + 1) } }
-        // Dictionaries
+        // Arrays bridged to Swift
+        if let arr = value as? [Any] {
+            return arr.compactMap { encode($0, visited: &visited, depth: depth + 1) }
+        }
+        // Dictionaries bridged to Swift
         if let dict = value as? [String: Any] {
             var out: [String: Any] = [:]
             for (k, v) in dict { if let ev = encode(v, visited: &visited, depth: depth + 1) { out[k] = ev } }
             return out
+        }
+
+        // Generic collections/sets/dictionaries via Mirror when not bridged above
+        let mirrorGeneric = Mirror(reflecting: value)
+        if mirrorGeneric.displayStyle == .collection || mirrorGeneric.displayStyle == .set {
+            var outArr: [Any] = []
+            for child in mirrorGeneric.children {
+                if let ev = encode(child.value, visited: &visited, depth: depth + 1) { outArr.append(ev) }
+            }
+            return outArr
+        }
+        if mirrorGeneric.displayStyle == .dictionary {
+            var out: [String: Any] = [:]
+            for child in mirrorGeneric.children {
+                // Child is a key/value tuple
+                let pair = Mirror(reflecting: child.value)
+                var kStr: String = ""
+                var val: Any? = nil
+                for kv in pair.children {
+                    if kv.label == "key" { kStr = String(describing: kv.value) }
+                    if kv.label == "value" { val = kv.value }
+                }
+                if !kStr.isEmpty, let vEncoded = encode(val as Any, visited: &visited, depth: depth + 1) {
+                    out[kStr] = vEncoded
+                }
+            }
+            return out
+        }
+
+        // NSObject-based objects: attempt Objective-C property introspection for readable keys
+        if let nsobj = value as? NSObject {
+            var out: [String: Any] = [:]
+            var currentClass: AnyClass? = type(of: nsobj)
+            while let cls = currentClass, cls != NSObject.self {
+                var count: UInt32 = 0
+                if let props = class_copyPropertyList(cls, &count) {
+                    for i in 0..<Int(count) {
+                        let prop: objc_property_t = props[i]
+                        if let name = String(utf8String: property_getName(prop)) {
+                            if out.keys.contains(name) { continue }
+                            // Avoid reserved names
+                            if name == "description" || name == "debugDescription" || name == "hash" || name == "superclass" { continue }
+                            let v = nsobj.value(forKey: name)
+                            if let ev = encode(v as Any, visited: &visited, depth: depth + 1) { out[name] = ev }
+                        }
+                    }
+                    free(props)
+                }
+                currentClass = class_getSuperclass(cls)
+            }
+            if !out.isEmpty { return out }
         }
 
         // Known SDK types with curated mapping

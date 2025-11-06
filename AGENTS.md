@@ -114,12 +114,14 @@ Swift (iOS)
 - When feasible, include “full details” variants that return everything the SDK exposes (e.g., `threadsGetFullDetails`).
 - Log the full JSON (pretty printed) when adding new endpoints so we can shape TS helpers later: `NSLog("[ExpoCxonemobilesdk] …\n<json>")`.
 - Keep small helpers to extract common fields, but do not strip properties from the returned JSON.
+- Exception: `Connection.getChannelConfiguration` uses a dedicated DTO that mirrors the minimal runtime struct (booleans + `fileRestrictions` + `features`). Do not reintroduce the reflective encoder for this path; keep it aligned with the SDK contract.
 
 TypeScript
 
 - In `src/ExpoCxonemobilesdkModule.ts` declare return types as broad JSON shapes, e.g. `Record<string, any>` or dedicated interfaces with index signatures.
 - In `src/api/*` you MAY add optional “curated” helpers that parse the JSON into stricter types for app code, but the native binding should tolerate unknown fields.
 - Favor forward-compatible types over strict enums for SDK-driven fields (use `string` plus docs, or union with fallback `string`).
+- Exception: `ChannelConfiguration` is now a strict interface that matches the DTO (shared by iOS and Android). Update both platforms together when the native SDK adds fields.
 
 Examples
 
@@ -167,6 +169,13 @@ README
 - Do: Update the example app to reflect any new API and rely on events for state.
 - Don’t: Re-add previous sample pieces (e.g., `PI`, `setValueAsync`, native view) unless
   there is a product requirement.
+
+## Document Platform Dissimilarities
+
+- When you find differences between Android and iOS (payloads, timing, supported fields), document them in `README.md` under the "Platform Dissimilarities" section.
+- Keep TS types permissive and add notes where values differ by platform (e.g., number vs object). Prefer unions with shared bases instead of hard-coding a single shape.
+- Do not add platform tags into native payloads just to discriminate; use runtime platform checks (`Platform.OS`) or dedicated TS guards in `src/platform.ts`.
+- For Android mapping where obfuscation hides field names, prefer stable public getters and overlay curated keys for important sections (e.g., `fileRestrictions`). Avoid reflecting internal fields unless necessary and cap traversal depth.
 
 ## Listener-First Design (Cross‑Platform Guidance)
 

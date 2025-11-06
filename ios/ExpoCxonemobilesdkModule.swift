@@ -1,4 +1,5 @@
 import CXoneChatSDK
+import Foundation
 import ExpoModulesCore
 
 public class ExpoCxonemobilesdkModule: Module {
@@ -201,13 +202,15 @@ public class ExpoCxonemobilesdkModule: Module {
             (env: String, brandId: Int, channelId: String) async throws -> [String: Any] in
             let cfg = try await ConnectionBridge.getChannelConfiguration(
                 env: env, brandId: brandId, channelId: channelId)
-            return (JSONBridge.encode(cfg) as? [String: Any]) ?? [:]
+            let dto = ChannelConfigurationDTO(cfg)
+            return try dto.asDictionary()
         }
         AsyncFunction("getChannelConfigurationByURL") {
             (chatURL: String, brandId: Int, channelId: String) async throws -> [String: Any] in
             let cfg = try await ConnectionBridge.getChannelConfiguration(
                 chatURL: chatURL, brandId: brandId, channelId: channelId)
-            return (JSONBridge.encode(cfg) as? [String: Any]) ?? [:]
+            let dto = ChannelConfigurationDTO(cfg)
+            return try dto.asDictionary()
         }
 
         // MARK: Customer

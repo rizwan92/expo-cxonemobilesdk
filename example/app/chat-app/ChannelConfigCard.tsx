@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, Button, StyleSheet, Platform } from 'react-native';
 import { Connection } from 'expo-cxonemobilesdk';
 import type { ChannelConfiguration } from 'expo-cxonemobilesdk';
@@ -33,8 +33,6 @@ export default function ChannelConfigCard({ connected }: Props) {
   }, [connected, cfg]);
 
 
-  console.log('ChannelConfigCard render', JSON.stringify(cfg, null, 2));
-
   return (
     <View style={styles.card}>
       <Text style={styles.title}>Channel</Text>
@@ -44,13 +42,6 @@ export default function ChannelConfigCard({ connected }: Props) {
       {cfg ? (
         <>
           <Text style={styles.meta}>Platform: {Platform.OS}</Text>
-          {typeof (cfg as any)?.channelId === 'string' && (
-            <Text style={styles.meta}>ID: {(cfg as any).channelId}</Text>
-          )}
-          {typeof (cfg as any)?.channelName === 'string' && (
-            <Text style={styles.meta}>Name: {(cfg as any).channelName}</Text>
-          )}
-          {typeof cfg.mode === 'string' && <Text style={styles.meta}>Mode: {cfg.mode}</Text>}
           <Text style={styles.meta}>Online: {String(cfg.isOnline)}</Text>
           <Text style={styles.meta}>Live Chat: {String(cfg.isLiveChat)}</Text>
           <Text style={styles.meta}>
@@ -60,23 +51,42 @@ export default function ChannelConfigCard({ connected }: Props) {
             Authorization Enabled: {String(cfg.isAuthorizationEnabled)}
           </Text>
           <Text style={styles.meta}>
-            Proactive Enabled: {String(cfg.isProactiveChatEnabled ?? cfg.features?.isProactiveChatEnabled)}
+            Proactive Enabled: {String(cfg.isProactiveChatEnabled)}
           </Text>
           <Text style={styles.meta}>
-            Attachments Enabled: {String(cfg.fileRestrictions?.isAttachmentsEnabled)}
+            Attachments Enabled: {String(cfg.fileRestrictions.isAttachmentsEnabled)}
           </Text>
           <Text style={styles.meta}>
-            Allowed Types: {cfg.fileRestrictions?.allowedFileTypes?.length ?? 0}
+            Allowed Types: {cfg.fileRestrictions.allowedFileTypes.length}
           </Text>
-          {cfg.fileRestrictions?.allowedFileSize !== undefined && (
-            <Text style={styles.meta}>
-              File Size: {
-                typeof cfg.fileRestrictions.allowedFileSize === 'number'
-                  ? String(cfg.fileRestrictions.allowedFileSize)
-                  : `${(cfg.fileRestrictions.allowedFileSize as any).minKb ?? '—'}–${(cfg.fileRestrictions.allowedFileSize as any).maxKb ?? '—'} KB`
-              }
-            </Text>
-          )}
+          {cfg.fileRestrictions.allowedFileSize !== undefined && (() => {
+            const size = cfg.fileRestrictions.allowedFileSize;
+            if (typeof size === 'number') {
+              return <Text style={styles.meta}>File Size: {size} KB</Text>;
+            }
+            if (!size) {
+              return null;
+            }
+            const min = size.minKb ?? '—';
+            const max = size.maxKb ?? '—';
+            return <Text style={styles.meta}>File Size: {min}–{max} KB</Text>;
+          })()}
+          {(() => {
+            const entries = Object.entries(cfg.features);
+            if (entries.length === 0) {
+              return <Text style={styles.meta}>Features (0)</Text>;
+            }
+            const preview = entries
+              .slice(0, 3)
+              .map(([key, value]) => `${key}: ${value}`)
+              .join(', ');
+            return (
+              <Text style={styles.meta}>
+                Features ({entries.length}): {preview}
+                {entries.length > 3 ? '…' : ''}
+              </Text>
+            );
+          })()}
           <View style={{ height: 8 }} />
           <Button title={showMore ? 'Hide Details' : 'View More'} onPress={() => setShowMore((s) => !s)} />
           {showMore && (

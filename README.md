@@ -238,6 +238,26 @@ See `example/App.tsx` for a runnable demo.
   - `sendAttachmentURL(threadId: string, url: string, mimeType: string, fileName: string, friendlyName: string): Promise<void>`
   - `sendAttachmentBase64(threadId: string, base64: string, mimeType: string, fileName: string, friendlyName: string): Promise<void>`
   - To page messages: call `loadMore(threadId)` then `getDetails(threadId)` to read `messages` and `hasMoreMessagesToLoad`.
+
+## Platform Dissimilarities
+
+Android and iOS SDKs are not identical. This module exposes a unified JS API, but some payloads differ by platform. We document known differences here and keep TypeScript types permissive to avoid breaking changes.
+
+- Channel Configuration (Connection.getChannelConfiguration)
+  - Both platforms now return the same minimal runtime model exposed by the native SDKs: booleans describing the channel, `fileRestrictions`, and a boolean `features` map.
+  - `fileRestrictions.allowedFileSize` can be a number or an object containing `minKb`/`maxKb` when the SDK provides ranges.
+
+- Customer Identity
+  - iOS: `getCustomerIdentity` returns the identity from the SDK provider.
+  - Android: `getCustomerIdentity` returns the last identity set by the app (the SDK does not expose a public getter).
+
+- Event/State Semantics
+  - Both platforms emit `chatUpdated` and `connectionError`, but timing may differ. Prefer listening to events over polling.
+
+Guidance
+- Write platform-tolerant code by checking only the fields you need and relying on events for state.
+- Narrow types at runtime using `Platform.OS` or your own guards where platform‑specific access is required.
+- If you discover new differences, please add them to this section (and update types if helpful).
 - Customer / OAuth
   - `setName(firstName: string, lastName: string): void`
   - `setIdentity(id: string, firstName?: string, lastName?: string): void`
