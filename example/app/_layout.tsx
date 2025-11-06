@@ -7,6 +7,7 @@ export default function RootLayout() {
       <Stack.Screen name="index" options={{ title: 'Home' }} />
       <Stack.Screen name="chat" options={{ title: 'CXone Chat SDK' }} />
       <Stack.Screen name="chat-app/index" options={{ title: 'Chat' }} />
+      <Stack.Screen name="chat-app/threads/index" options={{ title: 'Threads' }} />
       <Stack.Screen name="chat-app/thread/[threadId]" options={{ title: 'Thread' }} />
     </Stack>
   );

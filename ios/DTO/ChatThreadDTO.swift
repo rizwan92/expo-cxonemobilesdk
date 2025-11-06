@@ -77,21 +77,9 @@ struct MessageUserStatisticsDTO: Encodable {
   let seenAt: String?
   let readAt: String?
 
-  init(_ stats: MessageUserStatistics) {
+  init(_ stats: UserStatistics) {
     self.seenAt = stats.seenAt.map(ISO8601Helper.string)
     self.readAt = stats.readAt.map(ISO8601Helper.string)
-  }
-}
-
-struct EndUserIdentityDTO: Encodable {
-  let id: String
-  let firstName: String?
-  let lastName: String?
-
-  init(_ identity: EndUserIdentity) {
-    self.id = identity.id
-    self.firstName = identity.firstName
-    self.lastName = identity.lastName
   }
 }
 
@@ -220,7 +208,7 @@ struct MessageDTO: Encodable {
   let direction: String
   let status: String
   let authorUser: AgentDTO?
-  let authorEndUserIdentity: EndUserIdentityDTO?
+  let authorEndUserIdentity: CustomerIdentityDTO?
   let senderInfo: SenderInfoDTO?
   let userStatistics: MessageUserStatisticsDTO?
   let attachments: [AttachmentDTO]
@@ -233,7 +221,7 @@ struct MessageDTO: Encodable {
     self.direction = String(describing: message.direction)
     self.status = String(describing: message.status)
     self.authorUser = message.authorUser.map(AgentDTO.init)
-    self.authorEndUserIdentity = message.authorEndUserIdentity.map(EndUserIdentityDTO.init)
+    self.authorEndUserIdentity = message.authorEndUserIdentity.map(CustomerIdentityDTO.init)
     self.senderInfo = message.senderInfo.map(SenderInfoDTO.init)
     self.userStatistics = message.userStatistics.map(MessageUserStatisticsDTO.init)
     self.attachments = message.attachments.map { AttachmentDTO($0) }

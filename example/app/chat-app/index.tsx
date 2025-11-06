@@ -2,15 +2,16 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { SafeAreaView, View, Text, Button, StyleSheet, ScrollView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import ExpoCxonemobilesdk, { Connection, Customer } from 'expo-cxonemobilesdk';
-import ThreadsCard from './ThreadsCard';
 import ChannelConfigCard from './ChannelConfigCard';
 import VisitorCard from './VisitorCard';
 import { useEvent } from 'expo';
+import { useRouter } from 'expo-router';
 // Unified connection (no polling hook)
 import { CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID } from './config';
 
 export default function ChatAppHome() {
   const params = useLocalSearchParams<{ auth?: string; uid?: string; fn?: string; ln?: string }>();
+  const router = useRouter();
   const chatUpdated = useEvent(ExpoCxonemobilesdk, 'chatUpdated');
   // threadsUpdated handled inside ThreadsCard
   const errorEvent = useEvent(ExpoCxonemobilesdk, 'error');
@@ -124,8 +125,11 @@ export default function ChatAppHome() {
         <VisitorCard connected={connected} />
 
         <ChannelConfigCard connected={connected} />
-
-        <ThreadsCard connected={connected} chatMode={chatMode} />
+        <Button
+          title="View Threads"
+          onPress={() => router.push('/chat-app/threads')}
+          disabled={!connected}
+        />
       </ScrollView>
     </SafeAreaView>
   );
