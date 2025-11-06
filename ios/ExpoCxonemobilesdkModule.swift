@@ -19,9 +19,12 @@ public class ExpoCxonemobilesdkModule: Module {
     private func waitUntil(_ timeoutMs: Int = 7000, _ predicate: @escaping () -> Bool) async throws {
         let start = Date()
         while !predicate() {
-            try await Task.sleep(nanoseconds: 200_000_000) // 200ms
+            try await Task.sleep(nanoseconds: 200_000_000)  // 200ms
             if Date().timeIntervalSince(start) * 1000.0 > Double(timeoutMs) {
-                throw NSError(domain: "ExpoCxonemobilesdk", code: -10, userInfo: [NSLocalizedDescriptionKey: "Timeout while waiting for state"]) as Error
+                throw NSError(
+                    domain: "ExpoCxonemobilesdk", code: -10,
+                    userInfo: [NSLocalizedDescriptionKey: "Timeout while waiting for state"])
+                    as Error
             }
         }
     }
@@ -56,31 +59,39 @@ public class ExpoCxonemobilesdkModule: Module {
             ConnectionBridge.disconnect()
         }
 
-        AsyncFunction("prepareAndConnect") { (env: String, brandId: Int, channelId: String) async throws in
+        AsyncFunction("prepareAndConnect") {
+            (env: String, brandId: Int, channelId: String) async throws in
             self.registerDelegateIfNeeded()
 
             // Preflight fetch to surface server-side configuration errors early
             do {
-                _ = try await ConnectionBridge.getChannelConfiguration(env: env, brandId: brandId, channelId: channelId)
+                _ = try await ConnectionBridge.getChannelConfiguration(
+                    env: env, brandId: brandId, channelId: channelId)
             } catch {
-                self.sendEvent("connectionError", ["phase": "preflight", "message": String(describing: error)])
+                self.sendEvent(
+                    "connectionError", ["phase": "preflight", "message": String(describing: error)])
                 self.sendEvent("error", ["message": String(describing: error)])
                 throw error
             }
 
             // Small helpers for clarity
             func prepareNow() async throws {
-                do { try await ConnectionBridge.prepare(env: env, brandId: brandId, channelId: channelId) }
-                catch {
-                    self.sendEvent("connectionError", ["phase": "prepare", "message": String(describing: error)])
+                do {
+                    try await ConnectionBridge.prepare(
+                        env: env, brandId: brandId, channelId: channelId)
+                } catch {
+                    self.sendEvent(
+                        "connectionError",
+                        ["phase": "prepare", "message": String(describing: error)])
                     self.sendEvent("error", ["message": String(describing: error)])
                     throw error
                 }
             }
             func connectNow() async throws {
-                do { try await ConnectionBridge.connect() }
-                catch {
-                    self.sendEvent("connectionError", ["phase": "connect", "message": String(describing: error)])
+                do { try await ConnectionBridge.connect() } catch {
+                    self.sendEvent(
+                        "connectionError",
+                        ["phase": "connect", "message": String(describing: error)])
                     self.sendEvent("error", ["message": String(describing: error)])
                     throw error
                 }
@@ -92,7 +103,9 @@ public class ExpoCxonemobilesdkModule: Module {
                         return s == .connected || s == .ready
                     }
                 } catch {
-                    self.sendEvent("connectionError", ["phase": "connect", "message": "Timeout waiting for connection"])
+                    self.sendEvent(
+                        "connectionError",
+                        ["phase": "connect", "message": "Timeout waiting for connection"])
                     self.sendEvent("error", ["message": "Timeout waiting for connection"])
                     throw error
                 }
@@ -101,7 +114,9 @@ public class ExpoCxonemobilesdkModule: Module {
                 do {
                     try await self.waitUntil(7000) { CXoneChat.shared.state != .preparing }
                 } catch {
-                    self.sendEvent("connectionError", ["phase": "prepare", "message": "Timeout waiting for preparing to finish"])
+                    self.sendEvent(
+                        "connectionError",
+                        ["phase": "prepare", "message": "Timeout waiting for preparing to finish"])
                     self.sendEvent("error", ["message": "Timeout waiting for preparing to finish"])
                     throw error
                 }
@@ -111,11 +126,11 @@ public class ExpoCxonemobilesdkModule: Module {
             while true {
                 switch CXoneChat.shared.state {
                 case .connected, .ready:
-                    self.emitChatSnapshot();
+                    self.emitChatSnapshot()
                     return
                 case .initial:
                     try await prepareNow()
-                    // next iteration will handle connect based on new state
+                // next iteration will handle connect based on new state
                 case .prepared, .offline:
                     try await connectNow()
                 case .preparing:
@@ -123,7 +138,8 @@ public class ExpoCxonemobilesdkModule: Module {
                 case .connecting:
                     try await waitForConnected()
                 @unknown default:
-                    try await prepareNow(); try await connectNow()
+                    try await prepareNow()
+                    try await connectNow()
                 }
             }
         }
@@ -133,9 +149,11 @@ public class ExpoCxonemobilesdkModule: Module {
             (chatURL: String, socketURL: String, brandId: Int, channelId: String) async throws in
             self.registerDelegateIfNeeded()
             do {
-                _ = try await ConnectionBridge.getChannelConfiguration(chatURL: chatURL, brandId: brandId, channelId: channelId)
+                _ = try await ConnectionBridge.getChannelConfiguration(
+                    chatURL: chatURL, brandId: brandId, channelId: channelId)
             } catch {
-                self.sendEvent("connectionError", ["phase": "preflight", "message": String(describing: error)])
+                self.sendEvent(
+                    "connectionError", ["phase": "preflight", "message": String(describing: error)])
                 self.sendEvent("error", ["message": String(describing: error)])
                 throw error
             }
@@ -143,14 +161,16 @@ public class ExpoCxonemobilesdkModule: Module {
                 try await ConnectionBridge.prepare(
                     chatURL: chatURL, socketURL: socketURL, brandId: brandId, channelId: channelId)
             } catch {
-                self.sendEvent("connectionError", ["phase": "prepare", "message": String(describing: error)])
+                self.sendEvent(
+                    "connectionError", ["phase": "prepare", "message": String(describing: error)])
                 self.sendEvent("error", ["message": String(describing: error)])
                 throw error
             }
             do {
                 try await ConnectionBridge.connect()
             } catch {
-                self.sendEvent("connectionError", ["phase": "connect", "message": String(describing: error)])
+                self.sendEvent(
+                    "connectionError", ["phase": "connect", "message": String(describing: error)])
                 self.sendEvent("error", ["message": String(describing: error)])
                 throw error
             }
@@ -195,7 +215,8 @@ public class ExpoCxonemobilesdkModule: Module {
             CustomerBridge.setName(firstName: firstName, lastName: lastName)
         }
 
-        Function("setCustomerIdentity") { (id: String, firstName: String?, lastName: String?) throws in
+        Function("setCustomerIdentity") {
+            (id: String, firstName: String?, lastName: String?) throws in
             try CustomerBridge.setIdentity(id: id, firstName: firstName, lastName: lastName)
         }
 
@@ -247,7 +268,8 @@ public class ExpoCxonemobilesdkModule: Module {
             let threads = ThreadListBridge.get()
             return threads.compactMap { JSONBridge.encode($0) as? [String: Any] }
         }
-        AsyncFunction("threadsCreate") { (customFields: [String: String]?) async throws -> [String: Any] in
+        AsyncFunction("threadsCreate") {
+            (customFields: [String: String]?) async throws -> [String: Any] in
             let thread = try await ThreadListBridge.create(customFields: customFields)
             return (JSONBridge.encode(thread) as? [String: Any]) ?? [:]
         }
@@ -282,7 +304,8 @@ public class ExpoCxonemobilesdkModule: Module {
                     let url = URL(string: urlStr)
                 {
                     descs.append(
-                        ContentDescriptor(url: url, mimeType: mime, fileName: fileName, friendlyName: friendly))
+                        ContentDescriptor(
+                            url: url, mimeType: mime, fileName: fileName, friendlyName: friendly))
                 } else if let base64 = a["data"] as? String,
                     let data = Data(base64Encoded: base64),
                     let mime = a["mimeType"] as? String,
@@ -290,7 +313,8 @@ public class ExpoCxonemobilesdkModule: Module {
                     let friendly = a["friendlyName"] as? String
                 {
                     descs.append(
-                        ContentDescriptor(data: data, mimeType: mime, fileName: fileName, friendlyName: friendly))
+                        ContentDescriptor(
+                            data: data, mimeType: mime, fileName: fileName, friendlyName: friendly))
                 }
             }
             let outbound = OutboundMessage(text: text, attachments: descs, postback: postback)
@@ -337,7 +361,8 @@ public class ExpoCxonemobilesdkModule: Module {
             try await ThreadBridge.endContact(threadId: uuid)
         }
         // Matches ChatThreadProvider.reportTypingStart(_ didStart: Bool)
-        AsyncFunction("threadsReportTypingStart") { (threadId: String, didStart: Bool) async throws in
+        AsyncFunction("threadsReportTypingStart") {
+            (threadId: String, didStart: Bool) async throws in
             guard let uuid = UUID(uuidString: threadId) else {
                 throw NSError(
                     domain: "ExpoCxonemobilesdk", code: -3,
@@ -351,7 +376,10 @@ public class ExpoCxonemobilesdkModule: Module {
 
         // MARK: Rich content messages
         AsyncFunction("threadsSendAttachmentURL") {
-            (threadId: String, url: String, mimeType: String, fileName: String, friendlyName: String) async throws in
+            (
+                threadId: String, url: String, mimeType: String, fileName: String,
+                friendlyName: String
+            ) async throws in
             guard let uuid = UUID(uuidString: threadId) else {
                 throw NSError(
                     domain: "ExpoCxonemobilesdk", code: -3,
@@ -363,17 +391,22 @@ public class ExpoCxonemobilesdkModule: Module {
                     userInfo: [NSLocalizedDescriptionKey: "Invalid URL: \(url)"])
             }
             try await RichContentBridge.sendAttachmentURL(
-                threadId: uuid, url: u, mimeType: mimeType, fileName: fileName, friendlyName: friendlyName)
+                threadId: uuid, url: u, mimeType: mimeType, fileName: fileName,
+                friendlyName: friendlyName)
         }
         AsyncFunction("threadsSendAttachmentBase64") {
-            (threadId: String, base64: String, mimeType: String, fileName: String, friendlyName: String) async throws in
+            (
+                threadId: String, base64: String, mimeType: String, fileName: String,
+                friendlyName: String
+            ) async throws in
             guard let uuid = UUID(uuidString: threadId) else {
                 throw NSError(
                     domain: "ExpoCxonemobilesdk", code: -3,
                     userInfo: [NSLocalizedDescriptionKey: "Invalid UUID: \(threadId)"])
             }
             try await RichContentBridge.sendAttachmentBase64(
-                threadId: uuid, base64: base64, mimeType: mimeType, fileName: fileName, friendlyName: friendlyName)
+                threadId: uuid, base64: base64, mimeType: mimeType, fileName: fileName,
+                friendlyName: friendlyName)
         }
 
         // MARK: Custom fields
@@ -391,7 +424,8 @@ public class ExpoCxonemobilesdkModule: Module {
             }
             return CustomFieldsBridge.getThread(threadId: uuid)
         }
-        AsyncFunction("threadCustomFieldsSet") { (threadId: String, fields: [String: String]) async throws in
+        AsyncFunction("threadCustomFieldsSet") {
+            (threadId: String, fields: [String: String]) async throws in
             guard let uuid = UUID(uuidString: threadId) else {
                 throw NSError(
                     domain: "ExpoCxonemobilesdk", code: -3,
@@ -407,4 +441,4 @@ public class ExpoCxonemobilesdkModule: Module {
 
     }
 }
-        // Keep minimal surface: prepare + connect + events
+// Keep minimal surface: prepare + connect + events
