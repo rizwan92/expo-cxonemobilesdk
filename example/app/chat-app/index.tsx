@@ -9,8 +9,9 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import ExpoCxonemobilesdk, { Connection, Threads } from 'expo-cxonemobilesdk';
+import ExpoCxonemobilesdk, { Connection, Customer } from 'expo-cxonemobilesdk';
 import type { ChatThreadDetails } from 'expo-cxonemobilesdk';
+import ThreadsCard from './ThreadsCard';
 import ChannelConfigCard from './ChannelConfigCard';
 import VisitorCard from './VisitorCard';
 import { useEvent } from 'expo';
@@ -24,11 +25,9 @@ export default function ChatAppHome() {
   const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
   const errorEvent = useEvent(ExpoCxonemobilesdk, 'error');
   const connectionError = useEvent(ExpoCxonemobilesdk, 'connectionError');
-  const authorizationChanged = useEvent(ExpoCxonemobilesdk, 'authorizationChanged');
   const [chatState, setChatState] = useState<string>('initial');
   const connected = chatState === 'connected' || chatState === 'ready';
 
-  const [threadList, setThreadList] = useState<ChatThreadDetails[]>([]);
   const [prepareDone, setPrepareDone] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
   const [chatMode, setChatMode] = useState<'singlethread' | 'multithread' | 'liveChat' | 'unknown'>(
@@ -72,7 +71,6 @@ export default function ChatAppHome() {
     const st = Connection.getChatState();
     const is = st === 'connected' || st === 'ready';
     if (!is) return;
-    setThreadList(Threads.get());
     setChatMode(Connection.getChatMode());
   }, []);
 
@@ -146,74 +144,7 @@ export default function ChatAppHome() {
 
       <ChannelConfigCard connected={connected} />
 
-      <View style={styles.card}>
-        <Text style={styles.title}>Threads</Text>
-        {!isMultithread && (
-          <Button
-            title={starting ? 'Starting…' : 'Start Chat'}
-            onPress={startSingleThread}
-            disabled={!connected || starting}
-          />
-        )}
-        {!isMultithread && (
-          <Text style={[styles.meta, { marginTop: 8 }]}>
-            This channel is {chatMode}. Use Start Chat to open the single active thread.
-          </Text>
-        )}
-
-        <View style={{ height: 8 }} />
-        <Button
-          title={
-            isMultithread ? 'Create New Thread' : 'Create New Thread (unsupported in this mode)'
-          }
-          disabled={!isMultithread}
-          onPress={async () => {
-            try {
-              // Ensure connected with a single state-aware native call
-              await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
-              const details = await Threads.create();
-              setThreadList(Threads.get());
-              router.push(`/chat-app/thread/${details.id}`);
-            } catch (e) {
-              setLastError(String((e as any)?.message ?? e));
-            }
-          }}
-        />
-        <FlatList
-          data={threadList}
-          keyExtractor={(t) => t.id}
-          ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-          renderItem={({ item }) => (
-            <TouchableOpacity
-              style={styles.thread}
-              onPress={() => router.push(`/chat-app/thread/${item.id}`)}
-            >
-              <Text style={styles.threadText}>
-                {item.name && item.name.length ? item.name : item.id}
-              </Text>
-              <Text style={styles.meta}>
-                State: {String(item.state)} • Messages:{' '}
-                {item.messagesCount ?? item.messages?.length ?? 0} • More:{' '}
-                {String(item.hasMoreMessagesToLoad)}
-              </Text>
-              {item.assignedAgent?.fullName ? (
-                <Text style={styles.meta}>Agent: {item.assignedAgent.fullName}</Text>
-              ) : item.lastAssignedAgent?.fullName ? (
-                <Text style={styles.meta}>Last Agent: {item.lastAssignedAgent.fullName}</Text>
-              ) : null}
-              {typeof item.scrollToken === 'string' && (
-                <Text style={styles.meta}>
-                  Scroll:{' '}
-                  {item.scrollToken.length > 16
-                    ? `${item.scrollToken.slice(0, 16)}…`
-                    : item.scrollToken}
-                </Text>
-              )}
-            </TouchableOpacity>
-          )}
-          ListEmptyComponent={<Text style={styles.meta}>No threads yet.</Text>}
-        />
-      </View>
+      <ThreadsCard connected={connected} chatMode={chatMode} />
     </SafeAreaView>
   );
 }
