@@ -1,16 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  SafeAreaView,
-  View,
-  Text,
-  Button,
-  StyleSheet,
-  FlatList,
-  TouchableOpacity,
-} from 'react-native';
-import { Link, useLocalSearchParams, useRouter } from 'expo-router';
+import { SafeAreaView, View, Text, Button, StyleSheet } from 'react-native';
+import { useLocalSearchParams } from 'expo-router';
 import ExpoCxonemobilesdk, { Connection, Customer } from 'expo-cxonemobilesdk';
-import type { ChatThreadDetails } from 'expo-cxonemobilesdk';
 import ThreadsCard from './ThreadsCard';
 import ChannelConfigCard from './ChannelConfigCard';
 import VisitorCard from './VisitorCard';
@@ -19,10 +10,9 @@ import { useEvent } from 'expo';
 import { CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID } from './config';
 
 export default function ChatAppHome() {
-  const router = useRouter();
   const params = useLocalSearchParams<{ auth?: string; uid?: string; fn?: string; ln?: string }>();
   const chatUpdated = useEvent(ExpoCxonemobilesdk, 'chatUpdated');
-  const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
+  // threadsUpdated handled inside ThreadsCard
   const errorEvent = useEvent(ExpoCxonemobilesdk, 'error');
   const connectionError = useEvent(ExpoCxonemobilesdk, 'connectionError');
   const [chatState, setChatState] = useState<string>('initial');
@@ -33,7 +23,6 @@ export default function ChatAppHome() {
   const [chatMode, setChatMode] = useState<'singlethread' | 'multithread' | 'liveChat' | 'unknown'>(
     'unknown',
   );
-  const [starting, setStarting] = useState(false);
 
   // Set identity/auth first (if provided), then prepare + connect on open
   useEffect(() => {
@@ -65,7 +54,7 @@ export default function ChatAppHome() {
     };
   }, [params.uid, params.fn, params.ln, params.auth]);
 
-  // Load visitor id and thread list
+  // Refresh lightweight connection-derived data
   const reload = useCallback(() => {
     // Only query native once fully connected/ready
     const st = Connection.getChatState();
@@ -77,10 +66,9 @@ export default function ChatAppHome() {
 
   useEffect(() => {
     if (chatUpdated?.state) setChatState(chatUpdated.state);
-    // Only reload data after we’re connected
     const is = (chatUpdated?.state ?? chatState) === 'connected' || (chatUpdated?.state ?? chatState) === 'ready';
     if (is) reload();
-  }, [prepareDone, chatUpdated?.state, threadsUpdated?.threadIds?.length]);
+  }, [prepareDone, chatUpdated?.state]);
 
   // Channel configuration moved to ChannelConfigCard component
 
@@ -99,20 +87,6 @@ export default function ChatAppHome() {
     [chatState, connected, chatMode],
   );
 
-  const isMultithread = chatMode === 'multithread';
-  const startSingleThread = useCallback(async () => {
-    setLastError(null);
-    setStarting(true);
-    try {
-      // Create a new thread explicitly and navigate to it
-      const details = await Threads.create();
-      router.push(`/chat-app/thread/${details.id}`);
-    } catch (e) {
-      setLastError(String((e as any)?.message ?? e));
-    } finally {
-      setStarting(false);
-    }
-  }, [router]);
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
