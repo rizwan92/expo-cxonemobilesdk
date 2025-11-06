@@ -10,7 +10,8 @@ import {
 } from 'react-native';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
 import ExpoCxonemobilesdk, { Connection, Threads, Customer } from 'expo-cxonemobilesdk';
-import type { ChatThreadDetails, ChannelConfiguration } from 'expo-cxonemobilesdk';
+import type { ChatThreadDetails } from 'expo-cxonemobilesdk';
+import ChannelConfigCard from './ChannelConfigCard';
 import { useEvent } from 'expo';
 // Unified connection (no polling hook)
 import { CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID } from './config';
@@ -35,7 +36,6 @@ export default function ChatAppHome() {
     'unknown',
   );
   const [starting, setStarting] = useState(false);
-  const [channelCfg, setChannelCfg] = useState<ChannelConfiguration | null>(null);
 
   // Set identity/auth first (if provided), then prepare + connect on open
   useEffect(() => {
@@ -79,18 +79,6 @@ export default function ChatAppHome() {
     setChatMode(Connection.getChatMode());
   }, []);
 
-  const loadChannelConfiguration = useCallback(async () => {
-    try {
-      const cfg = await Connection.getChannelConfiguration(
-        CHAT_ENV,
-        CHAT_BRAND_ID,
-        CHAT_CHANNEL_ID,
-      );
-      setChannelCfg(cfg);
-    } catch (e) {
-      setLastError(String((e as any)?.message ?? e));
-    }
-  }, []);
 
   useEffect(() => {
     if (chatUpdated?.state) setChatState(chatUpdated.state);
@@ -99,15 +87,7 @@ export default function ChatAppHome() {
     if (is) reload();
   }, [prepareDone, chatUpdated?.state, threadsUpdated?.threadIds?.length]);
 
-  // Load channel configuration once connected the first time
-  useEffect(() => {
-    if (!prepareDone) return;
-    const is = chatState === 'connected' || chatState === 'ready';
-    if (is && !channelCfg) {
-      // fire and forget
-      loadChannelConfiguration();
-    }
-  }, [prepareDone, chatState]);
+  // Channel configuration moved to ChannelConfigCard component
 
   // (Identity/auth now set before connecting to satisfy iOS state requirements)
 
@@ -138,9 +118,6 @@ export default function ChatAppHome() {
       setStarting(false);
     }
   }, [router]);
-
-  console.log(JSON.stringify(channelCfg, null, 2));
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -190,30 +167,7 @@ export default function ChatAppHome() {
         </Text>
       </View>
 
-      <View style={styles.card}>
-        <Text style={styles.title}>Channel</Text>
-        <Button title="Refresh Config" onPress={loadChannelConfiguration} />
-        <View style={{ height: 8 }} />
-        {channelCfg ? (
-          <>
-            {typeof (channelCfg as any)?.channelId === 'string' && (
-              <Text style={styles.meta}>ID: {(channelCfg as any).channelId}</Text>
-            )}
-            {typeof (channelCfg as any)?.channelName === 'string' && (
-              <Text style={styles.meta}>Name: {(channelCfg as any).channelName}</Text>
-            )}
-            {typeof (channelCfg as any)?.mode === 'string' && (
-              <Text style={styles.meta}>Mode: {(channelCfg as any).mode}</Text>
-            )}
-            <Text style={styles.meta}>
-              Keys: {Object.keys(channelCfg).slice(0, 6).join(', ')}
-              {Object.keys(channelCfg).length > 6 ? '…' : ''}
-            </Text>
-          </>
-        ) : (
-          <Text style={styles.meta}>No configuration loaded.</Text>
-        )}
-      </View>
+      <ChannelConfigCard connected={connected} />
 
       <View style={styles.card}>
         <Text style={styles.title}>Threads</Text>
