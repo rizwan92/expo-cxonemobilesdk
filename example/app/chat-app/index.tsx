@@ -9,9 +9,10 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { Link, useLocalSearchParams, useRouter } from 'expo-router';
-import ExpoCxonemobilesdk, { Connection, Threads, Customer } from 'expo-cxonemobilesdk';
+import ExpoCxonemobilesdk, { Connection, Threads } from 'expo-cxonemobilesdk';
 import type { ChatThreadDetails } from 'expo-cxonemobilesdk';
 import ChannelConfigCard from './ChannelConfigCard';
+import VisitorCard from './VisitorCard';
 import { useEvent } from 'expo';
 // Unified connection (no polling hook)
 import { CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID } from './config';
@@ -27,8 +28,6 @@ export default function ChatAppHome() {
   const [chatState, setChatState] = useState<string>('initial');
   const connected = chatState === 'connected' || chatState === 'ready';
 
-  const [visitorId, setVisitorId] = useState<string | null>(null);
-  const [identity, setIdentity] = useState<{ id: string; firstName?: string | null; lastName?: string | null } | null>(null);
   const [threadList, setThreadList] = useState<ChatThreadDetails[]>([]);
   const [prepareDone, setPrepareDone] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
@@ -73,8 +72,6 @@ export default function ChatAppHome() {
     const st = Connection.getChatState();
     const is = st === 'connected' || st === 'ready';
     if (!is) return;
-    setVisitorId(Customer.getVisitorId());
-    setIdentity(Customer.getIdentity());
     setThreadList(Threads.get());
     setChatMode(Connection.getChatMode());
   }, []);
@@ -145,27 +142,7 @@ export default function ChatAppHome() {
 
       {/* Profiles and Preferred Agent sections removed per request */}
 
-      <View style={styles.card}>
-        <Text style={styles.title}>Visitor</Text>
-        <Text style={styles.meta}>Visitor ID: {visitorId ?? '—'}</Text>
-        {identity ? (
-          <Text style={styles.meta}>
-            Identity: {identity.id}
-            {identity.firstName ? `, ${identity.firstName}` : ''}
-            {identity.lastName ? ` ${identity.lastName}` : ''}
-          </Text>
-        ) : (
-          <Text style={styles.meta}>Identity: —</Text>
-        )}
-        <Text style={styles.meta}>
-          Authorization:
-          {authorizationChanged
-            ? ` ${authorizationChanged.status}${authorizationChanged.code ? ' • code' : ''}${
-                authorizationChanged.verifier ? ' • verifier' : ''
-              }`
-            : ' —'}
-        </Text>
-      </View>
+      <VisitorCard connected={connected} />
 
       <ChannelConfigCard connected={connected} />
 
