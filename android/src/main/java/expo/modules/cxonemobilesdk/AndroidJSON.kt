@@ -2,6 +2,7 @@ package expo.modules.cxonemobilesdk
 
 import android.content.Context
 import android.net.Uri
+ 
 import com.nice.cxonechat.Chat
 import com.nice.cxonechat.ChatBuilder
 import com.nice.cxonechat.SocketFactoryConfiguration
@@ -9,6 +10,7 @@ import com.nice.cxonechat.message.Message
 import com.nice.cxonechat.state.Configuration
 import com.nice.cxonechat.state.Environment
 import com.nice.cxonechat.thread.ChatThread
+import java.lang.reflect.Modifier
 
 object AndroidJSON {
   fun customEnvironmentFrom(chatUrl: String?, socketUrl: String?): Environment {
@@ -114,7 +116,8 @@ object AndroidJSON {
   // Best-effort reflective encoder to expose as much of the SDK Configuration as possible
   private fun reflectToJson(value: Any?, depth: Int = 0, visited: MutableSet<Int> = mutableSetOf()): Any? {
     if (value == null) return null
-    if (depth > 8) return null
+    // Limit traversal depth to avoid huge graphs
+    if (depth > 6) return null
     // primitives
     when (value) {
       is String, is Number, is Boolean -> return value
@@ -141,8 +144,32 @@ object AndroidJSON {
     // prevent cycles
     val id = System.identityHashCode(value)
     if (!visited.add(id)) return null
-    // reflect object fields (including private)
-    val out = mutableMapOf<String, Any?>()
+    // Prefer public bean-style getters to derive stable property names when available
+    run {
+      val out = mutableMapOf<String, Any?>()
+      val methods = try { value.javaClass.methods } catch (_: Throwable) { emptyArray() }
+      for (m in methods) {
+        val name = m.name
+        if (name == "getClass") continue
+        if (m.parameterCount != 0) continue
+        val pub = try { Modifier.isPublic(m.modifiers) } catch (_: Throwable) { false }
+        if (!pub) continue
+        val prop = when {
+          name.startsWith("get") && name.length > 3 -> name.substring(3).replaceFirstChar { it.lowercaseChar() }
+          name.startsWith("is") && name.length > 2 -> name.substring(2).replaceFirstChar { it.lowercaseChar() }
+          else -> null
+        } ?: continue
+        try {
+          m.isAccessible = true
+          val v = m.invoke(value)
+          out[prop] = reflectToJson(v, depth + 1, visited)
+        } catch (_: Throwable) { /* ignore */ }
+      }
+      if (out.isNotEmpty()) return out
+    }
+
+    // Fallback: reflect object fields (including private)
+    val outFields = mutableMapOf<String, Any?>()
     var c: Class<*>? = value.javaClass
     while (c != null && c != Any::class.java) {
       for (f in c.declaredFields) {
@@ -150,36 +177,44 @@ object AndroidJSON {
           f.isAccessible = true
           val name = f.name
           val v = f.get(value)
-          out[name] = reflectToJson(v, depth + 1, visited)
+          outFields[name] = reflectToJson(v, depth + 1, visited)
         } catch (_: Throwable) {}
       }
       c = c.superclass
     }
-    return out
+    return outFields
   }
 
   fun configurationToMap(cfg: Configuration): Map<String, Any?> {
     // Try a deep reflective map first to include all nested details
     val full = reflectToJson(cfg) as? Map<String, Any?>
-    if (full != null && full.isNotEmpty()) return full
-    // Fallback to curated minimal mapping
     val fr = cfg.fileRestrictions
+    val curatedFR = mapOf(
+      "allowedFileSize" to fr.allowedFileSize,
+      "isAttachmentsEnabled" to fr.isAttachmentsEnabled,
+      "allowedFileTypes" to fr.allowedFileTypes.map { aft ->
+        mapOf(
+          "mimeType" to aft.mimeType,
+          "description" to aft.description,
+        )
+      }
+    )
+
+    if (full != null && full.isNotEmpty()) {
+      // Overlay curated, human-friendly keys where obfuscation may hide names
+      val base = full.toMutableMap()
+      base["fileRestrictions"] = curatedFR
+      return base
+    }
+
+    // Fallback to curated minimal mapping
     return mapOf(
       "hasMultipleThreadsPerEndUser" to cfg.hasMultipleThreadsPerEndUser,
       "isProactiveChatEnabled" to cfg.isProactiveChatEnabled,
       "isAuthorizationEnabled" to cfg.isAuthorizationEnabled,
       "isLiveChat" to cfg.isLiveChat,
       "isOnline" to cfg.isOnline,
-      "fileRestrictions" to mapOf(
-        "allowedFileSize" to fr.allowedFileSize,
-        "isAttachmentsEnabled" to fr.isAttachmentsEnabled,
-        "allowedFileTypes" to fr.allowedFileTypes.map { aft ->
-          mapOf(
-            "mimeType" to aft.mimeType,
-            "description" to aft.description,
-          )
-        }
-      )
+      "fileRestrictions" to curatedFR,
     )
   }
 
@@ -217,6 +252,9 @@ object AndroidJSON {
     val cfg = SocketFactoryConfiguration(environment, brandId, channelId)
     ChatBuilder(context.applicationContext, cfg).build { res ->
       res.onSuccess { chat: Chat ->
+        // Diagnostics removed
+
+        // Return the merged/friendly map to JS
         result = configurationToMap(chat.configuration)
         chat.close()
       }.onFailure {
@@ -228,4 +266,5 @@ object AndroidJSON {
     latch.await(5, java.util.concurrent.TimeUnit.SECONDS)
     return result
   }
+
 }

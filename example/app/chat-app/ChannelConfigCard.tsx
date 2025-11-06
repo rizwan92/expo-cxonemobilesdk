@@ -32,6 +32,9 @@ export default function ChannelConfigCard({ connected }: Props) {
     }
   }, [connected, cfg]);
 
+
+  console.log('ChannelConfigCard render', JSON.stringify(cfg, null, 2));
+
   return (
     <View style={styles.card}>
       <Text style={styles.title}>Channel</Text>
