@@ -1,5 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, Button, StyleSheet } from 'react-native';
+import React, { useCallback, useEffect, useState, useMemo } from 'react';
+import { View, Text, Button, StyleSheet, Platform } from 'react-native';
 import { Connection } from 'expo-cxonemobilesdk';
 import type { ChannelConfiguration } from 'expo-cxonemobilesdk';
 import { CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID } from './config';
@@ -43,6 +43,7 @@ export default function ChannelConfigCard({ connected }: Props) {
       <View style={{ height: 8 }} />
       {cfg ? (
         <>
+          <Text style={styles.meta}>Platform: {Platform.OS}</Text>
           {typeof (cfg as any)?.channelId === 'string' && (
             <Text style={styles.meta}>ID: {(cfg as any).channelId}</Text>
           )}
@@ -67,10 +68,13 @@ export default function ChannelConfigCard({ connected }: Props) {
           <Text style={styles.meta}>
             Allowed Types: {cfg.fileRestrictions?.allowedFileTypes?.length ?? 0}
           </Text>
-          {!!cfg.fileRestrictions?.allowedFileSize && (
+          {cfg.fileRestrictions?.allowedFileSize !== undefined && (
             <Text style={styles.meta}>
-              File Size: {(cfg.fileRestrictions.allowedFileSize as any).minKb ?? '—'}–
-              {(cfg.fileRestrictions.allowedFileSize as any).maxKb ?? '—'} KB
+              File Size: {
+                typeof cfg.fileRestrictions.allowedFileSize === 'number'
+                  ? String(cfg.fileRestrictions.allowedFileSize)
+                  : `${(cfg.fileRestrictions.allowedFileSize as any).minKb ?? '—'}–${(cfg.fileRestrictions.allowedFileSize as any).maxKb ?? '—'} KB`
+              }
             </Text>
           )}
           <View style={{ height: 8 }} />
@@ -91,4 +95,3 @@ const styles = StyleSheet.create({
   title: { fontSize: 16, fontWeight: '600', marginBottom: 8 },
   meta: { color: '#555' },
 });
-
