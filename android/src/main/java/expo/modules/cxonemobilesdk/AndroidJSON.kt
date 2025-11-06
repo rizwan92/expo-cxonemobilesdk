@@ -111,7 +111,58 @@ object AndroidJSON {
     return base
   }
 
+  // Best-effort reflective encoder to expose as much of the SDK Configuration as possible
+  private fun reflectToJson(value: Any?, depth: Int = 0, visited: MutableSet<Int> = mutableSetOf()): Any? {
+    if (value == null) return null
+    if (depth > 8) return null
+    // primitives
+    when (value) {
+      is String, is Number, is Boolean -> return value
+    }
+    if (value is java.util.UUID) return value.toString()
+    if (value is java.util.Date) return value.time
+    if (value is Enum<*>) return value.name.lowercase()
+    if (value is Map<*, *>) {
+      val out = mutableMapOf<String, Any?>()
+      value.forEach { (k, v) ->
+        if (k is String) out[k] = reflectToJson(v, depth + 1, visited)
+      }
+      return out
+    }
+    if (value is Iterable<*>) {
+      return value.map { v -> reflectToJson(v, depth + 1, visited) }
+    }
+    if (value.javaClass.isArray) {
+      val arr = java.lang.reflect.Array.getLength(value)
+      val list = ArrayList<Any?>(arr)
+      for (i in 0 until arr) list.add(reflectToJson(java.lang.reflect.Array.get(value, i), depth + 1, visited))
+      return list
+    }
+    // prevent cycles
+    val id = System.identityHashCode(value)
+    if (!visited.add(id)) return null
+    // reflect object fields (including private)
+    val out = mutableMapOf<String, Any?>()
+    var c: Class<*>? = value.javaClass
+    while (c != null && c != Any::class.java) {
+      for (f in c.declaredFields) {
+        try {
+          f.isAccessible = true
+          val name = f.name
+          val v = f.get(value)
+          out[name] = reflectToJson(v, depth + 1, visited)
+        } catch (_: Throwable) {}
+      }
+      c = c.superclass
+    }
+    return out
+  }
+
   fun configurationToMap(cfg: Configuration): Map<String, Any?> {
+    // Try a deep reflective map first to include all nested details
+    val full = reflectToJson(cfg) as? Map<String, Any?>
+    if (full != null && full.isNotEmpty()) return full
+    // Fallback to curated minimal mapping
     val fr = cfg.fileRestrictions
     return mapOf(
       "hasMultipleThreadsPerEndUser" to cfg.hasMultipleThreadsPerEndUser,

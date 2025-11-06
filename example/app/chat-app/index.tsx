@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { SafeAreaView, View, Text, Button, StyleSheet } from 'react-native';
+import { SafeAreaView, View, Text, Button, StyleSheet, ScrollView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import ExpoCxonemobilesdk, { Connection, Customer } from 'expo-cxonemobilesdk';
 import ThreadsCard from './ThreadsCard';
@@ -35,10 +35,14 @@ export default function ChatAppHome() {
         const token = typeof params.auth === 'string' ? params.auth : '';
 
         if (id) {
-          try { Customer.setIdentity(id, fn, ln); } catch {}
+          try {
+            Customer.setIdentity(id, fn, ln);
+          } catch {}
         }
         if (token) {
-          try { Customer.setAuthorizationCode(token); } catch {}
+          try {
+            Customer.setAuthorizationCode(token);
+          } catch {}
         }
 
         await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
@@ -63,10 +67,11 @@ export default function ChatAppHome() {
     setChatMode(Connection.getChatMode());
   }, []);
 
-
   useEffect(() => {
     if (chatUpdated?.state) setChatState(chatUpdated.state);
-    const is = (chatUpdated?.state ?? chatState) === 'connected' || (chatUpdated?.state ?? chatState) === 'ready';
+    const is =
+      (chatUpdated?.state ?? chatState) === 'connected' ||
+      (chatUpdated?.state ?? chatState) === 'ready';
     if (is) reload();
   }, [prepareDone, chatUpdated?.state]);
 
@@ -79,7 +84,8 @@ export default function ChatAppHome() {
     if (errorEvent?.message) setLastError(errorEvent.message);
   }, [errorEvent?.message]);
   useEffect(() => {
-    if (connectionError?.message) setLastError(`${connectionError.phase}: ${connectionError.message}`);
+    if (connectionError?.message)
+      setLastError(`${connectionError.phase}: ${connectionError.message}`);
   }, [connectionError?.message]);
 
   const headerStatus = useMemo(
@@ -89,36 +95,38 @@ export default function ChatAppHome() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <View style={styles.headerTextBox}>
-          <Text style={styles.headerText} numberOfLines={2}>
-            Chat Status: {headerStatus}
-          </Text>
-          {!!lastError && (
-            <Text style={[styles.headerText, styles.headerError]} numberOfLines={2}>
-              Error: {lastError}
+      <ScrollView>
+        <View style={styles.header}>
+          <View style={styles.headerTextBox}>
+            <Text style={styles.headerText} numberOfLines={2}>
+              Chat Status: {headerStatus}
             </Text>
-          )}
+            {!!lastError && (
+              <Text style={[styles.headerText, styles.headerError]} numberOfLines={2}>
+                Error: {lastError}
+              </Text>
+            )}
+          </View>
+          <Button
+            title="Refresh"
+            onPress={() => {
+              setLastError(null);
+              setChatState(Connection.getChatState());
+              reload();
+            }}
+          />
         </View>
-        <Button
-          title="Refresh"
-          onPress={() => {
-            setLastError(null);
-            setChatState(Connection.getChatState());
-            reload();
-          }}
-        />
-      </View>
 
-      {/* Authentication handled on the home screen */}
+        {/* Authentication handled on the home screen */}
 
-      {/* Profiles and Preferred Agent sections removed per request */}
+        {/* Profiles and Preferred Agent sections removed per request */}
 
-      <VisitorCard connected={connected} />
+        <VisitorCard connected={connected} />
 
-      <ChannelConfigCard connected={connected} />
+        <ChannelConfigCard connected={connected} />
 
-      <ThreadsCard connected={connected} chatMode={chatMode} />
+        <ThreadsCard connected={connected} chatMode={chatMode} />
+      </ScrollView>
     </SafeAreaView>
   );
 }
