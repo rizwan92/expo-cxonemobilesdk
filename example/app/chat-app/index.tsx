@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { SafeAreaView, View, Text, Button, StyleSheet, ScrollView } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
 import ExpoCxonemobilesdk, { Connection, Customer } from 'expo-cxonemobilesdk';
@@ -8,22 +8,16 @@ import { useEvent } from 'expo';
 import { useRouter } from 'expo-router';
 // Unified connection (no polling hook)
 import { CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID } from './config';
+import { useConnection } from './ConnectionContext';
 
 export default function ChatAppHome() {
   const params = useLocalSearchParams<{ auth?: string; uid?: string; fn?: string; ln?: string }>();
   const router = useRouter();
-  const chatUpdated = useEvent(ExpoCxonemobilesdk, 'chatUpdated');
+  const { chatState, chatMode, connected, refresh } = useConnection();
   // threadsUpdated handled inside ThreadsCard
   const errorEvent = useEvent(ExpoCxonemobilesdk, 'error');
   const connectionError = useEvent(ExpoCxonemobilesdk, 'connectionError');
-  const [chatState, setChatState] = useState<string>('initial');
-  const connected = chatState === 'connected' || chatState === 'ready';
-
-  const [prepareDone, setPrepareDone] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
-  const [chatMode, setChatMode] = useState<'singlethread' | 'multithread' | 'liveChat' | 'unknown'>(
-    'unknown',
-  );
 
   // Set identity/auth first (if provided), then prepare + connect on open
   useEffect(() => {
@@ -33,22 +27,14 @@ export default function ChatAppHome() {
         const id = typeof params.uid === 'string' ? params.uid : '';
         const fn = typeof params.fn === 'string' ? params.fn : undefined;
         const ln = typeof params.ln === 'string' ? params.ln : undefined;
-        const token = typeof params.auth === 'string' ? params.auth : '';
-
         if (id) {
           try {
             Customer.setIdentity(id, fn, ln);
           } catch {}
         }
-        if (token) {
-          try {
-            Customer.setAuthorizationCode(token);
-          } catch {}
-        }
 
         await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
         if (cancelled) return;
-        setPrepareDone(true);
       } catch (e) {
         console.error('[ChatAppHome] prepare/connect failed', e);
         setLastError(String((e as any)?.message ?? e));
@@ -58,23 +44,6 @@ export default function ChatAppHome() {
       cancelled = true;
     };
   }, [params.uid, params.fn, params.ln, params.auth]);
-
-  // Refresh lightweight connection-derived data
-  const reload = useCallback(() => {
-    // Only query native once fully connected/ready
-    const st = Connection.getChatState();
-    const is = st === 'connected' || st === 'ready';
-    if (!is) return;
-    setChatMode(Connection.getChatMode());
-  }, []);
-
-  useEffect(() => {
-    if (chatUpdated?.state) setChatState(chatUpdated.state);
-    const is =
-      (chatUpdated?.state ?? chatState) === 'connected' ||
-      (chatUpdated?.state ?? chatState) === 'ready';
-    if (is) reload();
-  }, [prepareDone, chatUpdated?.state]);
 
   // Channel configuration moved to ChannelConfigCard component
 
@@ -112,8 +81,7 @@ export default function ChatAppHome() {
             title="Refresh"
             onPress={() => {
               setLastError(null);
-              setChatState(Connection.getChatState());
-              reload();
+              refresh();
             }}
           />
         </View>

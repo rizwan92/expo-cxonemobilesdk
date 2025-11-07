@@ -4,6 +4,8 @@ import type {
   OutboundMessage,
   ChannelConfiguration,
   PreChatSurvey,
+  ChatMode,
+  ChatState,
 } from './types';
 
 import { ExpoCxonemobilesdkModuleEvents } from './ExpoCxonemobilesdk.types';
@@ -19,16 +21,8 @@ declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkMo
     channelId: string,
   ): Promise<void>;
   disconnect(): void;
-  getChatMode(): 'singlethread' | 'multithread' | 'liveChat' | 'unknown';
-  getChatState():
-    | 'initial'
-    | 'preparing'
-    | 'prepared'
-    | 'offline'
-    | 'connecting'
-    | 'connected'
-    | 'ready'
-    | 'closed';
+  getChatMode(): ChatMode;
+  getChatState(): ChatState;
   isConnected(): boolean;
   executeTrigger(triggerId: string): Promise<void>;
   getChannelConfiguration(

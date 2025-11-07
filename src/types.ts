@@ -125,6 +125,18 @@ export interface ChannelConfiguration {
   isLiveChat: boolean;
 }
 
+export type ChatMode = 'singlethread' | 'multithread' | 'liveChat' | 'unknown';
+
+export type ChatState =
+  | 'initial'
+  | 'preparing'
+  | 'prepared'
+  | 'offline'
+  | 'connecting'
+  | 'connected'
+  | 'ready'
+  | 'closed';
+
 export interface ProactiveActionContent {
   bodyText?: string | null;
   headlineText?: string | null;

@@ -2,32 +2,35 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useEvent } from 'expo';
-import ExpoCxonemobilesdk, { Threads, Connection } from 'expo-cxonemobilesdk';
+import ExpoCxonemobilesdk, { Threads } from 'expo-cxonemobilesdk';
 import type { ChatThreadDetails } from 'expo-cxonemobilesdk';
+import { useConnection } from './ConnectionContext';
 
 type Props = {
-  connected: boolean;
+  connected?: boolean;
 };
 
 export default function ThreadsCard({ connected }: Props) {
+  const { connected: ctxConnected } = useConnection();
+  const isConnected = connected ?? ctxConnected;
   const router = useRouter();
   const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
 
   const [threadList, setThreadList] = useState<ChatThreadDetails[]>([]);
   const refreshThreads = useCallback(() => {
-    if (!connected) return;
+    if (!isConnected) return;
     setThreadList(Threads.get());
-  }, [connected]);
+  }, [isConnected]);
 
   useEffect(() => {
-    if (connected) refreshThreads();
-  }, [connected, refreshThreads]);
+    if (isConnected) refreshThreads();
+  }, [isConnected, refreshThreads]);
 
   useEffect(() => {
-    if (connected && threadsUpdated?.threads) {
+    if (isConnected && threadsUpdated?.threads) {
       setThreadList(threadsUpdated.threads);
     }
-  }, [threadsUpdated?.threads, connected]);
+  }, [threadsUpdated?.threads, isConnected]);
 
   return (
     <View style={styles.card}>

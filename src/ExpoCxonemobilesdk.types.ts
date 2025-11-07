@@ -1,7 +1,13 @@
-import type { ChatThreadDetails, ChatAuthor, ProactiveAction } from './types';
+import type {
+  ChatThreadDetails,
+  ChatAuthor,
+  ProactiveAction,
+  ChatMode,
+  ChatState,
+} from './types';
 
 export type ExpoCxonemobilesdkModuleEvents = {
-  chatUpdated: (params: { state: string; mode: string }) => void;
+  chatUpdated: (params: { state: ChatState; mode: ChatMode }) => void;
   threadUpdated: (params: { thread: ChatThreadDetails }) => void;
   threadsUpdated: (params: { threads: ChatThreadDetails[] }) => void;
   agentTyping: (params: { isTyping: boolean; threadId: string; agent: ChatAuthor }) => void;
