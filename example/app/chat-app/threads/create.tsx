@@ -71,7 +71,7 @@ export default function CreateThreadScreen() {
   }, []);
 
   const sortedOptions = useCallback((field: PreChatField) => {
-    if (field.type !== 'select') return field.options;
+    if (field.type !== 'select') return [];
     return [...field.options].sort((a, b) => a.label.localeCompare(b.label));
   }, []);
 
