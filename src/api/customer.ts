@@ -32,6 +32,17 @@ export function setCodeVerifier(verifier: string) {
   Native.setCodeVerifier(verifier);
 }
 
+export function getCustomFields() {
+  const fields = (Native as any).customerCustomFieldsGet?.() ?? {};
+  console.log(TAG, 'getCustomFields ->', fields);
+  return fields as Record<string, string>;
+}
+
+export async function setCustomFields(fields: Record<string, string>) {
+  console.log(TAG, 'setCustomFields', fields);
+  await (Native as any).customerCustomFieldsSet?.(fields);
+}
+
 export function getVisitorId() {
   const id = Native.getVisitorId();
   console.log(TAG, 'getVisitorId ->', id);

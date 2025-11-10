@@ -245,7 +245,8 @@ to bridge unavoidable timing/state differences.
     - `threadsReportTypingStart(threadId, didStart)`
     - `threadsSendAttachmentURL(...)`, `threadsSendAttachmentBase64(...)`
   - Custom Fields
-    - `customerCustomFieldsSet(fields)`, `threadCustomFieldsSet(threadId, fields)`
+    - `Customer.setCustomFields(fields)`
+    - `Threads.updateCustomFields(threadId, fields)`
 
 - Sync getters/setters (no await)
   - `disconnect()`, `getChatMode()`, `getChatState()`, `isConnected()`
@@ -253,7 +254,7 @@ to bridge unavoidable timing/state differences.
   - `setDeviceToken()`, `setAuthorizationCode()`, `setCodeVerifier()`
   - `getVisitorId()`
   - `threadsGet()`, `threadsGetDetails(threadId)`
-  - `customerCustomFieldsGet()`, `threadCustomFieldsGet(threadId)`
+  - `Customer.getCustomFields()`, `Threads.getCustomFields(threadId)`
   - `signOut()`
 
 // Optional TS helpers (await-on-events) intentionally omitted from the shipped API to keep the surface minimal.

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   SafeAreaView,
   ScrollView,
@@ -10,17 +10,22 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Threads } from 'expo-cxonemobilesdk';
 import type { PreChatField, PreChatNode, PreChatSurvey } from 'expo-cxonemobilesdk';
 import { useConnection } from '../../../components/ConnectionContext';
 
 export default function CreateThreadScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ threadId?: string }>();
+  const editingThreadId = typeof params.threadId === 'string' ? params.threadId : null;
+  const isEditing = Boolean(editingThreadId);
   const { connected } = useConnection();
   const [survey, setSurvey] = useState<PreChatSurvey | null>(null);
   const [loadingSurvey, setLoadingSurvey] = useState(true);
   const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [title, setTitle] = useState('');
+  const [existingFields, setExistingFields] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,6 +34,8 @@ export default function CreateThreadScreen() {
     if (!connected) {
       setSurvey(null);
       setAnswers({});
+      setTitle('');
+      setExistingFields({});
       setLoadingSurvey(false);
       return () => {
         isCancelled = true;
@@ -39,13 +46,30 @@ export default function CreateThreadScreen() {
         setLoadingSurvey(true);
         const result = await Threads.getPreChatSurvey();
         if (isCancelled) return;
+        const existing =
+          isEditing && editingThreadId ? Threads.getCustomFields(editingThreadId) : {};
+        if (isCancelled) return;
+        setExistingFields(existing);
+        if (isCancelled) return;
         setSurvey(result);
+        setTitle(isEditing ? existing.title ?? '' : '');
         if (result) {
           const seed: Record<string, string> = {};
           for (const field of result.fields) {
-            if (field.value) seed[field.id] = field.value;
+            const existingValue = existing[field.id];
+            if (existingValue !== undefined) {
+              seed[field.id] = existingValue;
+            } else if (field.value) {
+              seed[field.id] = field.value;
+            }
           }
           setAnswers(seed);
+        } else if (isEditing) {
+          const copy = { ...existing };
+          delete copy.title;
+          setAnswers(copy);
+        } else {
+          setAnswers({});
         }
       } catch (e) {
         if (!isCancelled) setError(String((e as any)?.message ?? e));
@@ -103,21 +127,33 @@ export default function CreateThreadScreen() {
     try {
       setSubmitting(true);
       setError(null);
-      const payload: Record<string, string> = {};
+      const payload: Record<string, string> = isEditing ? { ...existingFields } : {};
+      const trimmedTitle = title.trim();
+      if (trimmedTitle) {
+        payload.title = trimmedTitle;
+      } else if (isEditing) {
+        delete payload.title;
+      }
       if (survey) {
         for (const field of survey.fields) {
           const value = answers[field.id] ?? field.value ?? '';
           if (value) payload[field.id] = value;
+          else if (isEditing) delete payload[field.id];
         }
       }
-      const details = await Threads.create(payload);
-      router.replace(`/chat-app/thread/${details.id}`);
+      if (isEditing && editingThreadId) {
+        await Threads.updateCustomFields(editingThreadId, payload);
+        router.replace(`/chat-app/thread/${editingThreadId}`);
+      } else {
+        const details = await Threads.create(payload);
+        router.replace(`/chat-app/thread/${details.id}`);
+      }
     } catch (e) {
       setError(String((e as any)?.message ?? e));
     } finally {
       setSubmitting(false);
     }
-  }, [answers, router, submitting, survey, validate]);
+  }, [answers, router, submitting, survey, title, validate, isEditing, editingThreadId, existingFields]);
 
   const renderField = useCallback(
     (field: PreChatField) => {
@@ -194,10 +230,27 @@ export default function CreateThreadScreen() {
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.content}>
         {connected ? (
-          survey ? (
-            <View style={styles.form}>
-              <Text style={styles.formTitle}>{survey.name}</Text>
-              {survey.fields.map((field) => (
+          <View style={styles.form}>
+            <Text style={styles.formTitle}>
+              {isEditing ? 'Edit Thread Details' : survey?.name ?? 'Thread Details'}
+            </Text>
+            {isEditing && editingThreadId && (
+              <Text style={styles.meta}>Updating thread {editingThreadId}</Text>
+            )}
+            <View style={styles.formItem}>
+              <Text style={styles.label}>Thread Title (optional)</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="Describe your case or subject"
+                value={title}
+                onChangeText={setTitle}
+              />
+              <Text style={styles.helper}>
+                Stored as a thread custom field and shown in the list if provided.
+              </Text>
+            </View>
+            {survey ? (
+              survey.fields.map((field) => (
                 <View key={field.id} style={styles.formItem}>
                   <Text style={styles.label}>
                     {field.label}
@@ -205,13 +258,11 @@ export default function CreateThreadScreen() {
                   </Text>
                   {renderField(field)}
                 </View>
-              ))}
-            </View>
-          ) : (
-            <View style={styles.form}>
+              ))
+            ) : (
               <Text style={styles.meta}>No pre-chat survey is configured for this channel.</Text>
-            </View>
-          )
+            )}
+          </View>
         ) : (
           <View style={styles.form}>
             <Text style={styles.meta}>Connect first to load the pre-chat form.</Text>
@@ -220,7 +271,7 @@ export default function CreateThreadScreen() {
 
         {!!error && <Text style={styles.error}>{error}</Text>}
         <Button
-          title={submitting ? 'Starting…' : 'Start Chat'}
+          title={isEditing ? (submitting ? 'Saving…' : 'Update Thread') : submitting ? 'Starting…' : 'Start Chat'}
           onPress={handleCreate}
           disabled={submitting || !connected}
         />
@@ -248,6 +299,7 @@ const styles = StyleSheet.create({
   formTitle: { fontSize: 18, fontWeight: '600' },
   formItem: { gap: 8 },
   label: { fontSize: 14, fontWeight: '500' },
+  helper: { fontSize: 12, color: '#6b7280' },
   input: {
     borderWidth: 1,
     borderColor: '#d1d5db',

@@ -27,7 +27,7 @@ export default function ThreadListScreen() {
         />
       </View>
 
-      <ThreadsCard connected={connected} />
+      <ThreadsCard connected={connected} onRefresh={refresh} />
     </SafeAreaView>
   );
 }

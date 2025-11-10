@@ -8,14 +8,14 @@ import { useConnection } from './ConnectionContext';
 
 type Props = {
   connected?: boolean;
+  onRefresh?: () => void;
 };
 
-export default function ThreadsCard({ connected }: Props) {
+export default function ThreadsCard({ connected, onRefresh }: Props) {
   const { connected: ctxConnected } = useConnection();
   const isConnected = connected ?? ctxConnected;
   const router = useRouter();
   const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
-  console.log('ThreadsCard threadsUpdated###############################:', threadsUpdated);
 
   const [threadList, setThreadList] = useState<ChatThreadDetails[]>([]);
   const refreshThreads = useCallback(() => {
@@ -65,9 +65,30 @@ export default function ThreadsCard({ connected }: Props) {
     }
   };
 
+  const getThreadTitle = (thread: ChatThreadDetails) => {
+    const customTitle = thread.customFields?.title?.trim();
+    if (customTitle) return customTitle;
+    const nativeName = thread.name?.trim();
+    if (nativeName) return nativeName;
+    return 'Untitled Case';
+  };
+
+  const handleRefresh = useCallback(() => {
+    if (onRefresh) {
+      onRefresh();
+    } else {
+      refreshThreads();
+    }
+  }, [onRefresh, refreshThreads]);
+
   return (
     <View style={styles.card}>
-      <Text style={styles.title}>Threads</Text>
+      <View style={styles.headerRow}>
+        <Text style={styles.title}>Threads</Text>
+        <TouchableOpacity onPress={handleRefresh} disabled={!isConnected}>
+          <Text style={[styles.refresh, !isConnected && styles.refreshDisabled]}>Refresh</Text>
+        </TouchableOpacity>
+      </View>
       <FlatList
         data={threadList}
         keyExtractor={(t) => t.id}
@@ -77,7 +98,7 @@ export default function ThreadsCard({ connected }: Props) {
             <View style={styles.row}>
               <View style={styles.icon} />
               <View style={{ flex: 1 }}>
-                <Text style={styles.threadText}>{item.name && item.name.length ? item.name : 'Untitled Case'}</Text>
+                <Text style={styles.threadText}>{getThreadTitle(item)}</Text>
                 <Text style={styles.previewText} numberOfLines={1}>
                   {messagePreview(latestMessage(item))}
                 </Text>
@@ -97,7 +118,15 @@ export default function ThreadsCard({ connected }: Props) {
 
 const styles = StyleSheet.create({
   card: { backgroundColor: '#fff', borderRadius: 10, padding: 12, marginBottom: 12 },
-  title: { fontSize: 16, fontWeight: '600', marginBottom: 8 },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  title: { fontSize: 16, fontWeight: '600' },
+  refresh: { color: '#2563eb', fontWeight: '600' },
+  refreshDisabled: { color: '#9ca3af' },
   meta: { color: '#6b7280', fontSize: 12 },
   thread: { padding: 12, backgroundColor: '#f8fafc', borderRadius: 12 },
   threadText: { color: '#111827', fontSize: 16, fontWeight: '600' },

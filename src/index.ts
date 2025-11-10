@@ -5,5 +5,4 @@ export * as Connection from './api/connection';
 export * as Customer from './api/customer';
 export * as Analytics from './api/analytics';
 export * as Threads from './api/threads';
-export * as CustomFields from './api/customFields';
 export * from './types';

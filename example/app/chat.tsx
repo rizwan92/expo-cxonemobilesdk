@@ -1,12 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { SafeAreaView, ScrollView, View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import ExpoCxonemobilesdk, {
-  Connection,
-  Threads,
-  Customer,
-  CustomFields,
-  Analytics,
-} from 'expo-cxonemobilesdk';
+import ExpoCxonemobilesdk, { Connection, Threads, Customer, Analytics } from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
 
 export default function ChatScreen() {
@@ -303,7 +297,7 @@ export default function ChatScreen() {
             onPress={async () => {
               try {
                 const obj = JSON.parse(customerFieldsJson || '{}');
-                await CustomFields.setCustomer(obj);
+                await Customer.setCustomFields(obj);
               } catch (e) {
                 console.warn(e);
               }
@@ -312,7 +306,7 @@ export default function ChatScreen() {
           <View style={styles.spacer} />
           <Button
             title="Get Customer Fields"
-            onPress={() => console.log(TAG, 'customer fields', CustomFields.getCustomer())}
+            onPress={() => console.log(TAG, 'customer fields', Customer.getCustomFields())}
           />
           <View style={styles.spacer} />
           <Row label="Thread (JSON)">
@@ -328,7 +322,7 @@ export default function ChatScreen() {
               if (!activeThread) return;
               try {
                 const obj = JSON.parse(threadFieldsJson || '{}');
-                await CustomFields.setThread(activeThread, obj);
+                await Threads.updateCustomFields(activeThread, obj);
               } catch (e) {
                 console.warn(e);
               }
@@ -339,7 +333,7 @@ export default function ChatScreen() {
             title="Get Thread Fields"
             onPress={() => {
               if (activeThread)
-                console.log(TAG, 'thread fields', CustomFields.getThread(activeThread));
+                console.log(TAG, 'thread fields', Threads.getCustomFields(activeThread));
             }}
           />
         </View>

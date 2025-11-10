@@ -74,6 +74,17 @@ export async function reportTypingStart(threadId: string, didStart: boolean) {
   await (Native as any).threadsReportTypingStart(threadId, didStart);
 }
 
+export function getCustomFields(threadId: string): Record<string, string> {
+  const fields = (Native as any).threadCustomFieldsGet?.(threadId) ?? {};
+  console.log(TAG, 'getCustomFields ->', { threadId, fields });
+  return fields as Record<string, string>;
+}
+
+export async function updateCustomFields(threadId: string, fields: Record<string, string>) {
+  console.log(TAG, 'updateCustomFields', { threadId, fields });
+  await (Native as any).threadCustomFieldsSet(threadId, fields);
+}
+
 export async function sendAttachmentURL(
   threadId: string,
   url: string,

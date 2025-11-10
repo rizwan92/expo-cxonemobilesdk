@@ -27,6 +27,7 @@ export default function ThreadScreen() {
   const [counterText, setCounterText] = useState<string>('1');
   const [scrollKey, setScrollKey] = useState(0);
   const [customFields, setCustomFields] = useState<Record<string, string> | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const reload = useCallback(async () => {
     if (!threadId) return;
@@ -95,6 +96,16 @@ export default function ThreadScreen() {
     }
   }, [threadId, hasMore]);
 
+  const handleRefresh = useCallback(async () => {
+    if (!threadId || refreshing) return;
+    setRefreshing(true);
+    try {
+      await reload();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [threadId, refreshing, reload]);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -102,7 +113,18 @@ export default function ThreadScreen() {
         <Text style={styles.title} numberOfLines={1}>
           Thread: {threadId}
         </Text>
-        <View style={{ width: 60 }} />
+        <View style={styles.headerActions}>
+          <Button
+            title={refreshing ? 'Refreshing…' : 'Refresh'}
+            onPress={handleRefresh}
+            disabled={refreshing}
+          />
+          <Button
+            title="Edit Details"
+            onPress={() => router.push(`/chat-app/threads/create?threadId=${threadId}`)}
+            disabled={!threadId}
+          />
+        </View>
       </View>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
@@ -151,6 +173,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: '#ddd',
   },
+  headerActions: { flexDirection: 'row', gap: 8 },
   title: { fontSize: 14, fontWeight: '600', flex: 1, marginHorizontal: 12 },
   customFieldsCard: {
     margin: 12,

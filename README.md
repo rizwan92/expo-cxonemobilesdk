@@ -162,7 +162,7 @@ yarn format:swift:check
 Minimal unified connection (iOS + Android):
 
 ```
-import { Connection, Customer, Analytics, Threads, CustomFields } from 'expo-cxonemobilesdk';
+import { Connection, Customer, Analytics, Threads } from 'expo-cxonemobilesdk';
 
 // Prepare and connect in a single call
 await Connection.prepareAndConnect('NA1', 123, 'demo');
@@ -184,8 +184,9 @@ await Threads.sendAttachmentURL(
 );
 
 // Custom fields
-await CustomFields.setCustomer({ plan: 'gold' });
-await CustomFields.setThread(details.id, { topic: 'support' });
+await Customer.setCustomFields({ plan: 'gold' });
+await Threads.updateCustomFields(details.id, { topic: 'support' });
+const current = Threads.getCustomFields(details.id);
 
 // Customer identity / OAuth
 Customer.setName('Jane', 'Doe');
@@ -267,10 +268,10 @@ Guidance
   - `setCodeVerifier(verifier: string): void`
   - `getVisitorId(): string | null`
 - Custom Fields
-  - `CustomFields.getCustomer(): Record<string,string>`
-  - `CustomFields.setCustomer(fields: Record<string,string>): Promise<void>`
-  - `CustomFields.getThread(threadId: string): Record<string,string>`
-  - `CustomFields.setThread(threadId: string, fields: Record<string,string>): Promise<void>`
+- `Customer.getCustomFields(): Record<string,string>`
+- `Customer.setCustomFields(fields: Record<string,string>): Promise<void>`
+- `Threads.getCustomFields(threadId: string): Record<string,string>`
+- `Threads.updateCustomFields(threadId: string, fields: Record<string,string>): Promise<void>`
 - Analytics
   - `viewPage(title: string, url: string): Promise<void>`
   - `viewPageEnded(title: string, url: string): Promise<void>`
@@ -292,7 +293,7 @@ Events (subscribe with `useEvent(ExpoCxonemobilesdk, 'eventName')`):
 ## Notes
 
 - The iOS CXoneChat SDK framework is already included at `ios/Frameworks/CXoneChatSDK.xcframework` and referenced by `ios/ExpoCxonemobilesdk.podspec`.
-- Use the example app to exercise the module: Connection, Threads, CustomFields, Customer, Analytics.
+- Use the example app to exercise the module: Connection, Threads, Customer, Analytics.
 
 ## Platform Support
 
