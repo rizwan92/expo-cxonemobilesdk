@@ -13,15 +13,8 @@ public class ExpoCxonemobilesdkModule: Module {
         }
     }
 
-    /// Convenience helper for waiting on SDK state transitions.
-    private func emitChatSnapshot() {
-        let stateStr = String(describing: ConnectionBridge.state())
-        let modeStr = String(describing: ConnectionBridge.mode())
-        self.sendEvent("chatUpdated", ["state": stateStr, "mode": modeStr])
-    }
-
     /// Blocks until `predicate` returns true or the timeout elapses.
-    private func waitUntil(_ timeoutMs: Int = 7000, _ predicate: @escaping () -> Bool) async throws {
+    func waitUntil(_ timeoutMs: Int = 7000, _ predicate: @escaping () -> Bool) async throws {
         let start = Date()
         while !predicate() {
             try await Task.sleep(nanoseconds: 200_000_000)  // 200ms
@@ -38,10 +31,10 @@ public class ExpoCxonemobilesdkModule: Module {
     // that describes the module's functionality and behavior.
     // See https://docs.expo.dev/modules/module-api for more details about available components.
     public func definition() -> ModuleDefinition {
-        // Sets the name of the module that JavaScript code will use to refer to the module.
+        // Module identity ----------------------------------------------------
         Name("ExpoCxonemobilesdk")
 
-        // Events emitted from CXoneChat delegate
+        // Event registry -----------------------------------------------------
         Events(
             "chatUpdated",
             "threadUpdated",
@@ -58,132 +51,40 @@ public class ExpoCxonemobilesdkModule: Module {
             "proactivePopupAction"
         )
 
-        // Example sync function removed per request.
-
-        Function("disconnect") {
-            ConnectionBridge.disconnect()
-        }
+        // --------------------------------------------------------------------
+        // Connection lifecycle APIs
+        // --------------------------------------------------------------------
+        Function("disconnect") { ConnectionBridge.disconnect() }
 
         AsyncFunction("prepareAndConnect") {
             (env: String, brandId: Int, channelId: String) async throws in
             self.registerDelegateIfNeeded()
-
-            // Preflight fetch to surface server-side configuration errors early
-            do {
-                _ = try await ConnectionBridge.getChannelConfiguration(
-                    env: env, brandId: brandId, channelId: channelId)
-            } catch {
-                self.sendEvent(
-                    "connectionError", ["phase": "preflight", "message": String(describing: error)])
-                self.sendEvent("error", ["message": String(describing: error)])
-                throw error
-            }
-
-            // Small helpers for clarity
-            func prepareNow() async throws {
-                do {
-                    try await ConnectionBridge.prepare(
-                        env: env, brandId: brandId, channelId: channelId)
-                } catch {
-                    self.sendEvent(
-                        "connectionError",
-                        ["phase": "prepare", "message": String(describing: error)])
-                    self.sendEvent("error", ["message": String(describing: error)])
-                    throw error
-                }
-            }
-            func connectNow() async throws {
-                do { try await ConnectionBridge.connect() } catch {
-                    self.sendEvent(
-                        "connectionError",
-                        ["phase": "connect", "message": String(describing: error)])
-                    self.sendEvent("error", ["message": String(describing: error)])
-                    throw error
-                }
-            }
-            func waitForConnected() async throws {
-                do {
-                    try await self.waitUntil(7000) {
-                        let s = CXoneChat.shared.state
-                        return s == .connected || s == .ready
-                    }
-                } catch {
-                    self.sendEvent(
-                        "connectionError",
-                        ["phase": "connect", "message": "Timeout waiting for connection"])
-                    self.sendEvent("error", ["message": "Timeout waiting for connection"])
-                    throw error
-                }
-            }
-            func waitWhilePreparing() async throws {
-                do {
-                    try await self.waitUntil(7000) { CXoneChat.shared.state != .preparing }
-                } catch {
-                    self.sendEvent(
-                        "connectionError",
-                        ["phase": "prepare", "message": "Timeout waiting for preparing to finish"])
-                    self.sendEvent("error", ["message": "Timeout waiting for preparing to finish"])
-                    throw error
-                }
-            }
-
-            // Loop until connected/ready with minimal state transitions
-            while true {
-                switch CXoneChat.shared.state {
-                case .connected, .ready:
-                    self.emitChatSnapshot()
-                    return
-                case .initial:
-                    try await prepareNow()
-                // next iteration will handle connect based on new state
-                case .prepared, .offline:
-                    try await connectNow()
-                case .preparing:
-                    try await waitWhilePreparing()
-                case .connecting:
-                    try await waitForConnected()
-                @unknown default:
-                    try await prepareNow()
-                    try await connectNow()
-                }
-            }
+            try await self.preflightChannel(env: env, brandId: brandId, channelId: channelId)
+            try await self.loopUntilConnected(env: env, brandId: brandId, channelId: channelId)
         }
 
-        // Optional combined URL variant
         AsyncFunction("prepareAndConnectWithURLs") {
             (chatURL: String, socketURL: String, brandId: Int, channelId: String) async throws in
             self.registerDelegateIfNeeded()
-            do {
-                _ = try await ConnectionBridge.getChannelConfiguration(
-                    chatURL: chatURL, brandId: brandId, channelId: channelId)
-            } catch {
-                self.sendEvent(
-                    "connectionError", ["phase": "preflight", "message": String(describing: error)])
-                self.sendEvent("error", ["message": String(describing: error)])
-                throw error
-            }
+            try await self.preflightChannel(chatURL: chatURL, brandId: brandId, channelId: channelId)
             do {
                 try await ConnectionBridge.prepare(
                     chatURL: chatURL, socketURL: socketURL, brandId: brandId, channelId: channelId)
             } catch {
-                self.sendEvent(
-                    "connectionError", ["phase": "prepare", "message": String(describing: error)])
-                self.sendEvent("error", ["message": String(describing: error)])
+                self.emitConnectionError(
+                    phase: "prepare", message: String(describing: error))
                 throw error
             }
             do {
                 try await ConnectionBridge.connect()
             } catch {
-                self.sendEvent(
-                    "connectionError", ["phase": "connect", "message": String(describing: error)])
-                self.sendEvent("error", ["message": String(describing: error)])
+                self.emitConnectionError(
+                    phase: "connect", message: String(describing: error))
                 throw error
             }
         }
 
-        // (prepare/connect were removed in favor of combined API)
-
-        // MARK: Connection utilities
+        // Connection utilities ----------------------------------------------
         Function("getChatMode") { () -> String in
             String(describing: ConnectionBridge.mode())
         }
@@ -217,7 +118,11 @@ public class ExpoCxonemobilesdkModule: Module {
             return try dto.asDictionary()
         }
 
-        // MARK: Customer
+        //
+        // --------------------------------------------------------------------
+        // Customer identities & custom fields
+        // --------------------------------------------------------------------
+        //
         Function("setCustomerName") { (firstName: String, lastName: String) in
             CustomerBridge.setName(firstName: firstName, lastName: lastName)
         }
@@ -237,12 +142,15 @@ public class ExpoCxonemobilesdkModule: Module {
 
         Function("setAuthorizationCode") { (code: String) in
             CustomerBridge.setAuthorizationCode(code)
-            self.sendEvent("authorizationChanged", ["status": "pending", "code": true])
+            self.sendEvent(
+                "authorizationChanged", dto: AuthorizationChangedEventDTO(status: "pending", code: true))
         }
 
         Function("setCodeVerifier") { (verifier: String) in
             CustomerBridge.setCodeVerifier(verifier)
-            self.sendEvent("authorizationChanged", ["status": "pending", "verifier": true])
+            self.sendEvent(
+                "authorizationChanged",
+                dto: AuthorizationChangedEventDTO(status: "pending", verifier: true))
         }
 
         Function("getVisitorId") { () -> String? in
@@ -252,7 +160,11 @@ public class ExpoCxonemobilesdkModule: Module {
             CustomerBridge.identityDict()
         }
 
-        // MARK: Analytics
+        //
+        // --------------------------------------------------------------------
+        // Analytics bridge
+        // --------------------------------------------------------------------
+        //
         AsyncFunction("analyticsViewPage") { (title: String, url: String) async throws in
             try await AnalyticsBridge.viewPage(title: title, url: url)
         }
@@ -269,7 +181,9 @@ public class ExpoCxonemobilesdkModule: Module {
             try await AnalyticsBridge.conversion(type: type, value: value)
         }
 
-        // MARK: Threads (multithread support)
+        // --------------------------------------------------------------------
+        // Threads (multithread support)
+        // --------------------------------------------------------------------
         // Matches ChatThreadListProvider.get()
         Function("threadsGetPreChatSurvey") { () -> [String: Any]? in
             guard let survey = ThreadListBridge.preChatSurvey() else { return nil }
@@ -388,7 +302,9 @@ public class ExpoCxonemobilesdkModule: Module {
         // Note: Paging is performed by calling threadsLoadMore + threadsGetDetails
         // Limited variants removed
 
-        // MARK: Rich content messages
+        // --------------------------------------------------------------------
+        // Rich content messages
+        // --------------------------------------------------------------------
         AsyncFunction("threadsSendAttachmentURL") {
             (
                 threadId: String, url: String, mimeType: String, fileName: String,
@@ -423,7 +339,9 @@ public class ExpoCxonemobilesdkModule: Module {
                 friendlyName: friendlyName)
         }
 
-        // MARK: Custom fields
+        // --------------------------------------------------------------------
+        // Custom fields
+        // --------------------------------------------------------------------
         Function("customerCustomFieldsGet") { () -> [String: String] in
             CustomFieldsBridge.getCustomer()
         }
@@ -448,7 +366,9 @@ public class ExpoCxonemobilesdkModule: Module {
             try await CustomFieldsBridge.setThread(threadId: uuid, fields: fields)
         }
 
-        // MARK: Auth / sign out
+        // --------------------------------------------------------------------
+        // Auth / sign out
+        // --------------------------------------------------------------------
         Function("signOut") {
             CXoneChat.signOut()
         }

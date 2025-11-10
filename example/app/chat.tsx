@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { SafeAreaView, ScrollView, View, Text, TextInput, Button, StyleSheet } from 'react-native';
 import ExpoCxonemobilesdk, { Connection, Threads, Thread, Customer, Analytics } from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
@@ -8,6 +8,12 @@ export default function ChatScreen() {
   const chatUpdated = useEvent(ExpoCxonemobilesdk, Connection.EVENTS.CHAT_UPDATED);
   const threadsUpdated = useEvent(ExpoCxonemobilesdk, Threads.EVENTS.UPDATED);
   const proactivePopup = useEvent(ExpoCxonemobilesdk, Connection.EVENTS.PROACTIVE_POPUP);
+  const agentTyping = useEvent(ExpoCxonemobilesdk, Thread.EVENTS.AGENT_TYPING);
+  const customEventMessage = useEvent(ExpoCxonemobilesdk, Connection.EVENTS.CUSTOM_EVENT_MESSAGE);
+  const unexpectedDisconnect = useEvent(ExpoCxonemobilesdk, Connection.EVENTS.UNEXPECTED_DISCONNECT);
+  const tokenRefreshFailed = useEvent(ExpoCxonemobilesdk, Connection.EVENTS.TOKEN_REFRESH_FAILED);
+  const contactFieldsSet = useEvent(ExpoCxonemobilesdk, Thread.EVENTS.CONTACT_CUSTOM_FIELDS_SET);
+  const customerFieldsSet = useEvent(ExpoCxonemobilesdk, Customer.EVENTS.CUSTOM_FIELDS_SET);
   const [chatState, setChatState] = useState<string>('initial');
   const connected = chatState === 'connected' || chatState === 'ready';
   const [env, setEnv] = useState('EU1');
@@ -20,6 +26,7 @@ export default function ChatScreen() {
   const [messageText, setMessageText] = useState('Hello from Expo');
   const [typing, setTyping] = useState(false);
   const [threadName, setThreadName] = useState('New Thread Name');
+  const [eventLogs, setEventLogs] = useState<string[]>([]);
 
   // Attachment state
   const [attUrl, setAttUrl] = useState(
@@ -57,6 +64,52 @@ export default function ChatScreen() {
   useEffect(() => {
     if (chatUpdated?.state) setChatState(chatUpdated.state);
   }, [chatUpdated?.state]);
+
+  const appendLog = useCallback((msg: string) => {
+    setEventLogs((prev) => [msg, ...prev].slice(0, 10));
+  }, []);
+
+  useEffect(() => {
+    if (!agentTyping) return;
+    const agentName =
+      agentTyping.agent?.fullName ||
+      agentTyping.agent?.nickname ||
+      agentTyping.agent?.firstName ||
+      'Agent';
+    appendLog(
+      `[agentTyping] ${agentName} ${agentTyping.isTyping ? 'started' : 'stopped'} (${agentTyping.threadId})`,
+    );
+  }, [agentTyping?.threadId, agentTyping?.isTyping, appendLog]);
+
+  useEffect(() => {
+    if (!customEventMessage?.base64) return;
+    appendLog(`[customEventMessage] payload ${customEventMessage.base64.length} bytes`);
+  }, [customEventMessage?.base64, appendLog]);
+
+  useEffect(() => {
+    if (!unexpectedDisconnect) return;
+    appendLog('[unexpectedDisconnect] Socket closed unexpectedly, reconnect required.');
+  }, [unexpectedDisconnect, appendLog]);
+
+  useEffect(() => {
+    if (!tokenRefreshFailed) return;
+    appendLog('[tokenRefreshFailed] Native token refresh failed.');
+  }, [tokenRefreshFailed, appendLog]);
+
+  useEffect(() => {
+    if (!contactFieldsSet) return;
+    appendLog('[contactCustomFieldsSet] Thread custom fields updated.');
+  }, [contactFieldsSet, appendLog]);
+
+  useEffect(() => {
+    if (!customerFieldsSet) return;
+    appendLog('[customerCustomFieldsSet] Customer custom fields updated.');
+  }, [customerFieldsSet, appendLog]);
+
+  useEffect(() => {
+    if (!proactivePopup?.action) return;
+    appendLog(`[proactivePopupAction] ${proactivePopup.action.name ?? proactivePopup.actionId}`);
+  }, [proactivePopup?.action, appendLog]);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -388,10 +441,15 @@ export default function ChatScreen() {
 
         <View style={styles.card}>
           <Text style={styles.header}>Events (debug)</Text>
-          <Text style={styles.meta}>agentTyping: use console to view details</Text>
-          <Text style={styles.meta}>
-            customEventMessage/proactivePopupAction/errors printed to console as they occur
-          </Text>
+          {eventLogs.length === 0 ? (
+            <Text style={styles.meta}>No events yet.</Text>
+          ) : (
+            eventLogs.map((log, index) => (
+              <Text key={`${log}-${index}`} style={styles.meta}>
+                {log}
+              </Text>
+            ))
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>

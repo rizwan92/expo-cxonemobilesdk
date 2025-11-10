@@ -1,23 +1,27 @@
 import type {
-  ChatThreadDetails,
-  ChatAuthor,
-  ProactiveAction,
-  ChatMode,
-  ChatState,
+  ChatUpdatedEventPayload,
+  ThreadUpdatedEventPayload,
+  ThreadsUpdatedEventPayload,
+  AgentTypingEventPayload,
+  CustomEventMessagePayload,
+  AuthorizationChangedEventPayload,
+  ConnectionErrorEventPayload,
+  ErrorEventPayload,
+  ProactivePopupActionEventPayload,
 } from './types';
 
 export type ExpoCxonemobilesdkModuleEvents = {
-  chatUpdated: (params: { state: ChatState; mode: ChatMode }) => void;
-  threadUpdated: (params: { thread: ChatThreadDetails }) => void;
-  threadsUpdated: (params: { threads: ChatThreadDetails[] }) => void;
-  agentTyping: (params: { isTyping: boolean; threadId: string; agent: ChatAuthor }) => void;
+  chatUpdated: (params: ChatUpdatedEventPayload) => void;
+  threadUpdated: (params: ThreadUpdatedEventPayload) => void;
+  threadsUpdated: (params: ThreadsUpdatedEventPayload) => void;
+  agentTyping: (params: AgentTypingEventPayload) => void;
   unexpectedDisconnect: () => void;
-  customEventMessage: (params: { base64: string }) => void;
+  customEventMessage: (params: CustomEventMessagePayload) => void;
   contactCustomFieldsSet: () => void;
   customerCustomFieldsSet: () => void;
-  authorizationChanged: (params: { status: 'pending' | 'configured'; code?: boolean; verifier?: boolean }) => void;
-  connectionError: (params: { phase: 'preflight' | 'prepare' | 'connect' | 'runtime'; message: string }) => void;
-  error: (params: { message: string }) => void;
+  authorizationChanged: (params: AuthorizationChangedEventPayload) => void;
+  connectionError: (params: ConnectionErrorEventPayload) => void;
+  error: (params: ErrorEventPayload) => void;
   tokenRefreshFailed: () => void;
-  proactivePopupAction: (params: { actionId: string; action: ProactiveAction }) => void;
+  proactivePopupAction: (params: ProactivePopupActionEventPayload) => void;
 };

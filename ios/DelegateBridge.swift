@@ -6,65 +6,62 @@ import Foundation
 extension ExpoCxonemobilesdkModule: CXoneChatDelegate {
     // Track chat state changes
     public func onChatUpdated(_ state: ChatState, mode: ChatMode) {
-        let payload: [String: Any] = [
-            "state": String(describing: state),
-            "mode": String(describing: mode),
-        ]
-        self.sendEvent("chatUpdated", payload)
+        logRawEvent("chatUpdated(raw)", raw: "state=\(state), mode=\(mode)")
+        let payload = ChatUpdatedEventDTO(state: state, mode: mode)
+        self.sendEvent("chatUpdated", dto: payload)
     }
 
     public func onThreadUpdated(_ chatThread: ChatThread) {
-        let threadDict = (try? ChatThreadDTO(chatThread).asDictionary()) ?? [:]
-        self.sendEvent("threadUpdated", ["thread": threadDict])
+        logRawEvent("threadUpdated(raw)", raw: chatThread)
+        if let dto = try? ThreadUpdatedEventDTO(thread: chatThread) {
+            self.sendEvent("threadUpdated", dto: dto)
+        }
     }
 
     public func onThreadsUpdated(_ chatThreads: [ChatThread]) {
-        let threads = chatThreads.compactMap { try? ChatThreadDTO($0).asDictionary() }
-        self.sendEvent("threadsUpdated", ["threads": threads])
+        logRawEvent("threadsUpdated(raw)", raw: chatThreads)
+        let payload = ThreadsUpdatedEventDTO(threads: chatThreads)
+        self.sendEvent("threadsUpdated", dto: payload)
     }
 
     public func onCustomEventMessage(_ messageData: Data) {
-        let base64 = messageData.base64EncodedString()
-        self.sendEvent("customEventMessage", ["base64": base64])
+        logRawEvent("customEventMessage(raw)", raw: messageData)
+        self.sendEvent("customEventMessage", dto: CustomEventMessageDTO(data: messageData))
     }
 
     public func onAgentTyping(_ isTyping: Bool, agent: Agent, threadId: UUID) {
-        let payload: [String: Any] = [
-            "isTyping": isTyping,
-            "threadId": threadId.uuidString,
-            "agent": (try? AgentDTO(agent).asDictionary()) ?? [:],
-        ]
-        self.sendEvent("agentTyping", payload)
+        logRawEvent("agentTyping(raw)", raw: "threadId=\(threadId) agent=\(agent)")
+        let payload = AgentTypingEventDTO(isTyping: isTyping, agent: agent, threadId: threadId)
+        self.sendEvent("agentTyping", dto: payload)
     }
 
     public func onContactCustomFieldsSet() {
-        self.sendEvent("contactCustomFieldsSet", [:])
+        self.sendEvent("contactCustomFieldsSet", dto: EmptyEventDTO())
     }
 
     public func onCustomerCustomFieldsSet() {
-        self.sendEvent("customerCustomFieldsSet", [:])
+        logRawEvent("customerCustomFieldsSet(raw)", raw: [:])
+        self.sendEvent("customerCustomFieldsSet", dto: EmptyEventDTO())
     }
 
     public func onError(_ error: any Error) {
-        self.sendEvent("error", ["message": String(describing: error)])
+        logRawEvent("error(raw)", raw: error)
+        self.sendEvent("error", dto: ErrorEventDTO(message: String(describing: error)))
     }
 
     public func onUnexpectedDisconnect() {
-        self.sendEvent("unexpectedDisconnect", [:])
+        logRawEvent("unexpectedDisconnect(raw)", raw: [:])
+        self.sendEvent("unexpectedDisconnect", dto: EmptyEventDTO())
     }
 
     public func onTokenRefreshFailed() {
-        self.sendEvent("tokenRefreshFailed", [:])
+        logRawEvent("tokenRefreshFailed(raw)", raw: [:])
+        self.sendEvent("tokenRefreshFailed", dto: EmptyEventDTO())
     }
 
     public func onProactivePopupAction(data: [String: Any], actionId: UUID) {
-        let dto = ProactiveActionDTO(actionId: actionId, payload: data)
-        let dict = (try? dto.asDictionary()) ?? [:]
-        self.sendEvent(
-            "proactivePopupAction",
-            [
-                "actionId": actionId.uuidString,
-                "action": dict,
-            ])
+        logRawEvent("proactivePopupAction(raw)", raw: data)
+        let payload = ProactivePopupActionEventDTO(actionId: actionId, payload: data)
+        self.sendEvent("proactivePopupAction", dto: payload)
     }
 }

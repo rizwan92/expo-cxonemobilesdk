@@ -218,13 +218,16 @@ to bridge unavoidable timing/state differences.
 - Listener‑based (events as source of truth)
   - Use for ongoing or externally driven state changes; avoids polling and races.
   - Events we emit/consume:
-    - `chatUpdated` — state/mode transitions
-    - `connectionError` — phase‑specific failures (`preflight` | `prepare` | `connect` | `runtime`)
-    - `error` — generic/native error
-    - `threadsUpdated`, `threadUpdated` (emit serialized `ChatThreadDTO` payloads for direct UI use)
-    - `agentTyping` (includes `AgentDTO`), `proactivePopupAction` (emits `ProactiveActionDTO`), `unexpectedDisconnect`
-    - `customEventMessage`, `contactCustomFieldsSet`, `customerCustomFieldsSet`
-    - `tokenRefreshFailed`, `proactivePopupAction`
+    - `chatUpdated` — emits `{ state, mode }`
+    - `connectionError` — emits `{ phase: 'preflight' | 'prepare' | 'connect' | 'runtime', message }`
+    - `error` — emits `{ message }`
+    - `threadsUpdated`, `threadUpdated` — emit serialized `ChatThreadDTO` payloads
+    - `agentTyping` — emits `{ isTyping, threadId, agent: AgentDTO }`
+    - `customEventMessage` — emits `{ base64 }`
+    - `contactCustomFieldsSet`, `customerCustomFieldsSet` — emit `{}` (event-only)
+    - `authorizationChanged` — emits `{ status, code?, verifier? }`
+    - `unexpectedDisconnect`, `tokenRefreshFailed` — emit `{}`
+    - `proactivePopupAction` — emits `{ actionId, action: ProactiveActionDTO }`
 
 - Async/await (single, scoped operations)
   - Use when the action has a clear completion and similar semantics on both platforms:
@@ -238,12 +241,14 @@ to bridge unavoidable timing/state differences.
     - `analyticsViewPageEnded(title, url)`
     - `analyticsChatWindowOpen()`
     - `analyticsConversion(type, value)`
-  - Threads
-    - `threadsCreate(customFields?)`, `threadsLoad(threadId?)`, `threadsSend(threadId, message)`
-    - `threadsLoadMore(threadId)`, `threadsMarkRead(threadId)`
-    - `threadsUpdateName(threadId, name)`, `threadsArchive(threadId)`, `threadsEndContact(threadId)`
-    - `threadsReportTypingStart(threadId, didStart)`
-    - `threadsSendAttachmentURL(...)`, `threadsSendAttachmentBase64(...)`
+  - Thread list (`Threads.*`)
+    - `Threads.get()`, `Threads.getPreChatSurvey()`, `Threads.create(customFields?)`
+  - Thread detail (`Thread.*`)
+    - `Thread.load(threadId?)`, `Thread.send(threadId, message)`
+    - `Thread.loadMore(threadId)`, `Thread.markRead(threadId)`
+    - `Thread.updateName(threadId, name)`, `Thread.archive(threadId)`, `Thread.endContact(threadId)`
+    - `Thread.reportTypingStart(threadId, didStart)`
+    - `Thread.sendAttachmentURL(...)`, `Thread.sendAttachmentBase64(...)`
   - Custom Fields
     - `Customer.setCustomFields(fields)`
     - `Thread.updateCustomFields(threadId, fields)`
@@ -253,7 +258,7 @@ to bridge unavoidable timing/state differences.
   - `setCustomerName()`, `setCustomerIdentity()`, `clearCustomerIdentity()`
   - `setDeviceToken()`, `setAuthorizationCode()`, `setCodeVerifier()`
   - `getVisitorId()`
-  - `threadsGet()`, `threadsGetDetails(threadId)`
+  - `Threads.get()`, `Thread.getDetails(threadId)`
   - `Customer.getCustomFields()`, `Thread.getCustomFields(threadId)`
   - `signOut()`
 

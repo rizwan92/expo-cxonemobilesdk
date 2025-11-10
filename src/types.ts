@@ -153,6 +153,50 @@ export interface ProactiveAction {
   content?: ProactiveActionContent | null;
 }
 
+// Event payloads
+export interface ChatUpdatedEventPayload {
+  state: ChatState;
+  mode: ChatMode;
+}
+
+export interface ThreadUpdatedEventPayload {
+  thread: ChatThreadDetails;
+}
+
+export interface ThreadsUpdatedEventPayload {
+  threads: ChatThreadDetails[];
+}
+
+export interface AgentTypingEventPayload {
+  isTyping: boolean;
+  threadId: string;
+  agent: ChatAuthor;
+}
+
+export interface CustomEventMessagePayload {
+  base64: string;
+}
+
+export interface AuthorizationChangedEventPayload {
+  status: 'pending' | 'configured';
+  code?: boolean;
+  verifier?: boolean;
+}
+
+export interface ConnectionErrorEventPayload {
+  phase: 'preflight' | 'prepare' | 'connect' | 'runtime';
+  message: string;
+}
+
+export interface ErrorEventPayload {
+  message: string;
+}
+
+export interface ProactivePopupActionEventPayload {
+  actionId: string;
+  action: ProactiveAction;
+}
+
 export interface PreChatSurvey {
   name: string;
   fields: PreChatField[];
