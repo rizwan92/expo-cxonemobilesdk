@@ -26,12 +26,14 @@ export default function ThreadScreen() {
   const [hasMore, setHasMore] = useState<boolean>(false);
   const [counterText, setCounterText] = useState<string>('1');
   const [scrollKey, setScrollKey] = useState(0);
+  const [customFields, setCustomFields] = useState<Record<string, string> | null>(null);
 
   const reload = useCallback(async () => {
     if (!threadId) return;
     const details = await Threads.getDetails(threadId);
     setMessages(details.messages);
     setHasMore(!!details.hasMoreMessagesToLoad);
+    setCustomFields(details.customFields ?? null);
   }, [threadId]);
 
   useEffect(() => {
@@ -51,6 +53,7 @@ export default function ThreadScreen() {
       const details = threadUpdated.thread;
       setMessages(details.messages);
       setHasMore(!!details.hasMoreMessagesToLoad);
+      setCustomFields(details.customFields ?? null);
     }
   }, [threadUpdated?.thread?.id, threadId, threadUpdated?.thread]);
   useEffect(() => {
@@ -59,6 +62,7 @@ export default function ThreadScreen() {
     if (match) {
       setMessages(match.messages);
       setHasMore(!!match.hasMoreMessagesToLoad);
+      setCustomFields(match.customFields ?? null);
     }
   }, [threadsUpdated?.threads, threadId]);
 
@@ -104,6 +108,17 @@ export default function ThreadScreen() {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
+        {customFields && Object.keys(customFields).length ? (
+          <View style={styles.customFieldsCard}>
+            <Text style={styles.sectionTitle}>Thread Details</Text>
+            {Object.entries(customFields).map(([key, value]) => (
+              <View style={styles.fieldRow} key={key}>
+                <Text style={styles.fieldKey}>{key}</Text>
+                <Text style={styles.fieldValue}>{value}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
         <View style={{ paddingHorizontal: 12, paddingTop: 8 }}>
           {loadingEarlier ? (
             <ActivityIndicator />
@@ -137,4 +152,15 @@ const styles = StyleSheet.create({
     borderColor: '#ddd',
   },
   title: { fontSize: 14, fontWeight: '600', flex: 1, marginHorizontal: 12 },
+  customFieldsCard: {
+    margin: 12,
+    marginBottom: 0,
+    padding: 12,
+    borderRadius: 10,
+    backgroundColor: '#eef2ff',
+  },
+  sectionTitle: { fontSize: 16, fontWeight: '600', marginBottom: 8, color: '#1e1b4b' },
+  fieldRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
+  fieldKey: { fontWeight: '600', color: '#312e81', flex: 1, marginRight: 8 },
+  fieldValue: { color: '#1f2937', flex: 1, textAlign: 'right' },
 });

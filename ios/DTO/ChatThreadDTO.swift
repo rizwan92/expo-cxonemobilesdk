@@ -241,6 +241,7 @@ struct ChatThreadDTO: Encodable {
   let messagesCount: Int
   let messages: [MessageDTO]
   let scrollToken: String?
+  let customFields: [String: String]
 
   init(_ thread: ChatThread) {
     self.id = thread.id.uuidString
@@ -254,6 +255,7 @@ struct ChatThreadDTO: Encodable {
     let sorted = thread.messages.sorted { $0.createdAt > $1.createdAt }
     self.messages = sorted.map { MessageDTO($0) }
     self.scrollToken = ChatThreadDTO.scrollToken(from: thread)
+    self.customFields = CustomFieldsBridge.getThread(threadId: thread.id)
   }
 
   private static func scrollToken(from thread: ChatThread) -> String? {

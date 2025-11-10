@@ -97,6 +97,7 @@ export type ChatThreadDetails = {
   assignedAgent?: ChatAuthor | null;
   lastAssignedAgent?: ChatAuthor | null;
   messagesCount: number;
+  customFields?: Record<string, string>;
   scrollToken?: string;
   messages: ChatMessage[];
 };
