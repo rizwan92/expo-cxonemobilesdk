@@ -21,7 +21,7 @@ export type ConnectionContextValue = {
 const ConnectionContext = createContext<ConnectionContextValue | undefined>(undefined);
 
 export function ConnectionProvider({ children }: PropsWithChildren) {
-  const chatUpdated = useEvent(ExpoCxonemobilesdk, 'chatUpdated');
+  const chatUpdated = useEvent(ExpoCxonemobilesdk, Connection.EVENTS.CHAT_UPDATED);
   const [chatState, setChatState] = useState<ChatState>(Connection.getChatState());
   const [chatMode, setChatMode] = useState<ChatMode>(Connection.getChatMode());
 

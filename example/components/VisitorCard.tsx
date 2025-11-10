@@ -6,7 +6,10 @@ import { useEvent } from 'expo';
 type Props = { connected: boolean };
 
 export default function VisitorCard({ connected }: Props) {
-  const authorizationChanged = useEvent(ExpoCxonemobilesdk, 'authorizationChanged');
+  const authorizationChanged = useEvent(
+    ExpoCxonemobilesdk,
+    Customer.EVENTS.AUTHORIZATION_CHANGED,
+  );
   const [visitorId, setVisitorId] = useState<string | null>(null);
   const [identity, setIdentity] = useState<
     { id: string; firstName?: string | null; lastName?: string | null } | null
@@ -64,4 +67,3 @@ const styles = StyleSheet.create({
   title: { fontSize: 16, fontWeight: '600', marginBottom: 8 },
   meta: { color: '#555' },
 });
-

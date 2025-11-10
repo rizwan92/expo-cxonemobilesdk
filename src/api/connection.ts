@@ -3,6 +3,16 @@ import type { ChannelConfiguration } from '../types';
 
 const TAG = '[CXone/Connection]';
 
+export const EVENTS = {
+  CHAT_UPDATED: 'chatUpdated' as const,
+  CONNECTION_ERROR: 'connectionError' as const,
+  ERROR: 'error' as const,
+  UNEXPECTED_DISCONNECT: 'unexpectedDisconnect' as const,
+  TOKEN_REFRESH_FAILED: 'tokenRefreshFailed' as const,
+  CUSTOM_EVENT_MESSAGE: 'customEventMessage' as const,
+  PROACTIVE_POPUP: 'proactivePopupAction' as const,
+};
+
 // Unified entrypoint: preflight (best-effort) + prepare + connect
 export async function prepareAndConnect(env: string, brandId: number, channelId: string) {
   console.log(TAG, 'prepareAndConnect', { env, brandId, channelId });

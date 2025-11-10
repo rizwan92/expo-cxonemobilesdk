@@ -171,11 +171,11 @@ const mode = Connection.getChatMode(); // 'singlethread' | 'multithread' | 'live
 // Threads (multithread)
 const ids = Threads.get().map(t => t.id);
 const details = await Threads.create();
-await Threads.send(details.id, { text: 'Hello from Expo' });
-await Threads.markRead(details.id);
+await Thread.send(details.id, { text: 'Hello from Expo' });
+await Thread.markRead(details.id);
 
 // Rich content
-await Threads.sendAttachmentURL(
+await Thread.sendAttachmentURL(
   details.id,
   'https://example.com/file.pdf',
   'application/pdf',
@@ -185,8 +185,8 @@ await Threads.sendAttachmentURL(
 
 // Custom fields
 await Customer.setCustomFields({ plan: 'gold' });
-await Threads.updateCustomFields(details.id, { topic: 'support' });
-const current = Threads.getCustomFields(details.id);
+await Thread.updateCustomFields(details.id, { topic: 'support' });
+const current = Thread.getCustomFields(details.id);
 
 // Customer identity / OAuth
 Customer.setName('Jane', 'Doe');
@@ -206,8 +206,8 @@ await Connection.executeTrigger('00000000-0000-0000-0000-000000000001');
 // Events
 import ExpoCxonemobilesdk from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
-const chatUpdated = useEvent(ExpoCxonemobilesdk, 'chatUpdated');
-const connectionError = useEvent(ExpoCxonemobilesdk, 'connectionError');
+const chatUpdated = useEvent(ExpoCxonemobilesdk, Connection.EVENTS.CHAT_UPDATED);
+const connectionError = useEvent(ExpoCxonemobilesdk, Connection.EVENTS.CONNECTION_ERROR);
 ```
 
 See `example/App.tsx` for a runnable demo.
@@ -270,8 +270,8 @@ Guidance
 - Custom Fields
 - `Customer.getCustomFields(): Record<string,string>`
 - `Customer.setCustomFields(fields: Record<string,string>): Promise<void>`
-- `Threads.getCustomFields(threadId: string): Record<string,string>`
-- `Threads.updateCustomFields(threadId: string, fields: Record<string,string>): Promise<void>`
+- `Thread.getCustomFields(threadId: string): Record<string,string>`
+- `Thread.updateCustomFields(threadId: string, fields: Record<string,string>): Promise<void>`
 - Analytics
   - `viewPage(title: string, url: string): Promise<void>`
   - `viewPageEnded(title: string, url: string): Promise<void>`

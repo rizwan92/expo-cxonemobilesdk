@@ -1,13 +1,13 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { SafeAreaView, ScrollView, View, Text, TextInput, Button, StyleSheet } from 'react-native';
-import ExpoCxonemobilesdk, { Connection, Threads, Customer, Analytics } from 'expo-cxonemobilesdk';
+import ExpoCxonemobilesdk, { Connection, Threads, Thread, Customer, Analytics } from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
 
 export default function ChatScreen() {
   const TAG = '[ChatScreen]';
-  const chatUpdated = useEvent(ExpoCxonemobilesdk, 'chatUpdated');
-  const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
-  const proactivePopup = useEvent(ExpoCxonemobilesdk, 'proactivePopupAction');
+  const chatUpdated = useEvent(ExpoCxonemobilesdk, Connection.EVENTS.CHAT_UPDATED);
+  const threadsUpdated = useEvent(ExpoCxonemobilesdk, Threads.EVENTS.UPDATED);
+  const proactivePopup = useEvent(ExpoCxonemobilesdk, Connection.EVENTS.PROACTIVE_POPUP);
   const [chatState, setChatState] = useState<string>('initial');
   const connected = chatState === 'connected' || chatState === 'ready';
   const [env, setEnv] = useState('EU1');
@@ -146,7 +146,7 @@ export default function ChatScreen() {
             title="Send Text"
             onPress={async () => {
               if (!activeThread) return;
-              await Threads.send(activeThread, { text: messageText });
+              await Thread.send(activeThread, { text: messageText });
             }}
           />
           <View style={styles.spacer} />
@@ -154,14 +154,14 @@ export default function ChatScreen() {
             title="Load More"
             onPress={async () => {
               if (!activeThread) return;
-              await Threads.loadMore(activeThread);
+              await Thread.loadMore(activeThread);
             }}
           />
           <View style={styles.spacer} />
           <Button
             title="Mark Read"
             onPress={async () => {
-              if (activeThread) await Threads.markRead(activeThread);
+              if (activeThread) await Thread.markRead(activeThread);
             }}
           />
           <View style={styles.spacer} />
@@ -170,7 +170,7 @@ export default function ChatScreen() {
               title={typing ? 'Stop' : 'Start'}
               onPress={async () => {
                 if (!activeThread) return;
-                await Threads.reportTypingStart(activeThread, !typing);
+                await Thread.reportTypingStart(activeThread, !typing);
                 setTyping(!typing);
               }}
             />
@@ -181,21 +181,21 @@ export default function ChatScreen() {
           <Button
             title="Update Name"
             onPress={async () => {
-              if (activeThread) await Threads.updateName(activeThread, threadName);
+              if (activeThread) await Thread.updateName(activeThread, threadName);
             }}
           />
           <View style={styles.spacer} />
           <Button
             title="Archive"
             onPress={async () => {
-              if (activeThread) await Threads.archive(activeThread);
+              if (activeThread) await Thread.archive(activeThread);
             }}
           />
           <View style={styles.spacer} />
           <Button
             title="End Contact"
             onPress={async () => {
-              if (activeThread) await Threads.endContact(activeThread);
+              if (activeThread) await Thread.endContact(activeThread);
             }}
           />
           <View style={styles.spacer} />
@@ -216,7 +216,7 @@ export default function ChatScreen() {
             title="Send Attachment (URL)"
             onPress={async () => {
               if (!activeThread) return;
-              await Threads.sendAttachmentURL(activeThread, attUrl, attMime, attFile, attFriendly);
+              await Thread.sendAttachmentURL(activeThread, attUrl, attMime, attFile, attFriendly);
             }}
           />
           <View style={styles.spacer} />
@@ -232,7 +232,7 @@ export default function ChatScreen() {
             title="Send Attachment (Base64)"
             onPress={async () => {
               if (!activeThread || !attBase64) return;
-              await Threads.sendAttachmentBase64(
+              await Thread.sendAttachmentBase64(
                 activeThread,
                 attBase64,
                 attMime,
@@ -322,7 +322,7 @@ export default function ChatScreen() {
               if (!activeThread) return;
               try {
                 const obj = JSON.parse(threadFieldsJson || '{}');
-                await Threads.updateCustomFields(activeThread, obj);
+                await Thread.updateCustomFields(activeThread, obj);
               } catch (e) {
                 console.warn(e);
               }
@@ -332,8 +332,7 @@ export default function ChatScreen() {
           <Button
             title="Get Thread Fields"
             onPress={() => {
-              if (activeThread)
-                console.log(TAG, 'thread fields', Threads.getCustomFields(activeThread));
+              if (activeThread) console.log(TAG, 'thread fields', Thread.getCustomFields(activeThread));
             }}
           />
         </View>

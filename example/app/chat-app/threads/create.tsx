@@ -11,7 +11,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Threads } from 'expo-cxonemobilesdk';
+import { Threads, Thread } from 'expo-cxonemobilesdk';
 import type { PreChatField, PreChatNode, PreChatSurvey } from 'expo-cxonemobilesdk';
 import { useConnection } from '../../../components/ConnectionContext';
 
@@ -47,7 +47,7 @@ export default function CreateThreadScreen() {
         const result = await Threads.getPreChatSurvey();
         if (isCancelled) return;
         const existing =
-          isEditing && editingThreadId ? Threads.getCustomFields(editingThreadId) : {};
+          isEditing && editingThreadId ? Thread.getCustomFields(editingThreadId) : {};
         if (isCancelled) return;
         setExistingFields(existing);
         if (isCancelled) return;
@@ -142,7 +142,7 @@ export default function CreateThreadScreen() {
         }
       }
       if (isEditing && editingThreadId) {
-        await Threads.updateCustomFields(editingThreadId, payload);
+        await Thread.updateCustomFields(editingThreadId, payload);
         router.replace(`/chat-app/thread/${editingThreadId}`);
       } else {
         const details = await Threads.create(payload);

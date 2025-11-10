@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import ExpoCxonemobilesdk, { Threads } from 'expo-cxonemobilesdk';
+import ExpoCxonemobilesdk, { Thread } from 'expo-cxonemobilesdk';
 import type { ChatMessage } from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
 import { ChatList, Composer } from '../../../components/chat';
@@ -18,8 +18,7 @@ import { ChatList, Composer } from '../../../components/chat';
 export default function ThreadScreen() {
   const router = useRouter();
   const { threadId } = useLocalSearchParams<{ threadId: string }>();
-  const threadUpdated = useEvent(ExpoCxonemobilesdk, 'threadUpdated');
-  const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
+  const threadUpdated = useEvent(ExpoCxonemobilesdk, Thread.EVENTS.UPDATED);
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loadingEarlier, setLoadingEarlier] = useState(false);
@@ -31,7 +30,7 @@ export default function ThreadScreen() {
 
   const reload = useCallback(async () => {
     if (!threadId) return;
-    const details = await Threads.getDetails(threadId);
+    const details = await Thread.getDetails(threadId);
     setMessages(details.messages);
     setHasMore(!!details.hasMoreMessagesToLoad);
     setCustomFields(details.customFields ?? null);
@@ -41,7 +40,7 @@ export default function ThreadScreen() {
     if (!threadId) return;
     (async () => {
       try {
-        await Threads.load(threadId);
+        await Thread.load(threadId);
       } catch {}
       await reload();
     })();
@@ -57,20 +56,10 @@ export default function ThreadScreen() {
       setCustomFields(details.customFields ?? null);
     }
   }, [threadUpdated?.thread?.id, threadId, threadUpdated?.thread]);
-  useEffect(() => {
-    if (!threadId) return;
-    const match = threadsUpdated?.threads?.find((t) => t.id === threadId);
-    if (match) {
-      setMessages(match.messages);
-      setHasMore(!!match.hasMoreMessagesToLoad);
-      setCustomFields(match.customFields ?? null);
-    }
-  }, [threadsUpdated?.threads, threadId]);
-
   const onSend = useCallback(
     async (text: string) => {
       if (!threadId || !text) return;
-      await Threads.send(threadId, { text });
+      await Thread.send(threadId, { text });
       // Increment counter for next send
       const n = Number(text);
       if (Number.isFinite(n)) {
@@ -88,7 +77,7 @@ export default function ThreadScreen() {
     if (!hasMore) return;
     setLoadingEarlier(true);
     try {
-      const details = await Threads.loadMore(threadId);
+      const details = await Thread.loadMore(threadId);
       setMessages(details.messages);
       setHasMore(!!details.hasMoreMessagesToLoad);
     } finally {

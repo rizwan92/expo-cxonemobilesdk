@@ -2,6 +2,11 @@ import Native from '../ExpoCxonemobilesdkModule';
 
 const TAG = '[CXone/Customer]';
 
+export const EVENTS = {
+  AUTHORIZATION_CHANGED: 'authorizationChanged' as const,
+  CUSTOM_FIELDS_SET: 'customerCustomFieldsSet' as const,
+};
+
 export function setName(firstName: string, lastName: string) {
   console.log(TAG, 'setName', { firstName, lastName });
   Native.setCustomerName(firstName, lastName);

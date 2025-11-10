@@ -14,8 +14,8 @@ export default function ChatAppHome() {
   const router = useRouter();
   const { chatState, chatMode, connected, refresh } = useConnection();
   // threadsUpdated handled inside ThreadsCard
-  const errorEvent = useEvent(ExpoCxonemobilesdk, 'error');
-  const connectionError = useEvent(ExpoCxonemobilesdk, 'connectionError');
+  const errorEvent = useEvent(ExpoCxonemobilesdk, Connection.EVENTS.ERROR);
+  const connectionError = useEvent(ExpoCxonemobilesdk, Connection.EVENTS.CONNECTION_ERROR);
   const [lastError, setLastError] = useState<string | null>(null);
 
   // Identity is now configured on the home screen. Prepare + connect here.

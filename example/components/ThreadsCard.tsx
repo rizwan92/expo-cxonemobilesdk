@@ -15,16 +15,24 @@ export default function ThreadsCard({ connected, onRefresh }: Props) {
   const { connected: ctxConnected } = useConnection();
   const isConnected = connected ?? ctxConnected;
   const router = useRouter();
-  const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
+  const threadsUpdated = useEvent(ExpoCxonemobilesdk, Threads.EVENTS.UPDATED);
 
   const [threadList, setThreadList] = useState<ChatThreadDetails[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
   const refreshThreads = useCallback(() => {
     if (!isConnected) return;
-    setThreadList(Threads.get());
+    try {
+      setThreadList(Threads.get());
+    } catch (e) {
+      console.error('[ThreadsCard] refresh failed', e);
+    }
   }, [isConnected]);
 
   useEffect(() => {
-    if (isConnected) refreshThreads();
+    if (isConnected) {
+      refreshThreads();
+    }
   }, [isConnected, refreshThreads]);
 
   useEffect(() => {
@@ -73,20 +81,27 @@ export default function ThreadsCard({ connected, onRefresh }: Props) {
     return 'Untitled Case';
   };
 
-  const handleRefresh = useCallback(() => {
-    if (onRefresh) {
-      onRefresh();
-    } else {
+  const handleRefresh = useCallback(async () => {
+    if (!isConnected || refreshing) return;
+    setRefreshing(true);
+    try {
+      if (onRefresh) {
+        onRefresh();
+      }
       refreshThreads();
+    } finally {
+      setRefreshing(false);
     }
-  }, [onRefresh, refreshThreads]);
+  }, [isConnected, onRefresh, refreshThreads, refreshing]);
 
   return (
     <View style={styles.card}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>Threads</Text>
-        <TouchableOpacity onPress={handleRefresh} disabled={!isConnected}>
-          <Text style={[styles.refresh, !isConnected && styles.refreshDisabled]}>Refresh</Text>
+        <TouchableOpacity onPress={handleRefresh} disabled={!isConnected || refreshing}>
+          <Text style={[styles.refresh, (!isConnected || refreshing) && styles.refreshDisabled]}>
+            {refreshing ? 'Refreshing…' : 'Refresh'}
+          </Text>
         </TouchableOpacity>
       </View>
       <FlatList
@@ -94,7 +109,10 @@ export default function ThreadsCard({ connected, onRefresh }: Props) {
         keyExtractor={(t) => t.id}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.thread} onPress={() => router.push(`/chat-app/thread/${item.id}`)}>
+          <TouchableOpacity
+            style={styles.thread}
+            onPress={() => router.push(`/chat-app/thread/${item.id}`)}
+          >
             <View style={styles.row}>
               <View style={styles.icon} />
               <View style={{ flex: 1 }}>
@@ -103,7 +121,8 @@ export default function ThreadsCard({ connected, onRefresh }: Props) {
                   {messagePreview(latestMessage(item))}
                 </Text>
                 <Text style={styles.meta}>
-                  Created: {formatTime(threadCreatedAt(item))} • Last: {formatTime(latestMessage(item)?.createdAt)} • Status: {String(item.state)}
+                  Created: {formatTime(threadCreatedAt(item))} • Last:{' '}
+                  {formatTime(latestMessage(item)?.createdAt)} • Status: {String(item.state)}
                 </Text>
               </View>
               <Text style={styles.timeText}>{formatTime(latestMessage(item)?.createdAt)}</Text>
