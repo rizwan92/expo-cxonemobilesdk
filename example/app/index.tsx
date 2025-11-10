@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import { SafeAreaView, View, Text, Button, StyleSheet, TextInput } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Connection, Customer } from 'expo-cxonemobilesdk';
+import { useConnection } from '../components/ConnectionContext';
+import ConnectionStatusCard from '../components/ConnectionStatusCard';
 
 export default function Home() {
   const router = useRouter();
@@ -9,9 +12,16 @@ export default function Home() {
   const [lastName, setLastName] = useState('Chauhan');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { chatState, chatMode, connected, refresh } = useConnection();
 
   return (
     <SafeAreaView style={styles.container}>
+      <ConnectionStatusCard
+        chatState={chatState}
+        chatMode={chatMode}
+        connected={connected}
+        onRefresh={refresh}
+      />
       <View style={styles.card}>
         <Text style={styles.title}>expo-cxonemobilesdk</Text>
         <Text style={styles.subtitle}>Authenticate, connect, then open the chat UI</Text>
@@ -49,12 +59,20 @@ export default function Home() {
             setError(null);
             setBusy(true);
             try {
-              // Do not connect here. Pass token to next screen; it will
-              // prepare/connect and set identity after connection.
-              const uid = encodeURIComponent(userId || '');
-              const fn = encodeURIComponent(firstName || '');
-              const ln = encodeURIComponent(lastName || '');
-              router.push(`/chat-app?&uid=${uid}&fn=${fn}&ln=${ln}`);
+              const trimmedId = userId.trim();
+              if (!trimmedId) {
+                throw new Error('Customer ID is required');
+              }
+              const trimmedFirst = firstName.trim();
+              const trimmedLast = lastName.trim();
+
+              // Ensure the native SDK forgets the previous visitor before setting a new one.
+              Connection.disconnect();
+              Connection.signOut();
+              Customer.clearIdentity();
+              Customer.setIdentity(trimmedId, trimmedFirst || undefined, trimmedLast || undefined);
+
+              router.push('/chat-app');
             } catch (e) {
               setError(String((e as any)?.message ?? e));
             } finally {

@@ -15,6 +15,7 @@ export default function ThreadsCard({ connected }: Props) {
   const isConnected = connected ?? ctxConnected;
   const router = useRouter();
   const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
+  console.log('ThreadsCard threadsUpdated###############################:', threadsUpdated);
 
   const [threadList, setThreadList] = useState<ChatThreadDetails[]>([]);
   const refreshThreads = useCallback(() => {

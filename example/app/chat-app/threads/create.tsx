@@ -13,7 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Threads } from 'expo-cxonemobilesdk';
 import type { PreChatField, PreChatNode, PreChatSurvey } from 'expo-cxonemobilesdk';
-import { useConnection } from '../ConnectionContext';
+import { useConnection } from '../../../components/ConnectionContext';
 
 export default function CreateThreadScreen() {
   const router = useRouter();

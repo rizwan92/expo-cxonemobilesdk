@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { SafeAreaView, ScrollView, View, Text, Button, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import ThreadsCard from '../ThreadsCard';
-import { useConnection } from '../ConnectionContext';
+import ThreadsCard from '../../../components/ThreadsCard';
+import { useConnection } from '../../../components/ConnectionContext';
 
 export default function ThreadListScreen() {
   const router = useRouter();
@@ -15,21 +15,19 @@ export default function ThreadListScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
-        <View style={styles.header}>
-          <Text style={styles.headerText}>Thread List</Text>
-          <Text style={styles.meta}>{status}</Text>
-          <Button title="Refresh" onPress={refresh} />
-          <View style={{ height: 12 }} />
-          <Button
-            title="Create Thread"
-            onPress={() => router.push('/chat-app/threads/create')}
-            disabled={!connected}
-          />
-        </View>
+      <View style={styles.header}>
+        <Text style={styles.headerText}>Thread List</Text>
+        <Text style={styles.meta}>{status}</Text>
+        <Button title="Refresh" onPress={refresh} />
+        <View style={{ height: 12 }} />
+        <Button
+          title="Create Thread"
+          onPress={() => router.push('/chat-app/threads/create')}
+          disabled={!connected}
+        />
+      </View>
 
-        <ThreadsCard connected={connected} />
-      </ScrollView>
+      <ThreadsCard connected={connected} />
     </SafeAreaView>
   );
 }

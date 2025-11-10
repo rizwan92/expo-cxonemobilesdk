@@ -119,7 +119,7 @@ EXPO_PUBLIC_CHAT_BRAND_ID=1086
 EXPO_PUBLIC_CHAT_CHANNEL_ID=chat_xxx
 ```
 
-These are consumed in `example/app/chat-app/config.ts` and passed to `Connection.prepareAndConnect`.
+These are consumed in `example/config/chat.ts` and passed to `Connection.prepareAndConnect`.
 
 # Contributing
 

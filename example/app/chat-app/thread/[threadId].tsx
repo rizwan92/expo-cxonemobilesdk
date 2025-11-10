@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Threads } from 'expo-cxonemobilesdk';
+import ExpoCxonemobilesdk, { Threads } from 'expo-cxonemobilesdk';
 import type { ChatMessage } from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
 import { ChatList, Composer } from '../../../components/chat';
@@ -18,8 +18,8 @@ import { ChatList, Composer } from '../../../components/chat';
 export default function ThreadScreen() {
   const router = useRouter();
   const { threadId } = useLocalSearchParams<{ threadId: string }>();
-  const threadUpdated = useEvent(require('expo-cxonemobilesdk').default, 'threadUpdated');
-  const threadsUpdated = useEvent(require('expo-cxonemobilesdk').default, 'threadsUpdated');
+  const threadUpdated = useEvent(ExpoCxonemobilesdk, 'threadUpdated');
+  const threadsUpdated = useEvent(ExpoCxonemobilesdk, 'threadsUpdated');
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loadingEarlier, setLoadingEarlier] = useState(false);

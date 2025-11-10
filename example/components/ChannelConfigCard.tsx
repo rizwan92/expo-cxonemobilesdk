@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { View, Text, Button, StyleSheet, Platform } from 'react-native';
 import { Connection } from 'expo-cxonemobilesdk';
 import type { ChannelConfiguration } from 'expo-cxonemobilesdk';
-import { CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID } from './config';
+import { CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID } from '../config/chat';
 
 type Props = { connected: boolean };
 

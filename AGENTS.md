@@ -52,6 +52,8 @@ across Swift/Kotlin, TypeScript, podspecs/Gradle, and the example app.
 - Example App
   - `example/App.tsx`
     - Demonstrates calling `prepareAndConnect`, `disconnect` with console logs and event-driven UI.
+  - `example/components/*`
+    - Shared React context and cards live here so Expo Router screens under `example/app/*` stay lightweight. Add new reusable UI to this folder instead of inside the router tree.
 
 ## Add a New Native Function (Checklist)
 
@@ -134,6 +136,7 @@ Breaking changes policy
 Example App
 
 - Mirror the modular structure in `example/App.tsx` with sections per feature and call into `src/api/*` so the example exercises the same public API you ship.
+- Shared connection widgets (status header, visitor card, channel config, thread list, `ConnectionContext`) live in `example/components`. When adding UI helpers, place them there and import them into the router screens rather than creating deep component trees inside `example/app/*`.
 
 README
 
