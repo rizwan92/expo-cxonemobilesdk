@@ -242,6 +242,7 @@ to bridge unavoidable timing/state differences.
     - `analyticsChatWindowOpen()`
     - `analyticsConversion(type, value)`
   - Thread list (`Threads.*`)
+    - `Threads.load(threadId?)` (pass no id to refresh the entire list)
     - `Threads.get()`, `Threads.getPreChatSurvey()`, `Threads.create(customFields?)`
   - Thread detail (`Thread.*`)
     - `Thread.load(threadId?)`, `Thread.send(threadId, message)`
