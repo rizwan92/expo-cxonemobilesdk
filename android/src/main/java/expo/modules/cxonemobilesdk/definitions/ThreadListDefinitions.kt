@@ -24,8 +24,7 @@ internal fun ModuleDefinitionBuilder.addThreadListDefinitions(owner: ExpoCxonemo
     CXoneManager.refreshThreads(threadId)
   }
   Function("threadsGetDetails") { threadId: String ->
-    val t = CXoneManager.findThreadById(threadId)
-      ?: throw IllegalArgumentException("Thread not found: $threadId")
+    val t = CXoneManager.getThreadDetails(threadId)
     ChatThreadDTO.from(t).toMap()
   }
 }

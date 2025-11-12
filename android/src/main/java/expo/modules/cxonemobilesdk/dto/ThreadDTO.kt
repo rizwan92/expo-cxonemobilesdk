@@ -6,6 +6,7 @@ import com.nice.cxonechat.message.Media
 import com.nice.cxonechat.message.Message
 import com.nice.cxonechat.message.MessageAuthor
 import com.nice.cxonechat.message.MessageMetadata
+import com.nice.cxonechat.message.MessageDirection
 import com.nice.cxonechat.thread.Agent
 import com.nice.cxonechat.thread.ChatThread
 import java.text.SimpleDateFormat
@@ -207,7 +208,7 @@ data class MessageDTO(
         id = message.id.toString(),
         threadId = message.threadId.toString(),
         createdAt = message.createdAt.toIsoString() ?: "",
-        direction = message.direction.name.lowercase(Locale.US),
+        direction = message.direction.toBridgeString(),
         status = metadata?.status?.name?.lowercase(Locale.US) ?: "unknown",
         authorUser = null, // SDK does not expose typed agent authors separately on Android.
         authorEndUserIdentity = null,
@@ -269,6 +270,11 @@ private object MessageContentMapper {
   }
 }
 
+private fun MessageDirection.toBridgeString(): String = when (this) {
+  MessageDirection.ToAgent -> "toAgent"
+  MessageDirection.ToClient -> "toClient"
+}
+
 data class ChatThreadDTO(
   val id: String,
   val name: String?,
@@ -299,6 +305,11 @@ data class ChatThreadDTO(
   companion object {
     fun from(thread: ChatThread): ChatThreadDTO {
       val sortedMessages = thread.messages.sortedByDescending { it.createdAt }
+      val seen = linkedSetOf<String>()
+      val uniqueMessages = sortedMessages.mapNotNull { message ->
+        val id = message.id.toString()
+        if (seen.add(id)) MessageDTO.from(message) else null
+      }
       return ChatThreadDTO(
         id = thread.id.toString(),
         name = thread.threadName,
@@ -307,10 +318,10 @@ data class ChatThreadDTO(
         positionInQueue = thread.positionInQueue,
         assignedAgent = thread.threadAgent?.let { AgentDTO.from(it) },
         lastAssignedAgent = null,
-        messagesCount = thread.messages.size,
+        messagesCount = uniqueMessages.size,
         scrollToken = thread.scrollToken.takeIf { it.isNotBlank() },
         customFields = thread.fields.associate { it.id to it.value },
-        messages = sortedMessages.map { MessageDTO.from(it) },
+        messages = uniqueMessages,
       )
     }
   }

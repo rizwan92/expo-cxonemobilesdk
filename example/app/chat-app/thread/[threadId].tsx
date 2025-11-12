@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   SafeAreaView,
   View,
@@ -27,28 +27,38 @@ export default function ThreadScreen() {
   const [scrollKey, setScrollKey] = useState(0);
   const [customFields, setCustomFields] = useState<Record<string, string> | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const reloadingRef = useRef(false);
 
   const reload = useCallback(async () => {
     if (!threadId) return;
-    const details = await Thread.getDetails(threadId);
-    setMessages(details.messages);
-    setHasMore(!!details.hasMoreMessagesToLoad);
-    setCustomFields(details.customFields ?? null);
+    console.log('[ChatApp/Thread] reload', threadId);
+    reloadingRef.current = true;
+    try {
+      if (Platform.OS !== 'android') {
+        try {
+          await Thread.load(threadId);
+        } catch (error) {
+          console.warn('[ChatApp/Thread] reload load failed', error);
+        }
+      }
+      const details = await Thread.getDetails(threadId);
+      setMessages(details.messages);
+      setHasMore(!!details.hasMoreMessagesToLoad);
+      setCustomFields(details.customFields ?? null);
+    } finally {
+      reloadingRef.current = false;
+    }
   }, [threadId]);
 
   useEffect(() => {
     if (!threadId) return;
-    (async () => {
-      try {
-        await Thread.load(threadId);
-      } catch {}
-      await reload();
-    })();
-  }, [threadId]);
+    reload();
+  }, [threadId, reload]);
 
   // Refresh when native notifies updates for this thread
   useEffect(() => {
-    if (!threadId) return;
+    console.log('[ChatApp/Thread] threadUpdated event', threadUpdated?.thread.messages.length); 
+    if (!threadId || reloadingRef.current) return;
     if (threadUpdated?.thread?.id === threadId) {
       const details = threadUpdated.thread;
       setMessages(details.messages);
@@ -59,15 +69,22 @@ export default function ThreadScreen() {
   const onSend = useCallback(
     async (text: string) => {
       if (!threadId || !text) return;
-      await Thread.send(threadId, { text });
-      // Increment counter for next send
-      const n = Number(text);
-      if (Number.isFinite(n)) {
-        setCounterText(String(n + 1));
+      console.log('[ChatApp/Thread] onSend ->', { threadId, text });
+      try {
+        await Thread.send(threadId, { text });
+        console.log('[ChatApp/Thread] onSend success', { threadId });
+        // Increment counter for next send
+        const n = Number(text);
+        if (Number.isFinite(n)) {
+          setCounterText(String(n + 1));
+        }
+        await reload();
+        // Explicitly scroll to bottom after sending
+        setScrollKey((k) => k + 1);
+      } catch (err) {
+        console.error('[ChatApp/Thread] onSend failed', err);
+        throw err;
       }
-      await reload();
-      // Explicitly scroll to bottom after sending
-      setScrollKey((k) => k + 1);
     },
     [threadId, reload],
   );

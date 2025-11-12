@@ -20,6 +20,8 @@ import expo.modules.cxonemobilesdk.dto.ThreadUpdatedEventDTO
 import expo.modules.cxonemobilesdk.dto.ThreadsUpdatedEventDTO
 import java.lang.ref.WeakReference
 import java.util.UUID
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
@@ -318,7 +320,11 @@ object CXoneManager : ChatInstanceProvider.Listener {
       chat.threads().refresh()
     } else {
       val t = findThreadById(threadId) ?: return
-      chat.threads().thread(t).refresh()
+      val handler = chat.threads().thread(t)
+      awaitThreadUpdate(handler) { handler.refresh() }
+      val snapshot = loadEntireThread(handler)
+      cacheThreadSnapshot(snapshot)
+      moduleRef?.get()?.emitEvent("threadUpdated", ThreadUpdatedEventDTO.from(snapshot).toMap())
     }
   }
 
@@ -330,14 +336,82 @@ object CXoneManager : ChatInstanceProvider.Listener {
   }
 
   fun sendMessage(threadId: String, text: String, postback: String?, attachments: List<ContentDescriptor>) {
+    Log.i(TAG, "sendMessage threadId=$threadId text='$text' postback=$postback attachments=${attachments.size}")
     withThreadHandler(threadId) {
-      messages().send(attachments, text, postback)
+      try {
+        messages().send(attachments, text, postback)
+      } catch (error: Throwable) {
+        Log.e(TAG, "sendMessage failed threadId=$threadId", error)
+        throw error
+      }
     }
   }
 
   fun loadMore(threadId: String): ChatThread {
-    withThreadHandler(threadId) { messages().loadMore() }
-    return findThreadById(threadId) ?: throw IllegalStateException("Thread not found after load: $threadId")
+    return withThreadHandler(threadId) {
+      awaitThreadUpdate(this) { messages().loadMore() }
+      val snapshot = loadEntireThread(this)
+      cacheThreadSnapshot(snapshot)
+      snapshot
+    }
+  }
+
+  fun getThreadDetails(threadId: String): ChatThread {
+    return withThreadHandler(threadId) {
+      awaitThreadUpdate(this) { refresh() }
+      val snapshot = loadEntireThread(this)
+      cacheThreadSnapshot(snapshot)
+      snapshot
+    }
+  }
+
+  private fun loadEntireThread(handler: ChatThreadHandler): ChatThread {
+    var snapshot = handler.get()
+    var iterations = 0
+    while (snapshot.hasMoreMessagesToLoad && iterations < 50) {
+      val updated = awaitThreadUpdate(handler) {
+        handler.messages().loadMore()
+      }
+      if (updated.messages.size == snapshot.messages.size) {
+        snapshot = updated
+        break
+      }
+      snapshot = updated
+      iterations += 1
+    }
+    return snapshot
+  }
+
+  private fun cacheThreadSnapshot(snapshot: ChatThread) {
+    synchronized(threads) {
+      threads.removeAll { it.id == snapshot.id }
+      threads.add(snapshot)
+    }
+  }
+
+  private fun awaitThreadUpdate(
+    handler: ChatThreadHandler,
+    timeoutMs: Long = 3_000,
+    block: () -> Unit
+  ): ChatThread {
+    val latch = CountDownLatch(1)
+    var updated: ChatThread? = null
+    val listener = ChatThreadHandler.OnThreadUpdatedListener { thread ->
+      updated = thread
+      latch.countDown()
+    }
+    val cancellable = handler.get(listener)
+    try {
+      block()
+      if (!latch.await(timeoutMs, TimeUnit.MILLISECONDS)) {
+        Log.w(TAG, "Timed out waiting for thread update")
+      }
+    } catch (error: Throwable) {
+      Log.e(TAG, "awaitThreadUpdate failed", error)
+    } finally {
+      cancellable?.cancel()
+    }
+    return updated ?: handler.get()
   }
 
   fun findThreadById(id: String): ChatThread? = synchronized(threads) {

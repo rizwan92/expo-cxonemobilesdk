@@ -2,6 +2,7 @@ package expo.modules.cxonemobilesdk
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
  
 import com.nice.cxonechat.Chat
 import com.nice.cxonechat.ChatBuilder
@@ -9,6 +10,8 @@ import com.nice.cxonechat.SocketFactoryConfiguration
 import com.nice.cxonechat.state.Configuration
 import com.nice.cxonechat.state.Configuration.Feature
 import com.nice.cxonechat.state.Environment
+
+private const val JSON_TAG = "[ExpoCxonemobilesdk][AndroidJSON]"
 
 object AndroidJSON {
   fun customEnvironmentFrom(chatUrl: String?, socketUrl: String?): Environment {
@@ -78,6 +81,7 @@ object AndroidJSON {
         else -> null
       }
     }
+    Log.i(JSON_TAG, "parseOutbound -> text='$text' postback=$postback attachments=${desc.size}")
     return Triple(text, postback, desc)
   }
 

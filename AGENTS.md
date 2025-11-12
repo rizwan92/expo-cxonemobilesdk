@@ -137,6 +137,7 @@ Example App
 
 - Mirror the modular structure in `example/App.tsx` with sections per feature and call into `src/api/*` so the example exercises the same public API you ship.
 - Shared connection widgets (status header, visitor card, channel config, thread list, `ConnectionContext`) live in `example/components`. When adding UI helpers, place them there and import them into the router screens rather than creating deep component trees inside `example/app/*`.
+- When displaying thread/message data in JS, render the native-provided ordering verbatim. Do not resort or dedupe on the JS side; CXoneChat already returns the canonical chronology (especially after Android’s recovery flow), and local sorting can hide messages or show stale sequences.
 
 README
 
