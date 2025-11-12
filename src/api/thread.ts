@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import Native from '../ExpoCxonemobilesdkModule';
 import type { ChatThreadDetails, OutboundMessage } from '../types';
 
@@ -38,17 +39,25 @@ export async function send(threadId: string, message: OutboundMessage) {
 }
 
 export async function loadMore(threadId: string): Promise<ChatThreadDetails> {
-  const result = await Native.threadsLoadMore(threadId);
-  console.log(
-    TAG,
-    'loadMore -> id',
-    result.id,
-    'messages',
-    result.messages.length,
-    'hasMore',
-    result.hasMoreMessagesToLoad,
-  );
-  return result as ChatThreadDetails;
+  const result = (await Native.threadsLoadMore(threadId)) as ChatThreadDetails | void;
+  if (result) {
+    console.log(
+      TAG,
+      'loadMore -> id',
+      result.id,
+      'messages',
+      result.messages.length,
+      'hasMore',
+      result.hasMoreMessagesToLoad,
+    );
+    return result;
+  }
+
+  // iOS bridge returns void; fetch the latest snapshot manually
+  if (Platform.OS === 'ios') {
+    console.log(TAG, 'loadMore -> ios fallback via getDetails', threadId);
+  }
+  return getDetails(threadId);
 }
 
 export async function markRead(threadId: string) {

@@ -15,8 +15,7 @@ struct ThreadUpdatedEventDTO: Encodable {
     let thread: ChatThreadDTO
 
     init(thread: ChatThread) throws {
-        let override = ThreadBridge.hasMoreOverride(for: thread.id)
-        self.thread = try ChatThreadDTO(thread, hasMoreOverride: override)
+        self.thread = try ChatThreadDTO(thread)
     }
 }
 
@@ -24,10 +23,7 @@ struct ThreadsUpdatedEventDTO: Encodable {
     let threads: [ChatThreadDTO]
 
     init(threads: [ChatThread]) {
-        self.threads = threads.compactMap {
-            let override = ThreadBridge.hasMoreOverride(for: $0.id)
-            return try? ChatThreadDTO($0, hasMoreOverride: override)
-        }
+        self.threads = threads.compactMap { try? ChatThreadDTO($0) }
     }
 }
 

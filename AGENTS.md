@@ -178,6 +178,7 @@ README
 - Keep TS types permissive and add notes where values differ by platform (e.g., number vs object). Prefer unions with shared bases instead of hard-coding a single shape.
 - Do not add platform tags into native payloads just to discriminate; use runtime platform checks (`Platform.OS`) or dedicated TS guards in `src/platform.ts`.
 - For Android mapping where obfuscation hides field names, prefer stable public getters and overlay curated keys for important sections (e.g., `fileRestrictions`). Avoid reflecting internal fields unless necessary and cap traversal depth.
+- Threads: Android's `threadsLoadMore` returns the refreshed snapshot, but iOS only signals native to extend its cache. JS callers must treat a `void` result as "fire-and-forget" and invoke `Thread.getDetails` afterward (our `src/api/thread.ts` helper already abstracts this pattern).
 
 ## Listener-First Design (Cross‑Platform Guidance)
 

@@ -53,7 +53,7 @@ declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkMo
   threadsLoad(threadId?: string): Promise<void>;
   threadsGetDetails(threadId: string): ChatThreadDetails;
   threadsSend(threadId: string, message: OutboundMessage): Promise<void>;
-  threadsLoadMore(threadId: string): Promise<ChatThreadDetails>;
+  threadsLoadMore(threadId: string): Promise<ChatThreadDetails | void>;
   threadsMarkRead(threadId: string): Promise<void>;
   threadsUpdateName(threadId: string, name: string): Promise<void>;
   threadsArchive(threadId: string): Promise<void>;

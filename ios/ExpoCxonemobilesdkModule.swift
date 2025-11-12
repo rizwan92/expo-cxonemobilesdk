@@ -192,15 +192,13 @@ public class ExpoCxonemobilesdkModule: Module {
         Function("threadsGet") { () -> [[String: Any]] in
             let threads = ThreadListBridge.get()
             return threads.map { thread in
-                let override = ThreadBridge.hasMoreOverride(for: thread.id)
-                return (try? ChatThreadDTO(thread, hasMoreOverride: override).asDictionary()) ?? [:]
+                (try? ChatThreadDTO(thread).asDictionary()) ?? [:]
             }
         }
         AsyncFunction("threadsCreate") {
             (customFields: [String: String]?) async throws -> [String: Any] in
             let thread = try await ThreadListBridge.create(customFields: customFields)
-            let override = ThreadBridge.hasMoreOverride(for: thread.id)
-            return try ChatThreadDTO(thread, hasMoreOverride: override).asDictionary()
+            return try ChatThreadDTO(thread).asDictionary()
         }
         AsyncFunction("threadsLoad") { (threadId: String?) async throws in
             let uuid = threadId.flatMap(UUID.init(uuidString:))
@@ -213,8 +211,7 @@ public class ExpoCxonemobilesdkModule: Module {
                     userInfo: [NSLocalizedDescriptionKey: "Invalid UUID: \(threadId)"])
             }
             let t = try ThreadListBridge.getDetails(threadId: uuid)
-            let override = ThreadBridge.hasMoreOverride(for: uuid)
-            return try ChatThreadDTO(t, hasMoreOverride: override).asDictionary()
+            return try ChatThreadDTO(t).asDictionary()
         }
         AsyncFunction("threadsSend") { (threadId: String, message: [String: Any]) async throws in
             guard let uuid = UUID(uuidString: threadId) else {
@@ -257,8 +254,7 @@ public class ExpoCxonemobilesdkModule: Module {
                     userInfo: [NSLocalizedDescriptionKey: "Invalid UUID: \(threadId)"])
             }
             let thread = try await ThreadBridge.loadMore(threadId: uuid)
-            let override = ThreadBridge.hasMoreOverride(for: uuid)
-            return try ChatThreadDTO(thread, hasMoreOverride: override).asDictionary()
+            return try ChatThreadDTO(thread).asDictionary()
         }
         AsyncFunction("threadsMarkRead") { (threadId: String) async throws in
             guard let uuid = UUID(uuidString: threadId) else {
