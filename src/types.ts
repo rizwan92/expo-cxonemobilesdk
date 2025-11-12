@@ -151,6 +151,8 @@ export interface ProactiveAction {
   name?: string | null;
   type?: string | null;
   content?: ProactiveActionContent | null;
+  /** Android currently exposes the raw variables map supplied by the SDK. */
+  variables?: Record<string, any>;
 }
 
 // Event payloads

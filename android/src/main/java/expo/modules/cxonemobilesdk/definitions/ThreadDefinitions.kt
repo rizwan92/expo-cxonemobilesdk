@@ -8,6 +8,7 @@ import com.nice.cxonechat.message.ContentDescriptor
 import expo.modules.cxonemobilesdk.CXoneManager
 import expo.modules.cxonemobilesdk.ExpoCxonemobilesdkModule
 import expo.modules.cxonemobilesdk.JSONBridge
+import expo.modules.cxonemobilesdk.dto.ChatThreadDTO
 import expo.modules.kotlin.modules.ModuleDefinitionBuilder
 
 internal fun ModuleDefinitionBuilder.addThreadDefinitions(owner: ExpoCxonemobilesdkModule) {
@@ -17,7 +18,8 @@ internal fun ModuleDefinitionBuilder.addThreadDefinitions(owner: ExpoCxonemobile
     CXoneManager.sendMessage(threadId, text, postback, attachments)
   }
   AsyncFunction("threadsLoadMore") { threadId: String ->
-    CXoneManager.loadMore(threadId)
+    val thread = CXoneManager.loadMore(threadId)
+    ChatThreadDTO.from(thread).toMap()
   }
   AsyncFunction("threadsMarkRead") { threadId: String ->
     CXoneManager.withThreadHandler(threadId) { events().markThreadRead() }

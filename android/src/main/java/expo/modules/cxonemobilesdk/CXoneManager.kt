@@ -4,19 +4,27 @@ import android.content.Context
 import android.util.Log
 import com.nice.cxonechat.*
 import com.nice.cxonechat.ChatState.*
+import com.nice.cxonechat.ChatThreadHandler
 import com.nice.cxonechat.analytics.ActionMetadata
 import com.nice.cxonechat.exceptions.RuntimeChatException
-import com.nice.cxonechat.message.ContentDescriptor
 import com.nice.cxonechat.log.LoggerAndroid
+import com.nice.cxonechat.message.ContentDescriptor
 import com.nice.cxonechat.thread.ChatThread
-import com.nice.cxonechat.thread.ChatThreadState
+import expo.modules.cxonemobilesdk.dto.ActionMetadataMapper
+import expo.modules.cxonemobilesdk.dto.AgentDTO
+import expo.modules.cxonemobilesdk.dto.AgentTypingEventDTO
+import expo.modules.cxonemobilesdk.dto.ChatThreadDTO
+import expo.modules.cxonemobilesdk.dto.ProactiveActionDTO
+import expo.modules.cxonemobilesdk.dto.ProactiveActionEventDTO
+import expo.modules.cxonemobilesdk.dto.ThreadUpdatedEventDTO
+import expo.modules.cxonemobilesdk.dto.ThreadsUpdatedEventDTO
 import java.lang.ref.WeakReference
+import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.coroutines.resume
-import java.util.*
 
 object CXoneManager : ChatInstanceProvider.Listener {
   private const val TAG = "[ExpoCxonemobilesdk]"
@@ -85,16 +93,14 @@ object CXoneManager : ChatInstanceProvider.Listener {
             provider?.removeListener(this)
             val msg = "Prepare failed: returned to Initial"
             lastError = msg
-            moduleRef?.get()?.sendEvent("connectionError", mapOf("phase" to "prepare", "message" to msg))
-            moduleRef?.get()?.sendEvent("error", mapOf("message" to msg))
+            moduleRef?.get()?.emitConnectionError("prepare", msg)
             if (cont.isActive) cont.resumeWith(Result.failure(IllegalStateException(msg)))
           }
         }
         override fun onChatRuntimeException(exception: RuntimeChatException) {
           // Keep listening; state callback will follow. Do not fail here.
           lastError = exception.message ?: "unknown"
-          moduleRef?.get()?.sendEvent("connectionError", mapOf("phase" to "prepare", "message" to lastError!!))
-          moduleRef?.get()?.sendEvent("error", mapOf("message" to (exception.message ?: "unknown")))
+          moduleRef?.get()?.emitConnectionError("prepare", lastError!!)
         }
       }
       provider?.addListener(listener)
@@ -109,8 +115,7 @@ object CXoneManager : ChatInstanceProvider.Listener {
           provider?.removeListener(listener)
           val msg = "Prepare timeout"
           lastError = msg
-          moduleRef?.get()?.sendEvent("connectionError", mapOf("phase" to "prepare", "message" to msg))
-          moduleRef?.get()?.sendEvent("error", mapOf("message" to msg))
+          moduleRef?.get()?.emitConnectionError("prepare", msg)
           cont.resumeWith(Result.failure(IllegalStateException(msg)))
         }
       }
@@ -129,6 +134,7 @@ object CXoneManager : ChatInstanceProvider.Listener {
       ChatState.Initial -> {
         val msg = "Connect called before prepare"
         lastError = msg
+        moduleRef?.get()?.emitConnectionError("connect", msg)
         throw IllegalStateException(msg)
       }
       else -> { /* ConnectionLost also handled by connect below */ prov.connect() }
@@ -145,8 +151,7 @@ object CXoneManager : ChatInstanceProvider.Listener {
         }
         override fun onChatRuntimeException(exception: RuntimeChatException) {
           lastError = exception.message ?: "unknown"
-          moduleRef?.get()?.sendEvent("connectionError", mapOf("phase" to "connect", "message" to lastError!!))
-          moduleRef?.get()?.sendEvent("error", mapOf("message" to (exception.message ?: "unknown")))
+          moduleRef?.get()?.emitConnectionError("connect", lastError!!)
         }
       }
       provider?.addListener(listener)
@@ -156,8 +161,7 @@ object CXoneManager : ChatInstanceProvider.Listener {
           provider?.removeListener(listener)
           val msg = "Connect timeout"
           lastError = msg
-          moduleRef?.get()?.sendEvent("connectionError", mapOf("phase" to "connect", "message" to msg))
-          moduleRef?.get()?.sendEvent("error", mapOf("message" to msg))
+          moduleRef?.get()?.emitConnectionError("connect", msg)
           cont.resumeWith(Result.failure(IllegalStateException(msg)))
         }
       }
@@ -318,11 +322,11 @@ object CXoneManager : ChatInstanceProvider.Listener {
     }
   }
 
-  fun withThreadHandler(threadId: String, block: ChatThreadHandler.() -> Unit) {
+  fun <T> withThreadHandler(threadId: String, block: ChatThreadHandler.() -> T): T {
     val chat = provider?.chat ?: throw IllegalStateException("Chat not ready")
     val t = findThreadById(threadId) ?: throw IllegalArgumentException("Thread not found: $threadId")
     val handler = chat.threads().thread(t)
-    handler.block()
+    return handler.block()
   }
 
   fun sendMessage(threadId: String, text: String, postback: String?, attachments: List<ContentDescriptor>) {
@@ -331,8 +335,9 @@ object CXoneManager : ChatInstanceProvider.Listener {
     }
   }
 
-  fun loadMore(threadId: String) {
+  fun loadMore(threadId: String): ChatThread {
     withThreadHandler(threadId) { messages().loadMore() }
+    return findThreadById(threadId) ?: throw IllegalStateException("Thread not found after load: $threadId")
   }
 
   fun findThreadById(id: String): ChatThread? = synchronized(threads) {
@@ -358,57 +363,68 @@ object CXoneManager : ChatInstanceProvider.Listener {
           threads.clear()
           threads.addAll(list)
         }
-        // Emit threadsUpdated and per-thread threadUpdated events
-        val ids = list.map { it.id.toString() }
-        moduleRef?.get()?.sendEvent("threadsUpdated", mapOf("threadIds" to ids))
-        list.forEach { t ->
-          moduleRef?.get()?.sendEvent("threadUpdated", mapOf("threadId" to t.id.toString()))
-          // also derive typing signal if available
-          val typing = t.threadAgent?.isTyping == true
-          if (typing) {
-            moduleRef?.get()?.sendEvent("agentTyping", mapOf(
-              "isTyping" to true,
-              "threadId" to t.id.toString()
-            ))
+        val module = moduleRef?.get() ?: return@threads
+        module.logRawEvent("threadsUpdated(raw)", list)
+        module.emitEvent("threadsUpdated", ThreadsUpdatedEventDTO.from(list).toMap())
+        list.forEach { thread ->
+          module.logRawEvent("threadUpdated(raw)", thread)
+          module.emitEvent("threadUpdated", ThreadUpdatedEventDTO.from(thread).toMap())
+          val agent = thread.threadAgent
+          if (agent != null) {
+            module.emitEvent(
+              "agentTyping",
+              AgentTypingEventDTO(
+                isTyping = agent.isTyping,
+                threadId = thread.id.toString(),
+                agent = AgentDTO.from(agent),
+              ).toMap()
+            )
           }
         }
       }
 
       // Subscribe to proactive actions
       actionHandler = chat.actions().also { actions ->
-        actions.onPopup { variables: Map<String, Any?>, _: ActionMetadata ->
-          moduleRef?.get()?.sendEvent("proactivePopupAction", mapOf(
-            "actionId" to "unknown",
-            "data" to variables
-          ))
+        actions.onPopup { variables: Map<String, Any?>, metadata: ActionMetadata ->
+          val module = moduleRef?.get() ?: return@onPopup
+          module.logRawEvent("proactivePopupAction(raw)", mapOf("variables" to variables, "metadata" to metadata))
+          val meta = ActionMetadataMapper.map(metadata)
+          val dto = ProactiveActionEventDTO(
+            ProactiveActionDTO(
+              actionId = meta.actionId,
+              name = meta.name,
+              type = meta.type,
+              variables = variables,
+            )
+          )
+          module.emitEvent("proactivePopupAction", dto.toMap())
         }
       }
     }
   }
 
   override fun onChatStateChanged(chatState: ChatState) {
-    moduleRef?.get()?.sendEvent("chatUpdated", mapOf(
-      "state" to when (chatState) {
-        Initial -> "initial"
-        Preparing -> "preparing"
-        Prepared -> "prepared"
-        Offline -> "offline"
-        Connecting -> "connecting"
-        Connected -> "connected"
-        Ready -> "ready"
-        ConnectionLost -> "closed"
-      },
-      "mode" to getChatModeString(),
-    ))
+    val module = moduleRef?.get() ?: return
+    val stateString = when (chatState) {
+      Initial -> "initial"
+      Preparing -> "preparing"
+      Prepared -> "prepared"
+      Offline -> "offline"
+      Connecting -> "connecting"
+      Connected -> "connected"
+      Ready -> "ready"
+      ConnectionLost -> "closed"
+    }
+    module.logRawEvent("chatUpdated(raw)", "state=$chatState mode=${getChatModeString()}")
+    module.emitEvent("chatUpdated", mapOf("state" to stateString, "mode" to getChatModeString()))
 
     if (chatState == ConnectionLost) {
-      moduleRef?.get()?.sendEvent("unexpectedDisconnect", emptyMap<String, Any>())
+      module.emitEmptyEvent("unexpectedDisconnect")
     }
   }
 
   override fun onChatRuntimeException(exception: RuntimeChatException) {
     lastError = exception.message ?: "unknown"
-    moduleRef?.get()?.sendEvent("connectionError", mapOf("phase" to "runtime", "message" to lastError!!))
-    moduleRef?.get()?.sendEvent("error", mapOf("message" to (exception.message ?: "unknown")))
+    moduleRef?.get()?.emitConnectionError("runtime", lastError!!)
   }
 }

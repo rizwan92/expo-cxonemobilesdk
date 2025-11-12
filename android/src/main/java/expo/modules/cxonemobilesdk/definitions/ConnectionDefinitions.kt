@@ -7,6 +7,8 @@ import com.nice.cxonechat.enums.CXoneEnvironment
 import expo.modules.cxonemobilesdk.CXoneManager
 import expo.modules.cxonemobilesdk.ExpoCxonemobilesdkModule
 import expo.modules.cxonemobilesdk.JSONBridge
+import expo.modules.cxonemobilesdk.emitChatSnapshot
+import expo.modules.cxonemobilesdk.emitConnectionError
 import expo.modules.kotlin.modules.ModuleDefinitionBuilder
 import expo.modules.kotlin.functions.Coroutine
 import java.util.Locale
@@ -30,16 +32,11 @@ internal fun ModuleDefinitionBuilder.addConnectionDefinitions(owner: ExpoCxonemo
     val ctx = requireNotNull(owner.appContext.reactContext) { "No React context" }
     CXoneManager.initialize(ctx.applicationContext, cfg, owner)
     runCatching { JSONBridge.fetchChannelConfiguration(ctx, environment, brandId.toLong(), channelId) }
+      .onFailure { owner.emitConnectionError("preflight", it.message ?: "Failed to fetch channel configuration") }
     CXoneManager.prepareAwait()
     CXoneManager.connectAwait()
     // Emit a snapshot so callers always get an update even if already connected
-    owner.sendEvent(
-      "chatUpdated",
-      mapOf(
-        "state" to CXoneManager.getChatStateString(),
-        "mode" to CXoneManager.getChatModeString(),
-      )
-    )
+    owner.emitChatSnapshot()
   }
 
   AsyncFunction("prepareWithURLs") Coroutine { chatURL: String, socketURL: String, brandId: Int, channelId: String ->
@@ -50,6 +47,7 @@ internal fun ModuleDefinitionBuilder.addConnectionDefinitions(owner: ExpoCxonemo
     CXoneManager.initialize(ctx.applicationContext, cfg, owner)
     CXoneManager.prepareAwait()
     CXoneManager.connectAwait()
+    owner.emitChatSnapshot()
   }
 
   Function("getChatMode") { CXoneManager.getChatModeString() }

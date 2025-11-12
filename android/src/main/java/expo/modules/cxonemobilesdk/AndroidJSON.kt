@@ -6,11 +6,9 @@ import android.net.Uri
 import com.nice.cxonechat.Chat
 import com.nice.cxonechat.ChatBuilder
 import com.nice.cxonechat.SocketFactoryConfiguration
-import com.nice.cxonechat.message.Message
 import com.nice.cxonechat.state.Configuration
+import com.nice.cxonechat.state.Configuration.Feature
 import com.nice.cxonechat.state.Environment
-import com.nice.cxonechat.thread.ChatThread
-import java.lang.reflect.Modifier
 
 object AndroidJSON {
   fun customEnvironmentFrom(chatUrl: String?, socketUrl: String?): Environment {
@@ -28,166 +26,7 @@ object AndroidJSON {
     }
   }
 
-  fun threadToMap(t: ChatThread): Map<String, Any?> {
-    return mapOf(
-      "id" to t.id.toString(),
-      "name" to t.threadName,
-      "state" to t.threadState.name.lowercase(),
-      "hasMoreMessagesToLoad" to t.hasMoreMessagesToLoad,
-      "positionInQueue" to t.positionInQueue,
-      "assignedAgent" to t.threadAgent?.let { a ->
-        mapOf(
-          "id" to a.id,
-          "name" to a.fullName,
-          "isTyping" to a.isTyping,
-        )
-      },
-      "messagesCount" to t.messages.size,
-      "scrollToken" to t.scrollToken,
-      "messages" to t.messages.map { messageToMap(it) },
-    )
-  }
-
-  private fun messageToMap(m: Message): Map<String, Any?> {
-    val base = mutableMapOf<String, Any?>(
-      "id" to m.id.toString(),
-      "threadId" to m.threadId.toString(),
-      "createdAt" to m.createdAt.time,
-      "direction" to m.direction.name.lowercase(),
-      "fallbackText" to m.fallbackText,
-    )
-    when (m) {
-      is Message.Text -> {
-        base["type"] = "text"
-        base["payload"] = mapOf("text" to m.text)
-      }
-      is Message.RichLink -> {
-        base["type"] = "richLink"
-        base["data"] = mapOf(
-          "title" to m.title,
-          "url" to m.url,
-          "fileName" to m.media.fileName,
-          "fileUrl" to m.media.url,
-          "mimeType" to m.media.mimeType,
-        )
-      }
-      is Message.QuickReplies -> {
-        base["type"] = "quickReplies"
-        base["data"] = mapOf(
-          "title" to m.title,
-          "buttons" to m.actions.map { action ->
-            val b = action as? com.nice.cxonechat.message.Action.ReplyButton
-            val media = b?.media
-            mapOf(
-              "text" to (b?.text ?: ""),
-              "description" to (b?.description),
-              "postback" to (b?.postback),
-              "iconName" to media?.fileName,
-              "iconUrl" to media?.url,
-              "iconMimeType" to media?.mimeType,
-            )
-          }
-        )
-      }
-      is Message.ListPicker -> {
-        base["type"] = "listPicker"
-        base["data"] = mapOf(
-          "title" to m.title,
-          "text" to m.text,
-          "buttons" to m.actions.map { action ->
-            val b = action as? com.nice.cxonechat.message.Action.ReplyButton
-            val media = b?.media
-            mapOf(
-              "text" to (b?.text ?: ""),
-              "description" to b?.description,
-              "postback" to b?.postback,
-              "iconName" to media?.fileName,
-              "iconUrl" to media?.url,
-              "iconMimeType" to media?.mimeType,
-            )
-          }
-        )
-      }
-      else -> base["type"] = "unknown"
-    }
-    return base
-  }
-
-  // Best-effort reflective encoder to expose as much of the SDK Configuration as possible
-  private fun reflectToJson(value: Any?, depth: Int = 0, visited: MutableSet<Int> = mutableSetOf()): Any? {
-    if (value == null) return null
-    // Limit traversal depth to avoid huge graphs
-    if (depth > 6) return null
-    // primitives
-    when (value) {
-      is String, is Number, is Boolean -> return value
-    }
-    if (value is java.util.UUID) return value.toString()
-    if (value is java.util.Date) return value.time
-    if (value is Enum<*>) return value.name.lowercase()
-    if (value is Map<*, *>) {
-      val out = mutableMapOf<String, Any?>()
-      value.forEach { (k, v) ->
-        if (k is String) out[k] = reflectToJson(v, depth + 1, visited)
-      }
-      return out
-    }
-    if (value is Iterable<*>) {
-      return value.map { v -> reflectToJson(v, depth + 1, visited) }
-    }
-    if (value.javaClass.isArray) {
-      val arr = java.lang.reflect.Array.getLength(value)
-      val list = ArrayList<Any?>(arr)
-      for (i in 0 until arr) list.add(reflectToJson(java.lang.reflect.Array.get(value, i), depth + 1, visited))
-      return list
-    }
-    // prevent cycles
-    val id = System.identityHashCode(value)
-    if (!visited.add(id)) return null
-    // Prefer public bean-style getters to derive stable property names when available
-    run {
-      val out = mutableMapOf<String, Any?>()
-      val methods = try { value.javaClass.methods } catch (_: Throwable) { emptyArray() }
-      for (m in methods) {
-        val name = m.name
-        if (name == "getClass") continue
-        if (m.parameterCount != 0) continue
-        val pub = try { Modifier.isPublic(m.modifiers) } catch (_: Throwable) { false }
-        if (!pub) continue
-        val prop = when {
-          name.startsWith("get") && name.length > 3 -> name.substring(3).replaceFirstChar { it.lowercaseChar() }
-          name.startsWith("is") && name.length > 2 -> name.substring(2).replaceFirstChar { it.lowercaseChar() }
-          else -> null
-        } ?: continue
-        try {
-          m.isAccessible = true
-          val v = m.invoke(value)
-          out[prop] = reflectToJson(v, depth + 1, visited)
-        } catch (_: Throwable) { /* ignore */ }
-      }
-      if (out.isNotEmpty()) return out
-    }
-
-    // Fallback: reflect object fields (including private)
-    val outFields = mutableMapOf<String, Any?>()
-    var c: Class<*>? = value.javaClass
-    while (c != null && c != Any::class.java) {
-      for (f in c.declaredFields) {
-        try {
-          f.isAccessible = true
-          val name = f.name
-          val v = f.get(value)
-          outFields[name] = reflectToJson(v, depth + 1, visited)
-        } catch (_: Throwable) {}
-      }
-      c = c.superclass
-    }
-    return outFields
-  }
-
   fun configurationToMap(cfg: Configuration): Map<String, Any?> {
-    // Try a deep reflective map first to include all nested details
-    val full = reflectToJson(cfg) as? Map<String, Any?>
     val fr = cfg.fileRestrictions
     val curatedFR = mapOf(
       "allowedFileSize" to fr.allowedFileSize,
@@ -199,21 +38,23 @@ object AndroidJSON {
         )
       }
     )
-
-    if (full != null && full.isNotEmpty()) {
-      // Overlay curated, human-friendly keys where obfuscation may hide names
-      val base = full.toMutableMap()
-      base["fileRestrictions"] = curatedFR
-      return base
-    }
-
-    // Fallback to curated minimal mapping
+    val featureMap = runCatching<Map<String, Boolean>> {
+      Feature.values().associate { feature ->
+        val key = runCatching {
+          val method = feature.javaClass.getDeclaredMethod("getKey\$chat_sdk_core_release")
+          method.isAccessible = true
+          method.invoke(feature) as? String
+        }.getOrNull() ?: feature.name.lowercase()
+        key to cfg.hasFeature(feature)
+      }
+    }.getOrElse { emptyMap() }
     return mapOf(
       "hasMultipleThreadsPerEndUser" to cfg.hasMultipleThreadsPerEndUser,
       "isProactiveChatEnabled" to cfg.isProactiveChatEnabled,
       "isAuthorizationEnabled" to cfg.isAuthorizationEnabled,
       "isLiveChat" to cfg.isLiveChat,
       "isOnline" to cfg.isOnline,
+      "features" to featureMap,
       "fileRestrictions" to curatedFR,
     )
   }
