@@ -41,6 +41,7 @@ object CXoneManager : ChatInstanceProvider.Listener {
 
   // Cache of latest known threads
   private val threads: MutableList<ChatThread> = mutableListOf()
+  private val exhaustedThreads: MutableSet<UUID> = mutableSetOf()
 
   // Pending auth codes
   private var pendingAuthCode: String? = null
@@ -368,17 +369,31 @@ object CXoneManager : ChatInstanceProvider.Listener {
   private fun loadEntireThread(handler: ChatThreadHandler): ChatThread {
     var snapshot = handler.get()
     var iterations = 0
+    var lastOldestMessageId = snapshot.messages.lastOrNull()?.id?.toString()
+    var exhausted = false
     while (snapshot.hasMoreMessagesToLoad && iterations < 50) {
       val updated = awaitThreadUpdate(handler) {
         handler.messages().loadMore()
       }
-      if (updated.messages.size == snapshot.messages.size) {
+      val updatedOldestMessageId = updated.messages.lastOrNull()?.id?.toString()
+      if (
+        updated.messages.size == snapshot.messages.size &&
+        updatedOldestMessageId == lastOldestMessageId
+      ) {
+        Log.w(TAG, "loadEntireThread reached steady state for ${snapshot.id}, stopping early")
         snapshot = updated
+        exhausted = true
         break
       }
       snapshot = updated
+      lastOldestMessageId = updatedOldestMessageId
       iterations += 1
     }
+    if (snapshot.hasMoreMessagesToLoad && iterations >= 50) {
+      Log.w(TAG, "loadEntireThread hit iteration cap for ${snapshot.id}")
+      exhausted = true
+    }
+    markThreadExhaustion(snapshot.id, exhausted)
     return snapshot
   }
 
@@ -386,6 +401,17 @@ object CXoneManager : ChatInstanceProvider.Listener {
     synchronized(threads) {
       threads.removeAll { it.id == snapshot.id }
       threads.add(snapshot)
+    }
+  }
+
+  private fun hydrateThreadIfNeeded(chat: Chat, thread: ChatThread): ChatThread {
+    if (!thread.hasMoreMessagesToLoad) return thread
+    return runCatching {
+      val handler = chat.threads().thread(thread)
+      loadEntireThread(handler)
+    }.getOrElse { error ->
+      Log.w(TAG, "hydrateThreadIfNeeded failed for ${thread.id}", error)
+      thread
     }
   }
 
@@ -433,22 +459,25 @@ object CXoneManager : ChatInstanceProvider.Listener {
     if (chat != null) {
       // subscribe to thread list updates
       threadsHandlerCancellable = chat.threads().threads { list ->
+        val module = moduleRef?.get() ?: return@threads
+        val hydratedThreads = list.map { thread ->
+          hydrateThreadIfNeeded(chat, thread)
+        }
         synchronized(threads) {
           threads.clear()
-          threads.addAll(list)
+          threads.addAll(hydratedThreads)
         }
-        val module = moduleRef?.get() ?: return@threads
-        module.logRawEvent("threadsUpdated(raw)", list)
-        module.emitEvent("threadsUpdated", ThreadsUpdatedEventDTO.from(list).toMap())
-        list.forEach { thread ->
+        module.logRawEvent("threadsUpdated(raw)", hydratedThreads)
+        module.emitEvent("threadsUpdated", ThreadsUpdatedEventDTO.from(hydratedThreads).toMap())
+        hydratedThreads.forEach { thread ->
           module.logRawEvent("threadUpdated(raw)", thread)
           module.emitEvent("threadUpdated", ThreadUpdatedEventDTO.from(thread).toMap())
           val agent = thread.threadAgent
-          if (agent != null) {
+          if (agent?.isTyping == true) {
             module.emitEvent(
               "agentTyping",
               AgentTypingEventDTO(
-                isTyping = agent.isTyping,
+                isTyping = true,
                 threadId = thread.id.toString(),
                 agent = AgentDTO.from(agent),
               ).toMap()
@@ -500,5 +529,18 @@ object CXoneManager : ChatInstanceProvider.Listener {
   override fun onChatRuntimeException(exception: RuntimeChatException) {
     lastError = exception.message ?: "unknown"
     moduleRef?.get()?.emitConnectionError("runtime", lastError!!)
+  }
+  private fun markThreadExhaustion(id: UUID, exhausted: Boolean) {
+    synchronized(exhaustedThreads) {
+      if (exhausted) {
+        exhaustedThreads.add(id)
+      } else {
+        exhaustedThreads.remove(id)
+      }
+    }
+  }
+
+  fun threadHasMoreOverride(id: UUID): Boolean? = synchronized(exhaustedThreads) {
+    if (exhaustedThreads.contains(id)) false else null
   }
 }

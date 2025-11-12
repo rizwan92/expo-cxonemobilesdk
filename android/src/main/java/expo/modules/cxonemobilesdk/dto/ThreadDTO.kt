@@ -303,23 +303,24 @@ data class ChatThreadDTO(
   )
 
   companion object {
-    fun from(thread: ChatThread): ChatThreadDTO {
+    fun from(thread: ChatThread, hasMoreOverride: Boolean? = null): ChatThreadDTO {
       val sortedMessages = thread.messages.sortedByDescending { it.createdAt }
       val seen = linkedSetOf<String>()
       val uniqueMessages = sortedMessages.mapNotNull { message ->
         val id = message.id.toString()
         if (seen.add(id)) MessageDTO.from(message) else null
       }
+      val hasMore = hasMoreOverride ?: thread.hasMoreMessagesToLoad
       return ChatThreadDTO(
         id = thread.id.toString(),
         name = thread.threadName,
         state = thread.threadState.name.lowercase(Locale.US),
-        hasMoreMessagesToLoad = thread.hasMoreMessagesToLoad,
+        hasMoreMessagesToLoad = hasMore,
         positionInQueue = thread.positionInQueue,
         assignedAgent = thread.threadAgent?.let { AgentDTO.from(it) },
         lastAssignedAgent = null,
         messagesCount = uniqueMessages.size,
-        scrollToken = thread.scrollToken.takeIf { it.isNotBlank() },
+        scrollToken = if (hasMore) thread.scrollToken.takeIf { it.isNotBlank() } else null,
         customFields = thread.fields.associate { it.id to it.value },
         messages = uniqueMessages,
       )

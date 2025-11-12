@@ -54,6 +54,7 @@ across Swift/Kotlin, TypeScript, podspecs/Gradle, and the example app.
     - Demonstrates calling `prepareAndConnect`, `disconnect` with console logs and event-driven UI.
   - `example/components/*`
     - Shared React context and cards live here so Expo Router screens under `example/app/*` stay lightweight. Add new reusable UI to this folder instead of inside the router tree.
+  - Message rendering should stay purely event-driven: do not add optimistic/pending messages in JS. Let native `threadUpdated` events (with full history) drive the UI and only call `Thread.getDetails`/`Thread.loadMore` when the user explicitly refreshes.
 
 ## Add a New Native Function (Checklist)
 

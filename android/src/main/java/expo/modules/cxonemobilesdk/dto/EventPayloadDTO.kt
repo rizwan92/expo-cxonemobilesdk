@@ -17,7 +17,12 @@ data class ThreadsUpdatedEventDTO(val threads: List<ChatThreadDTO>) {
 
   companion object {
     fun from(chatThreads: List<com.nice.cxonechat.thread.ChatThread>) =
-      ThreadsUpdatedEventDTO(chatThreads.map { ChatThreadDTO.from(it) })
+      ThreadsUpdatedEventDTO(
+        chatThreads.map { thread ->
+          val override = CXoneManager.threadHasMoreOverride(thread.id)
+          ChatThreadDTO.from(thread, override)
+        }
+      )
   }
 }
 
@@ -25,7 +30,10 @@ data class ThreadUpdatedEventDTO(val thread: ChatThreadDTO) {
   fun toMap() = mapOf("thread" to thread.toMap())
 
   companion object {
-    fun from(thread: com.nice.cxonechat.thread.ChatThread) = ThreadUpdatedEventDTO(ChatThreadDTO.from(thread))
+    fun from(thread: com.nice.cxonechat.thread.ChatThread): ThreadUpdatedEventDTO {
+      val override = CXoneManager.threadHasMoreOverride(thread.id)
+      return ThreadUpdatedEventDTO(ChatThreadDTO.from(thread, override))
+    }
   }
 }
 

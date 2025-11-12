@@ -38,8 +38,16 @@ export async function send(threadId: string, message: OutboundMessage) {
 }
 
 export async function loadMore(threadId: string): Promise<ChatThreadDetails> {
-  console.log(TAG, 'loadMore', threadId);
   const result = await Native.threadsLoadMore(threadId);
+  console.log(
+    TAG,
+    'loadMore -> id',
+    result.id,
+    'messages',
+    result.messages.length,
+    'hasMore',
+    result.hasMoreMessagesToLoad,
+  );
   return result as ChatThreadDetails;
 }
 

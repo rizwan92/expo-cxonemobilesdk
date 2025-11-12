@@ -1,4 +1,6 @@
+// React primitives for state/effect management as well as refs
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+// Core RN components used to compose the chat screen UI
 import {
   SafeAreaView,
   View,
@@ -9,39 +11,75 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
+// Router helpers for reading the route param (threadId) and navigating back
 import { useLocalSearchParams, useRouter } from 'expo-router';
+// Native module surface + typed helpers for thread operations
 import ExpoCxonemobilesdk, { Thread } from 'expo-cxonemobilesdk';
-import type { ChatMessage } from 'expo-cxonemobilesdk';
+// Message shape mirrored from the native SDK
+import type { ChatMessage, ChatThreadDetails } from 'expo-cxonemobilesdk';
+// Expo helper to subscribe to native events
 import { useEvent } from 'expo';
+// Reusable chat UI building blocks
 import { ChatList, Composer } from '../../../components/chat';
 
+const MIN_INITIAL_MESSAGES = 25;
+const MAX_PREFETCH_BATCHES = 10;
+
+async function hydrateThreadSnapshot(threadId: string): Promise<ChatThreadDetails> {
+  let details = await Thread.getDetails(threadId);
+  let batches = 0;
+  while (
+    details.hasMoreMessagesToLoad &&
+    details.messages.length < MIN_INITIAL_MESSAGES &&
+    batches < MAX_PREFETCH_BATCHES
+  ) {
+    console.log('[ChatApp/Thread] prefetching earlier messages', {
+      threadId,
+      batch: batches + 1,
+      count: details.messages.length,
+    });
+    await Thread.loadMore(threadId);
+    details = await Thread.getDetails(threadId);
+    batches += 1;
+  }
+  return details;
+}
+
 export default function ThreadScreen() {
+  // Expo Router instance for navigation actions (back / push)
   const router = useRouter();
+  // Extract the current threadId from the route (e.g., /thread/[threadId])
   const { threadId } = useLocalSearchParams<{ threadId: string }>();
+  // Subscribe to native `threadUpdated` events so UI reflects server pushes
   const threadUpdated = useEvent(ExpoCxonemobilesdk, Thread.EVENTS.UPDATED);
 
+  // Rendered chat messages (mirrors native payload order)
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  // Track whether we are fetching older history to show spinner/disable loads
   const [loadingEarlier, setLoadingEarlier] = useState(false);
+  // Whether more history is available server-side (native informs us)
   const [hasMore, setHasMore] = useState<boolean>(false);
+  // Simple helper text used by the demo to send sequential numbers quickly
   const [counterText, setCounterText] = useState<string>('1');
+  // Bumping this value tells the list to auto-scroll to the bottom
   const [scrollKey, setScrollKey] = useState(0);
+  // Cached custom fields so the thread details card can display them
   const [customFields, setCustomFields] = useState<Record<string, string> | null>(null);
+  // Pull-to-refresh visual state
   const [refreshing, setRefreshing] = useState(false);
+  // Guard flag to avoid processing events while a manual reload is pending
   const reloadingRef = useRef(false);
 
-  const reload = useCallback(async () => {
+  // Always hydrate from native so we don't keep any optimistic/pending copies in JS.
+  const getInitialMessages = useCallback(async () => {
+    // Skip if the screen was opened without a thread id
     if (!threadId) return;
-    console.log('[ChatApp/Thread] reload', threadId);
+    console.log('[ChatApp/Thread] getInitialMessages', threadId);
+    // Mark that a reload is happening to mute event-driven updates mid-flight
     reloadingRef.current = true;
     try {
-      if (Platform.OS !== 'android') {
-        try {
-          await Thread.load(threadId);
-        } catch (error) {
-          console.warn('[ChatApp/Thread] reload load failed', error);
-        }
-      }
-      const details = await Thread.getDetails(threadId);
+      // Synchronously fetch the latest native snapshot (mirrors SDK ordering)
+      let details = await hydrateThreadSnapshot(threadId);
       setMessages(details.messages);
       setHasMore(!!details.hasMoreMessagesToLoad);
       setCustomFields(details.customFields ?? null);
@@ -51,75 +89,84 @@ export default function ThreadScreen() {
   }, [threadId]);
 
   useEffect(() => {
+    // Fetch messages whenever the route changes to a new thread id
     if (!threadId) return;
-    reload();
-  }, [threadId, reload]);
+    getInitialMessages();
+  }, [threadId, getInitialMessages]);
 
   // Refresh when native notifies updates for this thread
   useEffect(() => {
-    console.log('[ChatApp/Thread] threadUpdated event', threadUpdated?.thread.messages.length); 
+    // Ignore events until we finish a manual hydration
     if (!threadId || reloadingRef.current) return;
     if (threadUpdated?.thread?.id === threadId) {
-      const details = threadUpdated.thread;
-      setMessages(details.messages);
-      setHasMore(!!details.hasMoreMessagesToLoad);
-      setCustomFields(details.customFields ?? null);
+      // CXone emits the full message history for recovered threads, so just mirror it.
+      setMessages(threadUpdated.thread.messages);
+      setHasMore(!!threadUpdated.thread.hasMoreMessagesToLoad);
+      setCustomFields(threadUpdated.thread.customFields ?? null);
     }
-  }, [threadUpdated?.thread?.id, threadId, threadUpdated?.thread]);
+  }, [threadId, threadUpdated?.thread]);
+
+  // Send handler invoked by the Composer component
   const onSend = useCallback(
     async (text: string) => {
+      // Do nothing for empty payloads or missing thread ids
       if (!threadId || !text) return;
       console.log('[ChatApp/Thread] onSend ->', { threadId, text });
       try {
+        // Delegate to the native module and rely on threadUpdated for the echo
         await Thread.send(threadId, { text });
         console.log('[ChatApp/Thread] onSend success', { threadId });
-        // Increment counter for next send
         const n = Number(text);
         if (Number.isFinite(n)) {
           setCounterText(String(n + 1));
         }
-        await reload();
-        // Explicitly scroll to bottom after sending
+        // Bump so FlatList scrolls to the latest message once native updates arrive
         setScrollKey((k) => k + 1);
       } catch (err) {
         console.error('[ChatApp/Thread] onSend failed', err);
         throw err;
       }
     },
-    [threadId, reload],
+    [threadId],
   );
 
+  // Manual "load older history" action. We only call getDetails when needed.
   const onLoadEarlier = useCallback(async () => {
     if (!threadId) return;
     if (!hasMore) return;
-    setLoadingEarlier(true);
-    try {
-      const details = await Thread.loadMore(threadId);
-      setMessages(details.messages);
-      setHasMore(!!details.hasMoreMessagesToLoad);
-    } finally {
-      setLoadingEarlier(false);
-    }
+      // Show spinner while more history loads from native
+      setLoadingEarlier(true);
+      try {
+        const details = await Thread.loadMore(threadId);
+        setMessages(details.messages);
+        setHasMore(!!details.hasMoreMessagesToLoad);
+      } finally {
+        setLoadingEarlier(false);
+      }
   }, [threadId, hasMore]);
 
+  // Pull-to-refresh handler: simply re-fetch the native snapshot
   const handleRefresh = useCallback(async () => {
     if (!threadId || refreshing) return;
-    setRefreshing(true);
-    try {
-      await reload();
-    } finally {
-      setRefreshing(false);
-    }
-  }, [threadId, refreshing, reload]);
+      setRefreshing(true);
+      try {
+        await getInitialMessages();
+      } finally {
+        setRefreshing(false);
+      }
+  }, [threadId, refreshing, getInitialMessages]);
 
   return (
+    // Basic safe-area wrapper for notch devices
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        {/* Simple back button to exit the thread */}
         <Button title="Back" onPress={() => router.back()} />
         <Text style={styles.title} numberOfLines={1}>
           Thread: {threadId}
         </Text>
         <View style={styles.headerActions}>
+          {/* Manual refresh button shares the same logic as pull-to-refresh */}
           <Button
             title={refreshing ? 'Refreshing…' : 'Refresh'}
             onPress={handleRefresh}
@@ -127,6 +174,7 @@ export default function ThreadScreen() {
           />
           <Button
             title="Edit Details"
+            // Navigate to the edit UI, passing the thread id as query param
             onPress={() => router.push(`/chat-app/threads/create?threadId=${threadId}`)}
             disabled={!threadId}
           />
@@ -137,6 +185,7 @@ export default function ThreadScreen() {
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         {customFields && Object.keys(customFields).length ? (
+          // Show custom fields when the thread supplies metadata
           <View style={styles.customFieldsCard}>
             <Text style={styles.sectionTitle}>Thread Details</Text>
             {Object.entries(customFields).map(([key, value]) => (
@@ -155,6 +204,7 @@ export default function ThreadScreen() {
           )}
         </View>
         <View style={{ flex: 1 }}>
+          {/* Chat list handles rendering the message bubbles & infinite scroll */}
           <ChatList
             messages={messages}
             hasMore={hasMore}
@@ -163,6 +213,7 @@ export default function ThreadScreen() {
             scrollToBottomKey={scrollKey}
           />
         </View>
+        {/* Composer exposes the send UI and passes text to onSend */}
         <Composer onSend={onSend} value={counterText} onChangeText={setCounterText} />
       </KeyboardAvoidingView>
     </SafeAreaView>
