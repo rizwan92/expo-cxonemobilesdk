@@ -20,12 +20,21 @@ export default function ThreadsCard({ connected, onRefresh }: Props) {
   const [threadList, setThreadList] = useState<ChatThreadDetails[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
-  const refreshThreads = useCallback(() => {
-    if (!isConnected) return;
+  const refreshThreads = useCallback(async () => {
+    if (!isConnected) {
+      setThreadList([]);
+      return;
+    }
+    setRefreshing(true);
     try {
-      setThreadList(Threads.get());
+      await Threads.load();
+      const refreshed = Threads.get();
+      console.log('[ThreadsCard] refreshed threads', refreshed.length);
+      setThreadList(refreshed);
     } catch (e) {
-      console.error('[ThreadsCard] refresh failed', e);
+      console.error('[ThreadsCard] full refresh failed', e);
+    } finally {
+      setRefreshing(false);
     }
   }, [isConnected]);
 
@@ -83,14 +92,11 @@ export default function ThreadsCard({ connected, onRefresh }: Props) {
 
   const handleRefresh = useCallback(async () => {
     if (!isConnected || refreshing) return;
-    setRefreshing(true);
     try {
-      if (onRefresh) {
-        onRefresh();
-      }
-      refreshThreads();
-    } finally {
-      setRefreshing(false);
+      onRefresh?.();
+      await refreshThreads();
+    } catch (e) {
+      console.error('[ThreadsCard] manual refresh failed', e);
     }
   }, [isConnected, onRefresh, refreshThreads, refreshing]);
 

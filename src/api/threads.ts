@@ -19,6 +19,11 @@ export async function getPreChatSurvey(): Promise<PreChatSurvey | null> {
   return (survey ?? null) as PreChatSurvey | null;
 }
 
+export async function load(threadId?: string) {
+  console.log(TAG, 'load', threadId ?? '(all)');
+  await (Native as any).threadsLoad(threadId ?? null);
+}
+
 export async function create(customFields?: Record<string, string>): Promise<ChatThreadDetails> {
   console.log(TAG, 'create', customFields ?? '(no custom fields)');
   try {
