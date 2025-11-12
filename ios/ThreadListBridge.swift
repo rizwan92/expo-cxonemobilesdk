@@ -27,8 +27,7 @@ enum ThreadListBridge {
     }
 
     static func getDetails(threadId: UUID) throws -> ChatThread {
-        let p = try provider(for: threadId)
-        return p.chatThread
+        return try ThreadBridge.hydratedSnapshotSync(threadId: threadId)
     }
 
     static func preChatSurvey() -> PreChatSurvey? {

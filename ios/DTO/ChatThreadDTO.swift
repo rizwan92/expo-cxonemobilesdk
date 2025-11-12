@@ -243,18 +243,19 @@ struct ChatThreadDTO: Encodable {
   let scrollToken: String?
   let customFields: [String: String]
 
-  init(_ thread: ChatThread) {
+  init(_ thread: ChatThread, hasMoreOverride: Bool? = nil) {
+    let hasMore = hasMoreOverride ?? thread.hasMoreMessagesToLoad
     self.id = thread.id.uuidString
     self.name = thread.name
     self.state = String(describing: thread.state)
-    self.hasMoreMessagesToLoad = thread.hasMoreMessagesToLoad
+    self.hasMoreMessagesToLoad = hasMore
     self.positionInQueue = thread.positionInQueue
     self.assignedAgent = thread.assignedAgent.map(AgentDTO.init)
     self.lastAssignedAgent = thread.lastAssignedAgent.map(AgentDTO.init)
     self.messagesCount = thread.messages.count
     let sorted = thread.messages.sorted { $0.createdAt > $1.createdAt }
     self.messages = sorted.map { MessageDTO($0) }
-    self.scrollToken = ChatThreadDTO.scrollToken(from: thread)
+    self.scrollToken = hasMore ? ChatThreadDTO.scrollToken(from: thread) : nil
     self.customFields = CustomFieldsBridge.getThread(threadId: thread.id)
   }
 
