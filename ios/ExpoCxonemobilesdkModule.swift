@@ -248,14 +248,13 @@ public class ExpoCxonemobilesdkModule: Module {
             let outbound = OutboundMessage(text: text, attachments: descs, postback: postback)
             try await ThreadBridge.send(threadId: uuid, message: outbound)
         }
-        AsyncFunction("threadsLoadMore") { (threadId: String) async throws -> [String: Any] in
+        AsyncFunction("threadsLoadMore") { (threadId: String) async throws in
             guard let uuid = UUID(uuidString: threadId) else {
                 throw NSError(
                     domain: "ExpoCxonemobilesdk", code: -3,
                     userInfo: [NSLocalizedDescriptionKey: "Invalid UUID: \(threadId)"])
             }
-            let thread = try await ThreadBridge.loadMore(threadId: uuid)
-            return try ChatThreadDTO(thread).asDictionary()
+            try await ThreadBridge.loadMore(threadId: uuid)
         }
         AsyncFunction("threadsMarkRead") { (threadId: String) async throws in
             guard let uuid = UUID(uuidString: threadId) else {

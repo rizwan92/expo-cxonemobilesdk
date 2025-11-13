@@ -25,17 +25,6 @@ import { ChatList, Composer } from '../../../components/chat';
 const MIN_INITIAL_MESSAGES = 25;
 const MAX_PREFETCH_BATCHES = 10;
 
-async function hydrateThreadSnapshot(threadId: string): Promise<ChatThreadDetails> {
-  let details = await Thread.getDetails(threadId);
-  let batches = 0;
-  while (details.messages.length < MIN_INITIAL_MESSAGES && batches < MAX_PREFETCH_BATCHES) {
-    await Thread.loadMore(threadId);
-    details = await Thread.getDetails(threadId);
-    batches += 1;
-  }
-  return details;
-}
-
 export default function ThreadScreen() {
   // Expo Router instance for navigation actions (back / push)
   const router = useRouter();
@@ -68,11 +57,12 @@ export default function ThreadScreen() {
     // Mark that a reload is happening to mute event-driven updates mid-flight
     reloadingRef.current = true;
     try {
-      // Synchronously fetch the latest native snapshot (mirrors SDK ordering)
-      let details = await hydrateThreadSnapshot(threadId);
-      setMessages(details.messages);
-      setHasMore(!!details.hasMoreMessagesToLoad);
-      setCustomFields(details.customFields ?? null);
+      const currentThreadId = threadId;
+      console.log('[ChatApp/Thread] getInitialMessages', currentThreadId);
+      const baseDetails = await Thread.getDetails(currentThreadId);
+      setMessages(baseDetails.messages);
+      setHasMore(!!baseDetails.hasMoreMessagesToLoad);
+      setCustomFields(baseDetails.customFields ?? null);
     } catch (err) {
       console.error('[ChatApp/Thread] getInitialMessages failed', err);
     } finally {
@@ -123,13 +113,21 @@ export default function ThreadScreen() {
   // Manual "load older history" action. We only call getDetails when needed.
   const onLoadEarlier = useCallback(async () => {
     if (!threadId) return;
-    if (!hasMore) return;
+    if (!hasMore && Platform.OS !== 'ios') return;
     // Show spinner while more history loads from native
     setLoadingEarlier(true);
     try {
+      console.log('[ChatApp/Thread] loadEarlier start', { threadId, hasMore });
       const details = await Thread.loadMore(threadId);
+      console.log('[ChatApp/Thread] loadEarlier success', {
+        threadId,
+        count: details.messages.length,
+        hasMore: details.hasMoreMessagesToLoad,
+      });
       setMessages(details.messages);
       setHasMore(!!details.hasMoreMessagesToLoad);
+    } catch (error) {
+      console.error('[ChatApp/Thread] loadEarlier failed', error);
     } finally {
       setLoadingEarlier(false);
     }
