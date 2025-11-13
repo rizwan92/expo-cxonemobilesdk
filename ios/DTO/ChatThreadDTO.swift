@@ -255,32 +255,31 @@ struct ChatThreadDTO: Encodable {
     self.messagesCount = thread.messages.count
     let sorted = thread.messages.sorted { $0.createdAt > $1.createdAt }
     self.messages = sorted.map { MessageDTO($0) }
-    self.scrollToken = ChatThreadDTO.scrollToken(from: thread)
+    self.scrollToken = extractScrollToken(thread)
     self.customFields = CustomFieldsBridge.getThread(threadId: thread.id)
-    self.contactId = ChatThreadDTO.contactId(from: thread)
-  }
-
-  private static func scrollToken(from thread: ChatThread) -> String? {
-    let mirror = Mirror(reflecting: thread)
-    for child in mirror.children {
-      if child.label == "scrollToken", let value = child.value as? String {
-        return value
-  }
-
-  private static func contactId(from thread: ChatThread) -> String? {
-    var mirror: Mirror? = Mirror(reflecting: thread)
-    while let current = mirror {
-      for child in current.children {
-        if child.label == "contactId" {
-          return child.value as? String
-        }
-      }
-      mirror = current.superclassMirror
-    }
-    return nil
+    self.contactId = extractContactId(thread)
   }
 }
-    return nil
-  }
 
+private func extractScrollToken(_ thread: ChatThread) -> String? {
+  let mirror = Mirror(reflecting: thread)
+  for child in mirror.children {
+    if child.label == "scrollToken", let value = child.value as? String {
+      return value
+    }
+  }
+  return nil
+}
+
+private func extractContactId(_ thread: ChatThread) -> String? {
+  var mirror: Mirror? = Mirror(reflecting: thread)
+  while let current = mirror {
+    for child in current.children {
+      if child.label == "contactId" {
+        return child.value as? String
+      }
+    }
+    mirror = current.superclassMirror
+  }
+  return nil
 }

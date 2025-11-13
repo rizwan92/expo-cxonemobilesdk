@@ -111,13 +111,14 @@ export default function ThreadScreen() {
   // Manual "load older history" action. We only call getDetails when needed.
   const onLoadEarlier = useCallback(async () => {
     if (!threadId) return;
-    if (!hasMore) return;
+    if (!hasMore && Platform.OS !== 'ios') return;
     // Show spinner while more history loads from native
     setLoadingEarlier(true);
     try {
       const details = await Thread.loadMore(threadId);
       setMessages(details.messages);
       setHasMore(!!details.hasMoreMessagesToLoad);
+      setThreadInfo(details);
       setThreadInfo(details);
     } finally {
       setLoadingEarlier(false);
