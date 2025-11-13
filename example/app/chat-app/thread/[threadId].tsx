@@ -28,16 +28,7 @@ const MAX_PREFETCH_BATCHES = 10;
 async function hydrateThreadSnapshot(threadId: string): Promise<ChatThreadDetails> {
   let details = await Thread.getDetails(threadId);
   let batches = 0;
-  while (
-    details.hasMoreMessagesToLoad &&
-    details.messages.length < MIN_INITIAL_MESSAGES &&
-    batches < MAX_PREFETCH_BATCHES
-  ) {
-    console.log('[ChatApp/Thread] prefetching earlier messages', {
-      threadId,
-      batch: batches + 1,
-      count: details.messages.length,
-    });
+  while (details.messages.length < MIN_INITIAL_MESSAGES && batches < MAX_PREFETCH_BATCHES) {
     await Thread.loadMore(threadId);
     details = await Thread.getDetails(threadId);
     batches += 1;
@@ -74,7 +65,6 @@ export default function ThreadScreen() {
   const getInitialMessages = useCallback(async () => {
     // Skip if the screen was opened without a thread id
     if (!threadId) return;
-    console.log('[ChatApp/Thread] getInitialMessages', threadId);
     // Mark that a reload is happening to mute event-driven updates mid-flight
     reloadingRef.current = true;
     try {
@@ -83,6 +73,8 @@ export default function ThreadScreen() {
       setMessages(details.messages);
       setHasMore(!!details.hasMoreMessagesToLoad);
       setCustomFields(details.customFields ?? null);
+    } catch (err) {
+      console.error('[ChatApp/Thread] getInitialMessages failed', err);
     } finally {
       reloadingRef.current = false;
     }
@@ -111,11 +103,9 @@ export default function ThreadScreen() {
     async (text: string) => {
       // Do nothing for empty payloads or missing thread ids
       if (!threadId || !text) return;
-      console.log('[ChatApp/Thread] onSend ->', { threadId, text });
-      try {
+    try {
         // Delegate to the native module and rely on threadUpdated for the echo
         await Thread.send(threadId, { text });
-        console.log('[ChatApp/Thread] onSend success', { threadId });
         const n = Number(text);
         if (Number.isFinite(n)) {
           setCounterText(String(n + 1));
@@ -134,50 +124,54 @@ export default function ThreadScreen() {
   const onLoadEarlier = useCallback(async () => {
     if (!threadId) return;
     if (!hasMore) return;
-      // Show spinner while more history loads from native
-      setLoadingEarlier(true);
-      try {
-        const details = await Thread.loadMore(threadId);
-        setMessages(details.messages);
-        setHasMore(!!details.hasMoreMessagesToLoad);
-      } finally {
-        setLoadingEarlier(false);
-      }
+    // Show spinner while more history loads from native
+    setLoadingEarlier(true);
+    try {
+      const details = await Thread.loadMore(threadId);
+      setMessages(details.messages);
+      setHasMore(!!details.hasMoreMessagesToLoad);
+    } finally {
+      setLoadingEarlier(false);
+    }
   }, [threadId, hasMore]);
 
   // Pull-to-refresh handler: simply re-fetch the native snapshot
   const handleRefresh = useCallback(async () => {
     if (!threadId || refreshing) return;
-      setRefreshing(true);
-      try {
-        await getInitialMessages();
-      } finally {
-        setRefreshing(false);
-      }
+    setRefreshing(true);
+    try {
+      await getInitialMessages();
+    } finally {
+      setRefreshing(false);
+    }
   }, [threadId, refreshing, getInitialMessages]);
 
   return (
     // Basic safe-area wrapper for notch devices
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        {/* Simple back button to exit the thread */}
-        <Button title="Back" onPress={() => router.back()} />
-        <Text style={styles.title} numberOfLines={1}>
-          Thread: {threadId}
-        </Text>
-        <View style={styles.headerActions}>
-          {/* Manual refresh button shares the same logic as pull-to-refresh */}
-          <Button
-            title={refreshing ? 'Refreshing…' : 'Refresh'}
-            onPress={handleRefresh}
-            disabled={refreshing}
-          />
-          <Button
-            title="Edit Details"
-            // Navigate to the edit UI, passing the thread id as query param
-            onPress={() => router.push(`/chat-app/threads/create?threadId=${threadId}`)}
-            disabled={!threadId}
-          />
+      <View style={styles.headerContainer}>
+        <View style={styles.leftColumn}>
+          <Button title="Back" onPress={() => router.back()} />
+        </View>
+        <View style={styles.rightColumn}>
+          <View style={styles.threadIdBlock}>
+            <Text style={styles.threadIdLabel}>Thread ID</Text>
+            <Text style={styles.threadIdValue} selectable numberOfLines={2}>
+              {threadId ?? 'Unknown'}
+            </Text>
+          </View>
+          <View style={styles.headerContainer}>
+            <Button
+              title={refreshing ? 'Refreshing…' : 'Refresh'}
+              onPress={handleRefresh}
+              disabled={refreshing}
+            />
+            <Button
+              title="Edit Details"
+              onPress={() => router.push(`/chat-app/threads/create?threadId=${threadId}`)}
+              disabled={!threadId}
+            />
+          </View>
         </View>
       </View>
       <KeyboardAvoidingView
@@ -222,16 +216,33 @@ export default function ThreadScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
-  header: {
+  headerContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     padding: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderColor: '#ddd',
   },
-  headerActions: { flexDirection: 'row', gap: 8 },
-  title: { fontSize: 14, fontWeight: '600', flex: 1, marginHorizontal: 12 },
+  leftColumn: { width: 80, justifyContent: 'center' },
+  rightColumn: { flex: 1, alignItems: 'center', gap: 8 },
+  headerActions: {
+    flexDirection: 'column',
+    gap: 8,
+  },
+  threadIdBlock: {
+    alignItems: 'center',
+  },
+  threadIdLabel: {
+    fontSize: 10,
+    textTransform: 'uppercase',
+    color: '#6b7280',
+    marginBottom: 2,
+  },
+  threadIdValue: {
+    fontFamily: Platform.select({ ios: 'Menlo', android: 'monospace', default: undefined }),
+    fontSize: 13,
+    color: '#111827',
+    textAlign: 'center',
+  },
   customFieldsCard: {
     margin: 12,
     marginBottom: 0,

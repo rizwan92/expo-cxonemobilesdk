@@ -1,8 +1,5 @@
-import { Platform } from 'react-native';
 import Native from '../ExpoCxonemobilesdkModule';
 import type { ChatThreadDetails, OutboundMessage } from '../types';
-
-const TAG = '[CXone/Thread]';
 
 export const EVENTS = {
   UPDATED: 'threadUpdated' as const,
@@ -11,88 +8,49 @@ export const EVENTS = {
 };
 
 export async function load(threadId?: string) {
-  console.log(TAG, 'load', threadId);
   await Native.threadsLoad(threadId);
 }
 
 export function getDetails(threadId: string): ChatThreadDetails {
-  const d = Native.threadsGetDetails(threadId) as ChatThreadDetails;
-  console.log(
-    TAG,
-    'getDetails -> id',
-    d.id,
-    'messages',
-    d.messages.length,
-    'hasMore',
-    d.hasMoreMessagesToLoad,
-  );
-  return d;
+  return Native.threadsGetDetails(threadId) as ChatThreadDetails;
 }
 
 export async function send(threadId: string, message: OutboundMessage) {
-  console.log(TAG, 'send', {
-    threadId,
-    hasAttachments: !!message.attachments?.length,
-    hasPostback: !!message.postback,
-  });
   await (Native as any).threadsSend(threadId, message);
 }
 
 export async function loadMore(threadId: string): Promise<ChatThreadDetails> {
   const result = (await Native.threadsLoadMore(threadId)) as ChatThreadDetails | void;
-  if (result) {
-    console.log(
-      TAG,
-      'loadMore -> id',
-      result.id,
-      'messages',
-      result.messages.length,
-      'hasMore',
-      result.hasMoreMessagesToLoad,
-    );
-    return result;
-  }
-
-  // iOS bridge returns void; fetch the latest snapshot manually
-  if (Platform.OS === 'ios') {
-    console.log(TAG, 'loadMore -> ios fallback via getDetails', threadId);
-  }
+  if (result) return result;
   return getDetails(threadId);
 }
 
 export async function markRead(threadId: string) {
-  console.log(TAG, 'markRead', threadId);
   await Native.threadsMarkRead(threadId);
 }
 
 export async function updateName(threadId: string, name: string) {
-  console.log(TAG, 'updateName', { threadId, name });
   await Native.threadsUpdateName(threadId, name);
 }
 
 export async function archive(threadId: string) {
-  console.log(TAG, 'archive', threadId);
   await Native.threadsArchive(threadId);
 }
 
 export async function endContact(threadId: string) {
-  console.log(TAG, 'endContact', threadId);
   await Native.threadsEndContact(threadId);
 }
 
 export async function reportTypingStart(threadId: string, didStart: boolean) {
-  console.log(TAG, 'reportTypingStart', { threadId, didStart });
   await (Native as any).threadsReportTypingStart(threadId, didStart);
 }
 
 export function getCustomFields(threadId: string): Record<string, string> {
   const fields = (Native as any).threadCustomFieldsGet?.(threadId) ?? {};
-  console.log(TAG, 'getCustomFields ->', { threadId, fields });
   return fields as Record<string, string>;
 }
 
 export async function updateCustomFields(threadId: string, fields: Record<string, string>) {
-  console.log(TAG, 'updateCustomFields', { threadId, fields });
   await (Native as any).threadCustomFieldsSet(threadId, fields);
 }
 
@@ -103,13 +61,6 @@ export async function sendAttachmentURL(
   fileName: string,
   friendlyName: string,
 ) {
-  console.log(TAG, 'sendAttachmentURL', {
-    threadId,
-    url,
-    mimeType,
-    fileName,
-    friendlyName,
-  });
   await Native.threadsSendAttachmentURL(threadId, url, mimeType, fileName, friendlyName);
 }
 
@@ -120,11 +71,5 @@ export async function sendAttachmentBase64(
   fileName: string,
   friendlyName: string,
 ) {
-  console.log(TAG, 'sendAttachmentBase64', {
-    threadId,
-    mimeType,
-    fileName,
-    friendlyName,
-  });
   await Native.threadsSendAttachmentBase64(threadId, base64, mimeType, fileName, friendlyName);
 }

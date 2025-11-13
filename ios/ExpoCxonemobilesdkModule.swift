@@ -211,6 +211,7 @@ public class ExpoCxonemobilesdkModule: Module {
                     userInfo: [NSLocalizedDescriptionKey: "Invalid UUID: \(threadId)"])
             }
             let t = try ThreadListBridge.getDetails(threadId: uuid)
+            NSLog("[ExpoCxonemobilesdk][threadsGetDetails] thread=\(t.id) messages=\(t.messages.count) hasMore=\(t.hasMoreMessagesToLoad)")
             return try ChatThreadDTO(t).asDictionary()
         }
         AsyncFunction("threadsSend") { (threadId: String, message: [String: Any]) async throws in
