@@ -242,6 +242,7 @@ struct ChatThreadDTO: Encodable {
   let messages: [MessageDTO]
   let scrollToken: String?
   let customFields: [String: String]
+  let contactId: String?
 
   init(_ thread: ChatThread) {
     self.id = thread.id.uuidString
@@ -256,6 +257,7 @@ struct ChatThreadDTO: Encodable {
     self.messages = sorted.map { MessageDTO($0) }
     self.scrollToken = ChatThreadDTO.scrollToken(from: thread)
     self.customFields = CustomFieldsBridge.getThread(threadId: thread.id)
+    self.contactId = ChatThreadDTO.contactId(from: thread)
   }
 
   private static func scrollToken(from thread: ChatThread) -> String? {
@@ -263,8 +265,22 @@ struct ChatThreadDTO: Encodable {
     for child in mirror.children {
       if child.label == "scrollToken", let value = child.value as? String {
         return value
+  }
+
+  private static func contactId(from thread: ChatThread) -> String? {
+    var mirror: Mirror? = Mirror(reflecting: thread)
+    while let current = mirror {
+      for child in current.children {
+        if child.label == "contactId" {
+          return child.value as? String
+        }
       }
+      mirror = current.superclassMirror
     }
     return nil
   }
+}
+    return nil
+  }
+
 }

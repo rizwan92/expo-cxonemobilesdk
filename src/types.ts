@@ -99,6 +99,7 @@ export type ChatThreadDetails = {
   messagesCount: number;
   customFields?: Record<string, string>;
   scrollToken?: string;
+  contactId?: string | null;
   messages: ChatMessage[];
 };
 

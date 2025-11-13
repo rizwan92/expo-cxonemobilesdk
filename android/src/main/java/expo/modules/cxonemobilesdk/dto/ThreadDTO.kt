@@ -9,6 +9,7 @@ import com.nice.cxonechat.message.MessageMetadata
 import com.nice.cxonechat.message.MessageDirection
 import com.nice.cxonechat.thread.Agent
 import com.nice.cxonechat.thread.ChatThread
+import expo.modules.cxonemobilesdk.ThreadIntrospection
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -286,6 +287,7 @@ data class ChatThreadDTO(
   val messagesCount: Int,
   val scrollToken: String?,
   val customFields: Map<String, String>,
+  val contactId: String?,
   val messages: List<MessageDTO>,
 ) {
   fun toMap(): Map<String, Any?> = mapOf(
@@ -299,6 +301,7 @@ data class ChatThreadDTO(
     "messagesCount" to messagesCount,
     "scrollToken" to scrollToken,
     "customFields" to customFields,
+    "contactId" to contactId,
     "messages" to messages.map { it.toMap() },
   )
 
@@ -322,6 +325,7 @@ data class ChatThreadDTO(
         messagesCount = uniqueMessages.size,
         scrollToken = if (hasMore) thread.scrollToken.takeIf { it.isNotBlank() } else null,
         customFields = thread.fields.associate { it.id to it.value },
+        contactId = ThreadIntrospection.contactIdOf(thread),
         messages = uniqueMessages,
       )
     }

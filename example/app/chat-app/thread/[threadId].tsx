@@ -32,6 +32,7 @@ export default function ThreadScreen() {
 
   // Rendered chat messages (mirrors native payload order)
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [threadInfo, setThreadInfo] = useState<ChatThreadDetails | null>(null);
   // Track whether we are fetching older history to show spinner/disable loads
   const [loadingEarlier, setLoadingEarlier] = useState(false);
   // Whether more history is available server-side (native informs us)
@@ -58,6 +59,7 @@ export default function ThreadScreen() {
       setMessages(details.messages);
       setHasMore(!!details.hasMoreMessagesToLoad);
       setCustomFields(details.customFields ?? null);
+      setThreadInfo(details);
     } catch (err) {
       console.error('[ChatApp/Thread] getInitialMessages failed', err);
     } finally {
@@ -80,6 +82,7 @@ export default function ThreadScreen() {
       setMessages(threadUpdated.thread.messages);
       setHasMore(!!threadUpdated.thread.hasMoreMessagesToLoad);
       setCustomFields(threadUpdated.thread.customFields ?? null);
+      setThreadInfo(threadUpdated.thread as ChatThreadDetails);
     }
   }, [threadId, threadUpdated?.thread]);
 
@@ -115,6 +118,7 @@ export default function ThreadScreen() {
       const details = await Thread.loadMore(threadId);
       setMessages(details.messages);
       setHasMore(!!details.hasMoreMessagesToLoad);
+      setThreadInfo(details);
     } finally {
       setLoadingEarlier(false);
     }
@@ -143,6 +147,12 @@ export default function ThreadScreen() {
             <Text style={styles.threadIdLabel}>Thread ID</Text>
             <Text style={styles.threadIdValue} selectable numberOfLines={2}>
               {threadId ?? 'Unknown'}
+            </Text>
+          </View>
+          <View style={styles.threadIdBlock}>
+            <Text style={styles.threadIdLabel}>Case ID</Text>
+            <Text style={styles.threadIdValue} selectable numberOfLines={2}>
+              {threadInfo?.contactId ?? 'Unknown'}
             </Text>
           </View>
           <View style={styles.headerContainer}>

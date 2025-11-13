@@ -87,6 +87,7 @@ export default function ThreadsCard({ connected, onRefresh }: Props) {
     if (customTitle) return customTitle;
     const nativeName = thread.name?.trim();
     if (nativeName) return nativeName;
+    if (thread.contactId) return `Case ${thread.contactId}`;
     return 'Untitled Case';
   };
 
