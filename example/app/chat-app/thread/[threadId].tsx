@@ -47,6 +47,7 @@ export default function ThreadScreen() {
   const [refreshing, setRefreshing] = useState(false);
   // Guard flag to avoid processing events while a manual reload is pending
   const reloadingRef = useRef(false);
+  const suppressAutoScrollRef = useRef(false);
 
   // Always hydrate from native so we don't keep any optimistic/pending copies in JS.
   const getInitialMessages = useCallback(async () => {
@@ -83,7 +84,9 @@ export default function ThreadScreen() {
       setMessages(threadUpdated.thread.messages);
       setHasMore(!!threadUpdated.thread.hasMoreMessagesToLoad);
       setCustomFields(threadUpdated.thread.customFields ?? null);
-      setScrollKey((k) => k + 1);
+      if (!suppressAutoScrollRef.current) {
+        setScrollKey((k) => k + 1);
+      }
       setThreadInfo(threadUpdated.thread as ChatThreadDetails);
     }
   }, [threadId, threadUpdated?.thread]);
@@ -116,12 +119,14 @@ export default function ThreadScreen() {
     if (!hasMore && Platform.OS !== 'ios') return;
     // Show spinner while more history loads from native
     setLoadingEarlier(true);
+    suppressAutoScrollRef.current = true;
     try {
       const details = await Thread.loadMore(threadId);
       setMessages(details.messages);
       setHasMore(!!details.hasMoreMessagesToLoad);
       setThreadInfo(details);
     } finally {
+      suppressAutoScrollRef.current = false;
       setLoadingEarlier(false);
     }
   }, [threadId, hasMore]);
