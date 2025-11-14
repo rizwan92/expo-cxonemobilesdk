@@ -120,8 +120,6 @@ export default function ThreadScreen() {
       const details = await Thread.loadMore(threadId);
       setMessages(details.messages);
       setHasMore(!!details.hasMoreMessagesToLoad);
-      setScrollKey((k) => k + 1);
-      setThreadInfo(details);
       setThreadInfo(details);
     } finally {
       setLoadingEarlier(false);
