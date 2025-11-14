@@ -58,6 +58,7 @@ export default function ThreadScreen() {
       const details = await Thread.getDetails(threadId);
       setMessages(details.messages);
       setHasMore(!!details.hasMoreMessagesToLoad);
+      setScrollKey((k) => k + 1);
       setCustomFields(details.customFields ?? null);
       setThreadInfo(details);
     } catch (err) {
@@ -82,6 +83,7 @@ export default function ThreadScreen() {
       setMessages(threadUpdated.thread.messages);
       setHasMore(!!threadUpdated.thread.hasMoreMessagesToLoad);
       setCustomFields(threadUpdated.thread.customFields ?? null);
+      setScrollKey((k) => k + 1);
       setThreadInfo(threadUpdated.thread as ChatThreadDetails);
     }
   }, [threadId, threadUpdated?.thread]);
@@ -118,6 +120,7 @@ export default function ThreadScreen() {
       const details = await Thread.loadMore(threadId);
       setMessages(details.messages);
       setHasMore(!!details.hasMoreMessagesToLoad);
+      setScrollKey((k) => k + 1);
       setThreadInfo(details);
       setThreadInfo(details);
     } finally {

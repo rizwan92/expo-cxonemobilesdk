@@ -7,9 +7,9 @@ import ConnectionStatusCard from '../components/ConnectionStatusCard';
 
 export default function Home() {
   const router = useRouter();
-  const [userId, setUserId] = useState('IND_ff1df13f-54b2-4699-8c65-2f4a37e24b91');
-  const [firstName, setFirstName] = useState('MohammadRizwan');
-  const [lastName, setLastName] = useState('Chauhan');
+  const [userId, setUserId] = useState('101');
+  const [firstName, setFirstName] = useState('rizwan1');
+  const [lastName, setLastName] = useState('Chauhan1');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { chatState, chatMode, connected, refresh } = useConnection();
