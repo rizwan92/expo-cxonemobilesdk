@@ -142,10 +142,16 @@ export default function CreateThreadScreen() {
         }
       }
       if (isEditing && editingThreadId) {
+        if (trimmedTitle) {
+          await Thread.updateName(editingThreadId, trimmedTitle);
+        }
         await Thread.updateCustomFields(editingThreadId, payload);
         router.replace(`/chat-app/thread/${editingThreadId}`);
       } else {
         const details = await Threads.create(payload);
+        if (trimmedTitle) {
+          await Thread.updateName(details.id, trimmedTitle);
+        }
         router.replace(`/chat-app/thread/${details.id}`);
       }
     } catch (e) {

@@ -83,12 +83,54 @@ export default function ThreadsCard({ connected, onRefresh }: Props) {
   };
 
   const getThreadTitle = (thread: ChatThreadDetails) => {
-    const customTitle = thread.customFields?.title?.trim();
-    if (customTitle) return customTitle;
     const nativeName = thread.name?.trim();
-    if (nativeName) return nativeName;
-    if (thread.contactId) return `Case ${thread.contactId}`;
-    return 'Untitled Case';
+    return nativeName || 'Untitled Case';
+  };
+
+  const getCaseMeta = (thread: ChatThreadDetails) => {
+    const lines = [] as string[];
+    const caseId = thread.contactId?.trim();
+    lines.push(`Case ID: ${caseId ?? '—'}`);
+    const prechatTitle = thread.customFields?.title?.trim();
+    if (prechatTitle) {
+      lines.push(`Pre-chat title: ${prechatTitle}`);
+    }
+    return lines.join('\n');
+  };
+
+  const formatAgentName = (agent?: ChatThreadDetails['assignedAgent']) => {
+    if (!agent) return null;
+    const fullName = agent.fullName?.trim();
+    if (fullName) return fullName;
+    const composed = [agent.firstName, agent.surname]
+      .filter((part?: string) => !!part?.trim())
+      .join(' ')
+      .trim();
+    if (composed) return composed;
+    if (agent.nickname?.trim()) return agent.nickname.trim();
+    if (agent.id != null) return `Agent #${agent.id}`;
+    return null;
+  };
+
+  const getAgentDisplay = (thread: ChatThreadDetails) => {
+    const assigned = thread.assignedAgent;
+    const last = thread.lastAssignedAgent;
+    const assignedName = formatAgentName(assigned);
+    const lastName = formatAgentName(last);
+    const fallbackName = assignedName || lastName || '—';
+    const initial = fallbackName.trim().charAt(0).toUpperCase() || '—';
+    const label = assignedName ? `Agent: ${assignedName}` : 'Agent: —';
+    const secondaryLabel = lastName && lastName !== assignedName ? `Last agent: ${lastName}` : null;
+    return { label, secondaryLabel, initial };
+  };
+
+  const getThreadStats = (thread: ChatThreadDetails) => {
+    const parts = [
+      `Messages: ${thread.messagesCount}`,
+      `Queue: ${thread.positionInQueue ?? '—'}`,
+      `More to load: ${thread.hasMoreMessagesToLoad ? 'Yes' : 'No'}`,
+    ];
+    return parts.join(' • ');
   };
 
   const handleRefresh = useCallback(async () => {
@@ -115,27 +157,44 @@ export default function ThreadsCard({ connected, onRefresh }: Props) {
         data={threadList}
         keyExtractor={(t) => t.id}
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
-        renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.thread}
-            onPress={() => router.push(`/chat-app/thread/${item.id}`)}
-          >
-            <View style={styles.row}>
-              <View style={styles.icon} />
-              <View style={{ flex: 1 }}>
-                <Text style={styles.threadText}>{getThreadTitle(item)}</Text>
-                <Text style={styles.previewText} numberOfLines={1}>
-                  {messagePreview(latestMessage(item))}
-                </Text>
-                <Text style={styles.meta}>
-                  Created: {formatTime(threadCreatedAt(item))} • Last:{' '}
-                  {formatTime(latestMessage(item)?.createdAt)} • Status: {String(item.state)}
-                </Text>
+        renderItem={({ item }) => {
+          const agentDisplay = getAgentDisplay(item);
+          return (
+            <TouchableOpacity
+              style={styles.thread}
+              onPress={() => router.push(`/chat-app/thread/${item.id}`)}
+            >
+              <View style={styles.row}>
+                <View style={styles.icon}>
+                  <Text style={styles.iconText}>{agentDisplay.initial}</Text>
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.threadText}>{getThreadTitle(item)}</Text>
+                  <Text style={styles.previewText} numberOfLines={1}>
+                    {messagePreview(latestMessage(item))}
+                  </Text>
+                {getCaseMeta(item)
+                    .split('\n')
+                    .map((line) => (
+                      <Text key={line} style={styles.caseText}>
+                        Meta:  {line}
+                      </Text>
+                    ))}
+                  <Text style={styles.agentText}>{agentDisplay.label}</Text>
+                  {agentDisplay.secondaryLabel && (
+                    <Text style={styles.agentText}>{agentDisplay.secondaryLabel}</Text>
+                  )}
+                  <Text style={styles.statsText}>{getThreadStats(item)}</Text>
+                  <Text style={styles.meta}>
+                    Created: {formatTime(threadCreatedAt(item))} • Last:{' '}
+                    {formatTime(latestMessage(item)?.createdAt)} • Status: {String(item.state)}
+                  </Text>
+                </View>
+                <Text style={styles.timeText}>{formatTime(latestMessage(item)?.createdAt)}</Text>
               </View>
-              <Text style={styles.timeText}>{formatTime(latestMessage(item)?.createdAt)}</Text>
-            </View>
-          </TouchableOpacity>
-        )}
+            </TouchableOpacity>
+          );
+        }}
         ListEmptyComponent={<Text style={styles.meta}>No threads yet.</Text>}
       />
     </View>
@@ -157,7 +216,18 @@ const styles = StyleSheet.create({
   thread: { padding: 12, backgroundColor: '#f8fafc', borderRadius: 12 },
   threadText: { color: '#111827', fontSize: 16, fontWeight: '600' },
   previewText: { color: '#4b5563', marginTop: 2 },
+  caseText: { color: '#6b7280', fontSize: 12, marginTop: 2 },
+  agentText: { color: '#6b7280', fontSize: 12, marginTop: 2 },
+  statsText: { color: '#6b7280', fontSize: 12, marginTop: 2 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  icon: { width: 36, height: 36, borderRadius: 18, backgroundColor: '#e0e7ff' },
+  icon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: '#e0e7ff',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  iconText: { color: '#4338ca', fontWeight: '700' },
   timeText: { color: '#2563eb', fontWeight: '600' },
 });

@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router';
 import { Connection, Customer } from 'expo-cxonemobilesdk';
 import { useConnection } from '../components/ConnectionContext';
 import ConnectionStatusCard from '../components/ConnectionStatusCard';
+import { CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID } from '../config/chat';
 
 export default function Home() {
   const router = useRouter();
@@ -11,6 +12,9 @@ export default function Home() {
   const [firstName, setFirstName] = useState('rizwan1');
   const [lastName, setLastName] = useState('Chauhan1');
   const [busy, setBusy] = useState(false);
+  const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { chatState, chatMode, connected, refresh } = useConnection();
 
@@ -77,6 +81,68 @@ export default function Home() {
               setError(String((e as any)?.message ?? e));
             } finally {
               setBusy(false);
+            }
+          }}
+        />
+        <View style={{ height: 12 }} />
+        <View style={styles.inlineButtons}>
+          <View style={{ flex: 1 }}>
+            <Button
+              title={connecting ? 'Connecting…' : 'Quick Connect'}
+              onPress={async () => {
+                setError(null);
+                setConnecting(true);
+                try {
+                  await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
+                  refresh();
+                } catch (e) {
+                  console.error('[Home] quick connect failed', e);
+                  setError(String((e as any)?.message ?? e));
+                } finally {
+                  setConnecting(false);
+                }
+              }}
+            />
+          </View>
+          <View style={{ width: 12 }} />
+          <View style={{ flex: 1 }}>
+            <Button
+              color="#dc2626"
+              title={disconnecting ? 'Disconnecting…' : 'Disconnect'}
+              onPress={() => {
+                setError(null);
+                setDisconnecting(true);
+                try {
+                  Connection.disconnect();
+                  Connection.signOut();
+                  Customer.clearIdentity();
+                  refresh();
+                } catch (e) {
+                  console.error('[Home] quick disconnect failed', e);
+                  setError(String((e as any)?.message ?? e));
+                } finally {
+                  setDisconnecting(false);
+                }
+              }}
+            />
+          </View>
+        </View>
+        <View style={{ height: 12 }} />
+        <Button
+          color="#7c3aed"
+          title={signingOut ? 'Signing out…' : 'Sign Out'}
+          onPress={() => {
+            setError(null);
+            setSigningOut(true);
+            try {
+              Connection.signOut();
+              Customer.clearIdentity();
+              refresh();
+            } catch (e) {
+              console.error('[Home] signOut failed', e);
+              setError(String((e as any)?.message ?? e));
+            } finally {
+              setSigningOut(false);
             }
           }}
         />
@@ -153,4 +219,5 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
   },
+  inlineButtons: { flexDirection: 'row' },
 });
