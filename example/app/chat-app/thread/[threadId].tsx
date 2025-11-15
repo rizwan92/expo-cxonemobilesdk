@@ -29,6 +29,7 @@ export default function ThreadScreen() {
   const { threadId } = useLocalSearchParams<{ threadId: string }>();
   // Subscribe to native `threadUpdated` events so UI reflects server pushes
   const threadUpdated = useEvent(ExpoCxonemobilesdk, Thread.EVENTS.UPDATED);
+  const contactFieldsEvent = useEvent(ExpoCxonemobilesdk, Thread.EVENTS.CONTACT_CUSTOM_FIELDS_SET);
 
   // Rendered chat messages (mirrors native payload order)
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -74,6 +75,11 @@ export default function ThreadScreen() {
     if (!threadId) return;
     getInitialMessages();
   }, [threadId, getInitialMessages]);
+
+  useEffect(() => {
+    if (!threadId || !contactFieldsEvent) return;
+    getInitialMessages();
+  }, [threadId, contactFieldsEvent, getInitialMessages]);
 
   // Refresh when native notifies updates for this thread
   useEffect(() => {
@@ -180,16 +186,24 @@ export default function ThreadScreen() {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        {customFields && Object.keys(customFields).length ? (
+        {threadInfo?.state || (customFields && Object.keys(customFields).length) ? (
           // Show custom fields when the thread supplies metadata
           <View style={styles.customFieldsCard}>
             <Text style={styles.sectionTitle}>Thread Details</Text>
-            {Object.entries(customFields).map(([key, value]) => (
-              <View style={styles.fieldRow} key={key}>
-                <Text style={styles.fieldKey}>{key}</Text>
-                <Text style={styles.fieldValue}>{value}</Text>
+            {threadInfo?.state ? (
+              <View style={styles.fieldRow}>
+                <Text style={styles.fieldKey}>Status</Text>
+                <Text style={styles.fieldValue}>{String(threadInfo.state)}</Text>
               </View>
-            ))}
+            ) : null}
+            {customFields
+              ? Object.entries(customFields).map(([key, value]) => (
+                  <View style={styles.fieldRow} key={key}>
+                    <Text style={styles.fieldKey}>{key}</Text>
+                    <Text style={styles.fieldValue}>{value}</Text>
+                  </View>
+                ))
+              : null}
           </View>
         ) : null}
         <View style={{ paddingHorizontal: 12, paddingTop: 8 }}>

@@ -1,8 +1,17 @@
-import React, { useCallback, useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  TouchableOpacity,
+  Platform,
+  LayoutAnimation,
+  UIManager,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { useEvent } from 'expo';
-import ExpoCxonemobilesdk, { Threads } from 'expo-cxonemobilesdk';
+import ExpoCxonemobilesdk, { Threads, Thread } from 'expo-cxonemobilesdk';
 import type { ChatThreadDetails, ChatMessage } from 'expo-cxonemobilesdk';
 import { useConnection } from './ConnectionContext';
 
@@ -12,13 +21,47 @@ type Props = {
 };
 
 export default function ThreadsCard({ connected, onRefresh }: Props) {
+  useEffect(() => {
+    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+  }, []);
   const { connected: ctxConnected } = useConnection();
   const isConnected = connected ?? ctxConnected;
   const router = useRouter();
   const threadsUpdated = useEvent(ExpoCxonemobilesdk, Threads.EVENTS.UPDATED);
+  const threadUpdatedEvent = useEvent(ExpoCxonemobilesdk, Thread.EVENTS.UPDATED);
+  const contactFieldsEvent = useEvent(ExpoCxonemobilesdk, Thread.EVENTS.CONTACT_CUSTOM_FIELDS_SET);
 
   const [threadList, setThreadList] = useState<ChatThreadDetails[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+  const [agentHighlights, setAgentHighlights] = useState<Record<string, string>>({});
+  const seenMessagesRef = useRef<Record<string, string>>({});
+
+  const hydrateThreads = useCallback((threads: ChatThreadDetails[]) => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setThreadList(threads);
+    const baseline: Record<string, string> = {};
+    threads.forEach((thread) => {
+      const latest = thread.messages?.[0];
+      if (latest?.id) baseline[thread.id] = latest.id;
+    });
+    seenMessagesRef.current = baseline;
+    setAgentHighlights({});
+  }, []);
+
+  const acknowledgeThread = useCallback((thread: ChatThreadDetails) => {
+    const latest = thread.messages?.[0];
+    if (latest?.id) {
+      seenMessagesRef.current[thread.id] = latest.id;
+    }
+    setAgentHighlights((prev) => {
+      if (!prev[thread.id]) return prev;
+      const next = { ...prev };
+      delete next[thread.id];
+      return next;
+    });
+  }, []);
 
   const refreshThreads = useCallback(async () => {
     if (!isConnected) {
@@ -30,13 +73,13 @@ export default function ThreadsCard({ connected, onRefresh }: Props) {
       await Threads.load();
       const refreshed = Threads.get();
       console.log('[ThreadsCard] refreshed threads', refreshed.length);
-      setThreadList(refreshed);
+      hydrateThreads(refreshed);
     } catch (e) {
       console.error('[ThreadsCard] full refresh failed', e);
     } finally {
       setRefreshing(false);
     }
-  }, [isConnected]);
+  }, [hydrateThreads, isConnected]);
 
   useEffect(() => {
     if (isConnected) {
@@ -46,9 +89,50 @@ export default function ThreadsCard({ connected, onRefresh }: Props) {
 
   useEffect(() => {
     if (isConnected && threadsUpdated?.threads) {
-      setThreadList(threadsUpdated.threads);
+      console.log('[ThreadsCard] threadsUpdated event', {
+        count: threadsUpdated.threads.length,
+        ids: threadsUpdated.threads.map((t) => t.id),
+      });
+      hydrateThreads(threadsUpdated.threads);
     }
-  }, [threadsUpdated?.threads, isConnected]);
+  }, [threadsUpdated?.threads, isConnected, hydrateThreads]);
+
+  useEffect(() => {
+    if (!isConnected || !contactFieldsEvent) return;
+    refreshThreads();
+  }, [contactFieldsEvent, isConnected, refreshThreads]);
+
+  useEffect(() => {
+    if (!isConnected || !threadUpdatedEvent?.thread) return;
+    const payload = threadUpdatedEvent.thread;
+    console.log('[ThreadsCard] threadUpdated event', {
+      id: payload.id,
+      messages: payload.messages.length,
+    });
+    setThreadList((prev) => {
+      const idx = prev.findIndex((t) => t.id === payload.id);
+      if (idx === -1) return prev;
+      const next = [...prev];
+      next[idx] = payload;
+      return next;
+    });
+
+    const latest = payload.messages?.[0];
+    if (!latest?.id) return;
+    const prevSeen = seenMessagesRef.current[payload.id];
+    const alreadySeen = prevSeen === latest.id;
+    seenMessagesRef.current[payload.id] = latest.id;
+
+    setAgentHighlights((prev) => {
+      const next = { ...prev };
+      if (prevSeen && latest.direction === 'toClient' && !alreadySeen) {
+        next[payload.id] = latest.id;
+      } else if (latest.direction !== 'toClient' || alreadySeen) {
+        delete next[payload.id];
+      }
+      return next;
+    });
+  }, [isConnected, threadUpdatedEvent?.thread]);
 
   const formatTime = (iso?: string) => {
     if (!iso) return '—';
@@ -159,10 +243,14 @@ export default function ThreadsCard({ connected, onRefresh }: Props) {
         ItemSeparatorComponent={() => <View style={{ height: 8 }} />}
         renderItem={({ item }) => {
           const agentDisplay = getAgentDisplay(item);
+          const isUnread = Boolean(agentHighlights[item.id]);
           return (
             <TouchableOpacity
               style={styles.thread}
-              onPress={() => router.push(`/chat-app/thread/${item.id}`)}
+              onPress={() => {
+                acknowledgeThread(item);
+                router.push(`/chat-app/thread/${item.id}`);
+              }}
             >
               <View style={styles.row}>
                 <View style={styles.icon}>
@@ -170,7 +258,10 @@ export default function ThreadsCard({ connected, onRefresh }: Props) {
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.threadText}>{getThreadTitle(item)}</Text>
-                  <Text style={styles.previewText} numberOfLines={1}>
+                  <Text
+                    style={[styles.previewText, isUnread && styles.previewTextUnread]}
+                    numberOfLines={1}
+                  >
                     {messagePreview(latestMessage(item))}
                   </Text>
                 {getCaseMeta(item)
@@ -216,6 +307,7 @@ const styles = StyleSheet.create({
   thread: { padding: 12, backgroundColor: '#f8fafc', borderRadius: 12 },
   threadText: { color: '#111827', fontSize: 16, fontWeight: '600' },
   previewText: { color: '#4b5563', marginTop: 2 },
+  previewTextUnread: { color: '#111827', fontWeight: '700' },
   caseText: { color: '#6b7280', fontSize: 12, marginTop: 2 },
   agentText: { color: '#6b7280', fontSize: 12, marginTop: 2 },
   statsText: { color: '#6b7280', fontSize: 12, marginTop: 2 },

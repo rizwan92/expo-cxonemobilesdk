@@ -129,6 +129,7 @@ Examples
   - Native: `threadsCreate` returns the full thread JSON (id, state, assignedAgent, messages, scrollToken, etc.).
   - TypeScript: the binding type can be `Record<string, any>` or a permissive `ChatThreadDetails` that allows unknown keys.
   - Optional: expose both `threadsGetDetails` (light) and `threadsGetFullDetails` (heavy) for performance-sensitive surfaces.
+  - Event limits: the CXone SDK only exposes `onThreadsUpdated` (full snapshot) and `onThreadUpdated` (single thread) delegate callbacks. Lower-level socket events such as `MessageAddedIntoCase`, `MessageCreated`, `MessageReadChanged`, `CaseStatusChanged`, or `ThreadRecovered` are **not** surfaced individually. The sample app must therefore diff `threadUpdated` payloads to detect new agent messages or case changes.
 
 Breaking changes policy
 
