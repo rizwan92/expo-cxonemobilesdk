@@ -2,10 +2,12 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { View, Text, StyleSheet, Button } from 'react-native';
 import ExpoCxonemobilesdk, { Customer } from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
+import { useRouter } from 'expo-router';
 
 type Props = { connected: boolean };
 
 export default function VisitorCard({ connected }: Props) {
+  const router = useRouter();
   const authorizationChanged = useEvent(
     ExpoCxonemobilesdk,
     Customer.EVENTS.AUTHORIZATION_CHANGED,
@@ -39,6 +41,12 @@ export default function VisitorCard({ connected }: Props) {
     <View style={styles.card}>
       <Text style={styles.title}>Visitor</Text>
       <Button title="Refresh Visitor" onPress={load} />
+      <View style={{ height: 8 }} />
+      <Button
+        title="Customer Details"
+        onPress={() => router.push('/chat-app/customer-details')}
+        disabled={!connected}
+      />
       <View style={{ height: 8 }} />
       <Text style={styles.meta}>Visitor ID: {visitorId ?? '—'}</Text>
       {identity ? (

@@ -210,6 +210,8 @@ const chatUpdated = useEvent(ExpoCxonemobilesdk, Connection.EVENTS.CHAT_UPDATED)
 const connectionError = useEvent(ExpoCxonemobilesdk, Connection.EVENTS.CONNECTION_ERROR);
 ```
 
+> **Note:** Customer custom fields live only for the active session/visitor. When you call `Connection.signOut()` the CXone SDK clears the cached identity and any custom fields. After reconnecting you must reapply them via `Customer.setCustomFields()` before `Customer.getCustomFields()` will return them.
+
 See `example/App.tsx` for a runnable demo.
 
 ## API (JS)

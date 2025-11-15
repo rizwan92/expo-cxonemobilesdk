@@ -153,6 +153,8 @@ export default function Home() {
         <Text style={styles.title}>Quick API Demo</Text>
         <Text style={styles.subtitle}>Prepare and fetch channel configuration</Text>
         <View style={{ height: 8 }} />
+        <Button title="Open Legacy Demo" onPress={() => router.push('/chat')} />
+        <View style={{ height: 8 }} />
         <Button
           title="prepareWithURLs (sample URLs)"
           onPress={async () => {

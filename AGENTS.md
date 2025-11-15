@@ -130,6 +130,8 @@ Examples
   - TypeScript: the binding type can be `Record<string, any>` or a permissive `ChatThreadDetails` that allows unknown keys.
   - Optional: expose both `threadsGetDetails` (light) and `threadsGetFullDetails` (heavy) for performance-sensitive surfaces.
   - Event limits: the CXone SDK only exposes `onThreadsUpdated` (full snapshot) and `onThreadUpdated` (single thread) delegate callbacks. Lower-level socket events such as `MessageAddedIntoCase`, `MessageCreated`, `MessageReadChanged`, `CaseStatusChanged`, or `ThreadRecovered` are **not** surfaced individually. The sample app must therefore diff `threadUpdated` payloads to detect new agent messages or case changes.
+- Customer custom fields
+  - `Customer.getCustomFields()` / `Customer.setCustomFields()` simply mirror the SDK’s in-memory state. CXone clears these whenever `Connection.signOut()` runs (and our home screen calls sign-out before opening the chat UI). Tests that expect persistence must reapply fields after reconnecting; there is no SDK API to fetch historical values for prior visitors.
 
 Breaking changes policy
 
