@@ -29,6 +29,7 @@ export default function ThreadScreen() {
   const { threadId } = useLocalSearchParams<{ threadId: string }>();
   // Subscribe to native `threadUpdated` events so UI reflects server pushes
   const threadUpdated = useEvent(ExpoCxonemobilesdk, Thread.EVENTS.UPDATED);
+  const agentTypingEvent = useEvent(ExpoCxonemobilesdk, Thread.EVENTS.AGENT_TYPING);
   const contactFieldsEvent = useEvent(ExpoCxonemobilesdk, Thread.EVENTS.CONTACT_CUSTOM_FIELDS_SET);
 
   // Rendered chat messages (mirrors native payload order)
@@ -46,6 +47,7 @@ export default function ThreadScreen() {
   const [customFields, setCustomFields] = useState<Record<string, string> | null>(null);
   // Pull-to-refresh visual state
   const [refreshing, setRefreshing] = useState(false);
+  const [agentTypingIndicator, setAgentTypingIndicator] = useState<string | null>(null);
   // Guard flag to avoid processing events while a manual reload is pending
   const reloadingRef = useRef(false);
   const suppressAutoScrollRef = useRef(false);
@@ -96,6 +98,28 @@ export default function ThreadScreen() {
       setThreadInfo(threadUpdated.thread as ChatThreadDetails);
     }
   }, [threadId, threadUpdated?.thread]);
+
+  useEffect(() => {
+    if (!threadId || !agentTypingEvent) return;
+    if (agentTypingEvent.threadId !== threadId) return;
+    const agentName =
+      agentTypingEvent.agent?.fullName?.trim() ||
+      agentTypingEvent.agent?.nickname?.trim() ||
+      agentTypingEvent.agent?.firstName?.trim() ||
+      'Agent';
+    if (agentTypingEvent.isTyping) {
+      setAgentTypingIndicator(`${agentName} is typing…`);
+    } else {
+      setAgentTypingIndicator(null);
+    }
+  }, [
+    agentTypingEvent?.agent?.firstName,
+    agentTypingEvent?.agent?.fullName,
+    agentTypingEvent?.agent?.nickname,
+    agentTypingEvent?.isTyping,
+    agentTypingEvent?.threadId,
+    threadId,
+  ]);
 
   // Send handler invoked by the Composer component
   const onSend = useCallback(
@@ -223,6 +247,11 @@ export default function ThreadScreen() {
             scrollToBottomKey={scrollKey}
           />
         </View>
+        {agentTypingIndicator ? (
+          <View style={styles.typingContainer}>
+            <Text style={styles.typingText}>{agentTypingIndicator}</Text>
+          </View>
+        ) : null}
         {/* Composer exposes the send UI and passes text to onSend */}
         <Composer onSend={onSend} value={counterText} onChangeText={setCounterText} />
       </KeyboardAvoidingView>
@@ -270,4 +299,12 @@ const styles = StyleSheet.create({
   fieldRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
   fieldKey: { fontWeight: '600', color: '#312e81', flex: 1, marginRight: 8 },
   fieldValue: { color: '#1f2937', flex: 1, textAlign: 'right' },
+  typingContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    marginHorizontal: 16,
+    borderRadius: 8,
+    backgroundColor: '#f3f4f6',
+  },
+  typingText: { color: '#6b7280', fontStyle: 'italic' },
 });
