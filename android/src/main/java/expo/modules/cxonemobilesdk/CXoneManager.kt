@@ -7,7 +7,10 @@ import com.nice.cxonechat.ChatState.*
 import com.nice.cxonechat.ChatThreadHandler
 import com.nice.cxonechat.analytics.ActionMetadata
 import com.nice.cxonechat.exceptions.RuntimeChatException
+import com.nice.cxonechat.log.Level
+import com.nice.cxonechat.log.Logger
 import com.nice.cxonechat.log.LoggerAndroid
+import com.nice.cxonechat.log.LoggerNoop
 import com.nice.cxonechat.message.ContentDescriptor
 import com.nice.cxonechat.thread.ChatThread
 import expo.modules.cxonemobilesdk.dto.ActionMetadataMapper
@@ -18,8 +21,10 @@ import expo.modules.cxonemobilesdk.dto.ProactiveActionDTO
 import expo.modules.cxonemobilesdk.dto.ProactiveActionEventDTO
 import expo.modules.cxonemobilesdk.dto.ThreadUpdatedEventDTO
 import expo.modules.cxonemobilesdk.dto.ThreadsUpdatedEventDTO
+import expo.modules.cxonemobilesdk.logging.FilteredLogger
 import java.lang.ref.WeakReference
 import java.util.UUID
+import java.util.Locale
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +43,7 @@ object CXoneManager : ChatInstanceProvider.Listener {
   private var provider: ChatInstanceProvider? = null
   private var threadsHandlerCancellable: Cancellable? = null
   private var actionHandler: ChatActionHandler? = null
+  private var currentLogger: Logger = LoggerAndroid("CXoneChat")
 
   // Cache of latest known threads
   private val threads: MutableList<ChatThread> = mutableListOf()
@@ -65,7 +71,7 @@ object CXoneManager : ChatInstanceProvider.Listener {
       userName = null,
       developmentMode = true,
       deviceTokenProvider = null,
-      logger = LoggerAndroid("CXoneChat"),
+      logger = currentLogger,
       customerId = null,
     )
     provider?.addListener(this)
@@ -530,6 +536,26 @@ object CXoneManager : ChatInstanceProvider.Listener {
     lastError = exception.message ?: "unknown"
     moduleRef?.get()?.emitConnectionError("runtime", lastError!!)
   }
+
+  fun configureLogger(level: String?, verbosity: String?) {
+    currentLogger = buildLogger(level, verbosity)
+    val ctx = appContext
+    if (ctx != null) {
+      provider?.configure(ctx) {
+        logger = currentLogger
+      }
+    }
+  }
+
+  private fun buildLogger(level: String?, verbosity: String?): Logger {
+    val parsed = parseLogLevel(level)
+    return when (parsed) {
+      null -> LoggerNoop
+      Level.All -> LoggerAndroid("CXoneChat")
+      else -> FilteredLogger(LoggerAndroid("CXoneChat"), parsed)
+    }
+  }
+
   private fun markThreadExhaustion(id: UUID, exhausted: Boolean) {
     synchronized(exhaustedThreads) {
       if (exhausted) {
@@ -542,5 +568,20 @@ object CXoneManager : ChatInstanceProvider.Listener {
 
   fun threadHasMoreOverride(id: UUID): Boolean? = synchronized(exhaustedThreads) {
     if (exhaustedThreads.contains(id)) false else null
+  }
+
+  private fun parseLogLevel(level: String?): Level? {
+    val normalized = level?.trim()?.lowercase(Locale.ROOT)
+    return when (normalized) {
+      null, "" -> Level.Info
+      "none", "off", "silent" -> null
+      "error", "fatal" -> Level.Error
+      "warn", "warning" -> Level.Warning
+      "info" -> Level.Info
+      "debug" -> Level.Debug
+      "trace", "verbose" -> Level.Verbose
+      "all" -> Level.All
+      else -> Level.Info
+    }
   }
 }

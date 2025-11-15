@@ -1,5 +1,5 @@
 import Native from '../ExpoCxonemobilesdkModule';
-import type { ChannelConfiguration } from '../types';
+import type { ChannelConfiguration, LoggerLevel, LoggerVerbosity } from '../types';
 
 const TAG = '[CXone/Connection]';
 
@@ -85,4 +85,12 @@ export async function getChannelConfigurationByURL(
 export function signOut() {
   console.log(TAG, 'signOut');
   Native.signOut();
+}
+
+export function configureLogger(
+  level: LoggerLevel = 'info',
+  verbosity: LoggerVerbosity = 'simple',
+) {
+  console.log(TAG, 'configureLogger', { level, verbosity });
+  (Native as any).configureLogger?.(level, verbosity);
 }

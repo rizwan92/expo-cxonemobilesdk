@@ -1,4 +1,5 @@
 import CXoneChatSDK
+import CXoneGuideUtility
 import Foundation
 import ExpoModulesCore
 
@@ -93,6 +94,9 @@ public class ExpoCxonemobilesdkModule: Module {
         }
         Function("isConnected") { () -> Bool in
             ConnectionBridge.isConnected()
+        }
+        Function("configureLogger") { (level: String?, verbosity: String?) in
+            self.configureLogger(level: level, verbosity: verbosity)
         }
         AsyncFunction("executeTrigger") { (triggerId: String) async throws in
             guard let uuid = UUID(uuidString: triggerId) else {
@@ -373,6 +377,30 @@ public class ExpoCxonemobilesdkModule: Module {
             CXoneChat.signOut()
         }
 
+    }
+}
+
+private extension ExpoCxonemobilesdkModule {
+    func configureLogger(level: String?, verbosity: String?) {
+        let normalized = level?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        if normalized == "none" || normalized == "off" {
+            NSLog("[ExpoCxonemobilesdk] Logger disabled")
+            CXoneChat.logWriter = nil
+            return
+        }
+
+        let logLevel = LogLevel(rawValue: normalized ?? "") ?? .info
+        let formatter: LogFormatter
+        switch verbosity?.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() {
+        case "full":
+            formatter = .full
+        case "medium":
+            formatter = .medium
+        default:
+            formatter = .simple
+        }
+        let writer = PrintLogWriter().format(formatter).filter(level: logLevel)
+        CXoneChat.logWriter = writer
     }
 }
 // Keep minimal surface: prepare + connect + events

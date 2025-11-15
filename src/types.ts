@@ -4,6 +4,20 @@ export type ChatDirection = 'toAgent' | 'toClient';
 
 export type MessageStatus = 'sent' | 'delivered' | 'seen' | 'failed';
 
+export type LoggerLevel =
+  | 'trace'
+  | 'debug'
+  | 'info'
+  | 'warning'
+  | 'error'
+  | 'fatal'
+  | 'verbose'
+  | 'all'
+  | 'none'
+  | 'off';
+
+export type LoggerVerbosity = 'simple' | 'medium' | 'full';
+
 export type ChatAuthor = {
   id: number;
   firstName: string;

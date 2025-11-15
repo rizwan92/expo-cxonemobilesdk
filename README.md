@@ -203,6 +203,9 @@ await Analytics.conversion('purchase', 99.99);
 // Triggers
 await Connection.executeTrigger('00000000-0000-0000-0000-000000000001');
 
+// Logging
+Connection.configureLogger('debug', 'full'); // adjust level + verbosity
+
 // Events
 import ExpoCxonemobilesdk from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';

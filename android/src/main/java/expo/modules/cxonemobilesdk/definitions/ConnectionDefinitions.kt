@@ -53,6 +53,9 @@ internal fun ModuleDefinitionBuilder.addConnectionDefinitions(owner: ExpoCxonemo
   Function("getChatMode") { CXoneManager.getChatModeString() }
   Function("getChatState") { CXoneManager.getChatStateString() }
   Function("isConnected") { CXoneManager.isConnected() }
+  Function("configureLogger") { level: String?, verbosity: String? ->
+    CXoneManager.configureLogger(level, verbosity)
+  }
 
   AsyncFunction("executeTrigger") { triggerId: String ->
     val id = try { UUID.fromString(triggerId) } catch (_: Throwable) {

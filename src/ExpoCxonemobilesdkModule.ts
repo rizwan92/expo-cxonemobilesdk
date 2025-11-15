@@ -24,6 +24,7 @@ declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkMo
   getChatMode(): ChatMode;
   getChatState(): ChatState;
   isConnected(): boolean;
+  configureLogger(level?: string | null, verbosity?: string | null): void;
   executeTrigger(triggerId: string): Promise<void>;
   getChannelConfiguration(
     env: string,
