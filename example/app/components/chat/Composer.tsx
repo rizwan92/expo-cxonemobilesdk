@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { View, TextInput, Button, StyleSheet, TouchableOpacity, Text, ScrollView } from 'react-native';
 
 type Props = {
@@ -34,10 +34,16 @@ export default function Composer({
   const [sending, setSending] = useState(false);
   const [showAttachments, setShowAttachments] = useState(false);
 
-  const canSendMessage = canSend ? canSend(text) : text.trim().length > 0;
+  const canSendMessage = useMemo(
+    () => (canSend ? canSend(text) : text.trim().length > 0),
+    [canSend, text],
+  );
+  const hasAttachmentActions = attachmentActions.length > 0;
+  const hasAttachments = attachments.length > 0;
 
-  async function handleSend() {
-    if (!canSendMessage || sending) return;
+  const handleSend = useCallback(async () => {
+    if (sending) return;
+    if (!(canSendMessage || hasAttachments)) return;
     setSending(true);
     try {
       await onSend(text);
@@ -46,46 +52,23 @@ export default function Composer({
     } finally {
       setSending(false);
     }
-  }
+  }, [canSendMessage, hasAttachments, isControlled, onSend, sending, text]);
+
+  const toggleAttachmentMenu = useCallback(() => {
+    setShowAttachments((prev) => !prev);
+  }, []);
 
   return (
     <View style={styles.container}>
-      {attachments.length ? (
-        <ScrollView
-          horizontal
-          style={styles.attachmentsWrapper}
-          contentContainerStyle={styles.attachmentsContent}
-          showsHorizontalScrollIndicator={false}
-        >
-          {attachments.map((attachment) => (
-            <View key={attachment.id} style={styles.attachmentChip}>
-              <View style={styles.attachmentIcon}>
-                <Text style={styles.attachmentIconText}>📎</Text>
-              </View>
-              <View style={styles.attachmentInfo}>
-                <Text style={styles.attachmentName} numberOfLines={1}>
-                  {attachment.name}
-                </Text>
-                <Text style={styles.attachmentMeta} numberOfLines={1}>
-                  {attachment.mimeType ?? 'unknown'}
-                  {attachment.size ? ` • ${(attachment.size / 1024).toFixed(1)} KB` : ''}
-                </Text>
-              </View>
-              {onRemoveAttachment ? (
-                <TouchableOpacity onPress={() => onRemoveAttachment(attachment.id)}>
-                  <Text style={styles.removeAttachment}>✕</Text>
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          ))}
-        </ScrollView>
-      ) : null}
+      {hasAttachments && (
+        <AttachmentTray attachments={attachments} onRemoveAttachment={onRemoveAttachment} />
+      )}
       <View style={styles.composerRow}>
-        {attachmentActions.length ? (
+        {hasAttachmentActions ? (
           <View style={styles.leftColumn}>
             <TouchableOpacity
               style={styles.attachmentTrigger}
-              onPress={() => setShowAttachments((prev) => !prev)}
+              onPress={toggleAttachmentMenu}
               disabled={sending}
             >
               <Text style={styles.attachmentTriggerText}>+</Text>
@@ -106,25 +89,77 @@ export default function Composer({
         <Button
           title={sending ? 'Sending…' : 'Send'}
           onPress={handleSend}
-          disabled={sending || !canSendMessage}
+          disabled={sending || !(canSendMessage || hasAttachments)}
         />
-        {showAttachments && attachmentActions.length ? (
-          <View style={styles.attachmentMenu}>
-            {attachmentActions.map((action) => (
-              <TouchableOpacity
-                key={action.label}
-                style={styles.attachmentOption}
-                onPress={() => {
-                  setShowAttachments(false);
-                  action.onPress();
-                }}
-              >
-                <Text style={styles.attachmentOptionText}>{action.label}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        ) : null}
+        {showAttachments && hasAttachmentActions && (
+          <AttachmentMenu
+            actions={attachmentActions}
+            onDismiss={() => setShowAttachments(false)}
+          />
+        )}
       </View>
+    </View>
+  );
+}
+
+type AttachmentTrayProps = {
+  attachments: NonNullable<Props['attachments']>;
+  onRemoveAttachment?: (id: string) => void;
+};
+
+function AttachmentTray({ attachments, onRemoveAttachment }: AttachmentTrayProps) {
+  return (
+    <ScrollView
+      horizontal
+      style={styles.attachmentsWrapper}
+      contentContainerStyle={styles.attachmentsContent}
+      showsHorizontalScrollIndicator={false}
+    >
+      {attachments.map((attachment) => (
+        <View key={attachment.id} style={styles.attachmentChip}>
+          <View style={styles.attachmentIcon}>
+            <Text style={styles.attachmentIconText}>📎</Text>
+          </View>
+          <View style={styles.attachmentInfo}>
+            <Text style={styles.attachmentName} numberOfLines={1}>
+              {attachment.name}
+            </Text>
+            <Text style={styles.attachmentMeta} numberOfLines={1}>
+              {attachment.mimeType ?? 'unknown'}
+              {attachment.size ? ` • ${(attachment.size / 1024).toFixed(1)} KB` : ''}
+            </Text>
+          </View>
+          {onRemoveAttachment && (
+            <TouchableOpacity onPress={() => onRemoveAttachment(attachment.id)}>
+              <Text style={styles.removeAttachment}>✕</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      ))}
+    </ScrollView>
+  );
+}
+
+type AttachmentMenuProps = {
+  actions: NonNullable<Props['attachmentActions']>;
+  onDismiss: () => void;
+};
+
+function AttachmentMenu({ actions, onDismiss }: AttachmentMenuProps) {
+  return (
+    <View style={styles.attachmentMenu}>
+      {actions.map((action) => (
+        <TouchableOpacity
+          key={action.label}
+          style={styles.attachmentOption}
+          onPress={() => {
+            onDismiss();
+            action.onPress();
+          }}
+        >
+          <Text style={styles.attachmentOptionText}>{action.label}</Text>
+        </TouchableOpacity>
+      ))}
     </View>
   );
 }

@@ -10,13 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  TouchableOpacity,
-  Image,
-  Alert,
 } from 'react-native';
-import * as ImagePicker from 'expo-image-picker';
-import * as DocumentPicker from 'expo-document-picker';
-import { File } from 'expo-file-system';
 // Router helpers for reading the route param (threadId) and navigating back
 import { useLocalSearchParams, useRouter } from 'expo-router';
 // Native module surface + typed helpers for thread operations
@@ -26,16 +20,7 @@ import type { ChatMessage, ChatThreadDetails } from 'expo-cxonemobilesdk';
 // Expo helper to subscribe to native events
 import { useEvent } from 'expo';
 // Reusable chat UI building blocks
-import { ChatList, Composer } from '../../components/chat';
-
-type PendingAttachment = {
-  id: string;
-  name: string;
-  mimeType: string;
-  type: 'image' | 'video' | 'file';
-  base64: string;
-  size?: number | null;
-};
+import { ChatList, ThreadComposer } from '../../components/chat';
 
 export default function ThreadScreen() {
   // Expo Router instance for navigation actions (back / push)
@@ -54,8 +39,6 @@ export default function ThreadScreen() {
   const [loadingEarlier, setLoadingEarlier] = useState(false);
   // Whether more history is available server-side (native informs us)
   const [hasMore, setHasMore] = useState<boolean>(false);
-  // Simple helper text used by the demo to send sequential numbers quickly
-  const [counterText, setCounterText] = useState<string>('1');
   // Bumping this value tells the list to auto-scroll to the bottom
   const [scrollKey, setScrollKey] = useState(0);
   // Cached custom fields so the thread details card can display them
@@ -63,7 +46,6 @@ export default function ThreadScreen() {
   // Pull-to-refresh visual state
   const [refreshing, setRefreshing] = useState(false);
   const [agentTypingIndicator, setAgentTypingIndicator] = useState<string | null>(null);
-  const [pendingAttachments, setPendingAttachments] = useState<PendingAttachment[]>([]);
   // Guard flag to avoid processing events while a manual reload is pending
   const reloadingRef = useRef(false);
   const suppressAutoScrollRef = useRef(false);
@@ -137,43 +119,6 @@ export default function ThreadScreen() {
     threadId,
   ]);
 
-  // Send handler invoked by the Composer component
-  const onSend = useCallback(
-    async (text: string) => {
-      if (!threadId) return;
-      const trimmed = text.trim();
-      const hasText = trimmed.length > 0;
-      const hasAttachments = pendingAttachments.length > 0;
-      if (!hasText && !hasAttachments) return;
-
-      try {
-        await Thread.send(threadId, {
-          text: hasText ? trimmed : '',
-          attachments: hasAttachments
-            ? pendingAttachments.map((attachment) => ({
-                data: attachment.base64,
-                mimeType: attachment.mimeType,
-                fileName: attachment.name,
-                friendlyName: attachment.name,
-              }))
-            : undefined,
-        });
-        if (hasAttachments) {
-          setPendingAttachments([]);
-        }
-        const n = Number(trimmed);
-        if (hasText && Number.isFinite(n)) {
-          setCounterText(String(n + 1));
-        }
-        setScrollKey((k) => k + 1);
-      } catch (err) {
-        console.error('[ChatApp/Thread] onSend failed', err);
-        throw err;
-      }
-    },
-    [threadId, pendingAttachments],
-  );
-
   // Manual "load older history" action. We only call getDetails when needed.
   const onLoadEarlier = useCallback(async () => {
     if (!threadId) return;
@@ -202,70 +147,6 @@ export default function ThreadScreen() {
       setRefreshing(false);
     }
   }, [threadId, refreshing, getInitialMessages]);
-
-  const addAttachment = useCallback((attachment: PendingAttachment) => {
-    setPendingAttachments((prev) => [...prev, attachment]);
-  }, []);
-
-  const handlePickMedia = useCallback(async () => {
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.All,
-        quality: 0.7,
-        base64: true,
-      });
-      if (result.canceled || !result.assets?.length) return;
-      const asset = result.assets[0];
-      const type = asset.type === 'video' ? 'video' : 'image';
-      const mimeType = asset.mimeType ?? (type === 'video' ? 'video/mp4' : 'image/jpeg');
-      let base64 = asset.base64;
-      if (!base64 && asset.uri) {
-        const file = new File(asset.uri);
-        base64 = await file.base64();
-      }
-      if (!base64) {
-        Alert.alert('Attachment error', 'Unable to read the selected media.');
-        return;
-      }
-      addAttachment({
-        id: `${Date.now()}-${Math.random()}`,
-        name: asset.fileName ?? `media-${Date.now()}`,
-        mimeType,
-        type,
-        base64,
-        size: asset.fileSize,
-      });
-    } catch (error) {
-      console.error('[ChatApp/Thread] pick media failed', error);
-      Alert.alert('Attachment error', 'Failed to pick media file.');
-    }
-  }, [addAttachment]);
-
-  const handlePickDocument = useCallback(async () => {
-    try {
-      const result = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
-      if (result.canceled || !result.assets?.length) return;
-      const asset = result.assets[0];
-      if (!asset.uri) return;
-      const file = new File(asset.uri);
-      const base64 = await file.base64();
-      addAttachment({
-        id: `${Date.now()}-${Math.random()}`,
-        name: asset.name ?? 'document',
-        mimeType: asset.mimeType ?? 'application/octet-stream',
-        type: 'file',
-        base64,
-        size: asset.size,
-      });
-    } catch (error) {
-      console.error('[ChatApp/Thread] pick document failed', error);
-      Alert.alert('Attachment error', 'Failed to pick document.');
-    }
-  }, [addAttachment]);
-
-  const removeAttachment = useCallback((id: string) => {
-    setPendingAttachments((prev) => prev.filter((att) => att.id !== id));
-  }, []);
 
   return (
     // Basic safe-area wrapper for notch devices
@@ -347,19 +228,7 @@ export default function ThreadScreen() {
             <Text style={styles.typingText}>{agentTypingIndicator}</Text>
           </View>
         ) : null}
-        {/* Composer exposes the send UI and passes text to onSend */}
-        <Composer
-          onSend={onSend}
-          value={counterText}
-          onChangeText={setCounterText}
-          canSend={(text) => pendingAttachments.length > 0 || text.trim().length > 0}
-          attachments={pendingAttachments}
-          onRemoveAttachment={removeAttachment}
-          attachmentActions={[
-            { label: 'Photo/Video', onPress: handlePickMedia },
-            { label: 'Document', onPress: handlePickDocument },
-          ]}
-        />
+        <ThreadComposer threadId={threadId} onSent={() => setScrollKey((k) => k + 1)} />
       </KeyboardAvoidingView>
     </SafeAreaView>
   );

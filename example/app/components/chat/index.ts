@@ -1,6 +1,7 @@
 export { default as Avatar } from './Avatar';
 export { default as MessageBubble } from './MessageBubble';
 export { default as Composer } from './Composer';
+export { default as ThreadComposer } from './ThreadComposer';
 export { default as LoadMore } from './LoadMore';
 export { default as ChatList } from './ChatList';
 export { default as Timestamp } from './Timestamp';

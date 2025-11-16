@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Linking } from 'react-native';
 import Timestamp from './Timestamp';
 import StatusTicks from './StatusTicks';
@@ -15,26 +15,36 @@ type Props = {
   attachments?: Attachment[];
 };
 
-export default function MessageBubble({
-  text,
-  isMe,
-  createdAtMs,
-  status,
-  authorName,
-  direction,
-  attachments,
-}: Props) {
+export default function MessageBubble(props: Props) {
+  const { text, isMe, createdAtMs, status, authorName, direction, attachments } = props;
+  const bubbleStyle = useMemo(
+    () => [styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem],
+    [isMe],
+  );
+  const textStyle = useMemo(
+    () => [styles.text, isMe ? styles.textMe : styles.textThem],
+    [isMe],
+  );
+  const metaStyle = useMemo(
+    () => [styles.metaRow, isMe ? styles.metaMe : styles.metaThem],
+    [isMe],
+  );
+
   return (
     <View style={[styles.row, isMe ? styles.rowMe : styles.rowThem]}>
-      <View style={{ maxWidth: '85%' }}>
-        {!isMe && !!authorName && <Text style={styles.author}>{authorName}</Text>}
-        <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
-          <Text style={[styles.text, isMe ? styles.textMe : styles.textThem]}>{text}</Text>
-        {attachments?.map((attachment) => (
-          <AttachmentPreview key={attachment.url || attachment.friendlyName} attachment={attachment} isMe={isMe} />
-        ))}
+      <View style={styles.messageColumn}>
+        {!isMe && authorName && <Text style={styles.author}>{authorName}</Text>}
+        <View style={bubbleStyle}>
+          <Text style={textStyle}>{text}</Text>
+          {attachments?.map((attachment) => (
+            <AttachmentPreview
+              key={attachment.url || attachment.friendlyName}
+              attachment={attachment}
+              isMe={isMe}
+            />
+          ))}
         </View>
-        <View style={[styles.metaRow, isMe ? styles.metaMe : styles.metaThem]}>
+        <View style={metaStyle}>
           {!!direction && <DirectionIcon direction={direction} />}
           <Timestamp ms={createdAtMs} style={styles.metaText} variant="full" />
           {isMe && <StatusTicks status={status} />}
@@ -81,6 +91,7 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', marginVertical: 4, paddingHorizontal: 8 },
   rowMe: { justifyContent: 'flex-end' },
   rowThem: { justifyContent: 'flex-start' },
+  messageColumn: { maxWidth: '85%' },
   bubble: { paddingVertical: 8, paddingHorizontal: 12, borderRadius: 16, maxWidth: '75%' },
   bubbleMe: { backgroundColor: '#2563eb' },
   bubbleThem: { backgroundColor: '#e5e7eb' },
