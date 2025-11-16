@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { SafeAreaView, View, Text, Button, StyleSheet, TextInput, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Connection, Customer } from 'expo-cxonemobilesdk';
-import { useConnection } from '../components/ConnectionContext';
-import ConnectionStatusCard from '../components/ConnectionStatusCard';
-import { CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID } from '../config/chat';
+import { useConnection } from './components/ConnectionContext';
+import ConnectionStatusCard from './components/ConnectionStatusCard';
+import { CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID } from './config/chat';
 
 export default function Home() {
   const router = useRouter();

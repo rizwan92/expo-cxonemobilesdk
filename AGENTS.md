@@ -52,7 +52,7 @@ across Swift/Kotlin, TypeScript, podspecs/Gradle, and the example app.
 - Example App
   - `example/App.tsx`
     - Demonstrates calling `prepareAndConnect`, `disconnect` with console logs and event-driven UI.
-  - `example/components/*`
+  - `example/app/components/*`
     - Shared React context and cards live here so Expo Router screens under `example/app/*` stay lightweight. Add new reusable UI to this folder instead of inside the router tree.
   - Message rendering should stay purely event-driven: do not add optimistic/pending messages in JS. Let native `threadUpdated` events (with full history) drive the UI and only call `Thread.getDetails`/`Thread.loadMore` when the user explicitly refreshes.
 
@@ -140,7 +140,7 @@ Breaking changes policy
 Example App
 
 - Mirror the modular structure in `example/App.tsx` with sections per feature and call into `src/api/*` so the example exercises the same public API you ship.
-- Shared connection widgets (status header, visitor card, channel config, thread list, `ConnectionContext`) live in `example/components`. When adding UI helpers, place them there and import them into the router screens rather than creating deep component trees inside `example/app/*`.
+- Shared connection widgets (status header, visitor card, channel config, thread list, `ConnectionContext`) live in `example/app/components`. When adding UI helpers, place them there and import them into the router screens rather than creating deep component trees inside `example/app/*`.
 - When displaying thread/message data in JS, render the native-provided ordering verbatim. Do not resort or dedupe on the JS side; CXoneChat already returns the canonical chronology (especially after Android’s recovery flow), and local sorting can hide messages or show stale sequences.
 
 README
@@ -274,3 +274,13 @@ to bridge unavoidable timing/state differences.
 - Principle to remember
   - Prefer method parity for both platforms first.
   - Only when platform timing/state differs, introduce listener‑based wrappers at the JS layer.
+
+### Attachment Support (Images, Video, Docs)
+
+- Native wiring: `Thread.sendAttachmentBase64` and `Thread.sendAttachmentURL` are implemented on both platforms and already bridged through `src/api/thread.ts`. The Android side routes to `ChatThreadsManager.sendAttachment*`, iOS uses the CXoneChat equivalents. Do not rename those entry points without updating both native modules.
+- Example flow: the example app (`example/app/chat-app/thread/[threadId].tsx`) uses `expo-image-picker`, `expo-document-picker`, and `expo-file-system` to fetch the local file, convert it to base64, and then call `Thread.sendAttachmentBase64({ threadId, mimeType, filename, base64 })`. UI state lives in `example/app/components/chat/Composer.tsx` (staged attachments) and `MessageBubble.tsx` / `ChatList.tsx` (previews once the SDK echoes the message back through `threadUpdated`).
+- Testing checklist:
+  - exercise both camera/photo roll and document pickers in the example app;
+  - send at least one PDF and one image to confirm CXone returns a `fileUrl` you can display;
+  - watch the Metro console for `[ChatAppThread] sendAttachment` logs and native Logcat/Xcode logs to verify payload sizes.
+- Limits & cautions: `Thread.sendAttachmentBase64` loads the entire file into memory, so guard against very large videos (>10 MB) in JS. We currently show one attachment preview per message; plan future updates before attempting multi‑attachment payloads. Progress callbacks are not surfaced—show a “sending…” chip until the SDK produces a `threadUpdated` event.

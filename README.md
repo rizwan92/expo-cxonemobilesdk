@@ -119,7 +119,7 @@ EXPO_PUBLIC_CHAT_BRAND_ID=1086
 EXPO_PUBLIC_CHAT_CHANNEL_ID=chat_xxx
 ```
 
-These are consumed in `example/config/chat.ts` and passed to `Connection.prepareAndConnect`.
+These are consumed in `example/app/config/chat.ts` and passed to `Connection.prepareAndConnect`.
 
 # Contributing
 
@@ -205,6 +205,19 @@ await Connection.executeTrigger('00000000-0000-0000-0000-000000000001');
 
 // Logging
 Connection.configureLogger('debug', 'full'); // adjust level + verbosity
+
+// Attachments
+import * as FileSystem from 'expo-file-system';
+const base64 = await FileSystem.readAsStringAsync(localUri, {
+  encoding: FileSystem.EncodingType.Base64,
+});
+await Thread.sendAttachmentBase64(
+  threadId,
+  base64,
+  'image/jpeg',
+  'photo.jpg',
+  'Photo',
+);
 
 // Events
 import ExpoCxonemobilesdk from 'expo-cxonemobilesdk';

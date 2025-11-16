@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView, StyleSheet, ScrollView, Button } from 'react-native';
 import ExpoCxonemobilesdk, { Connection } from 'expo-cxonemobilesdk';
-import ChannelConfigCard from '../../components/ChannelConfigCard';
-import VisitorCard from '../../components/VisitorCard';
+import ChannelConfigCard from '../components/ChannelConfigCard';
+import VisitorCard from '../components/VisitorCard';
 import { useEvent } from 'expo';
 import { useRouter } from 'expo-router';
 // Unified connection (no polling hook)
-import { CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID } from '../../config/chat';
-import { useConnection } from '../../components/ConnectionContext';
-import ConnectionStatusCard from '../../components/ConnectionStatusCard';
+import { CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID } from '../config/chat';
+import { useConnection } from '../components/ConnectionContext';
+import ConnectionStatusCard from '../components/ConnectionStatusCard';
 
 export default function ChatAppHome() {
   const router = useRouter();

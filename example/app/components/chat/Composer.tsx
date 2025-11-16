@@ -4,8 +4,9 @@ import { View, TextInput, Button, StyleSheet } from 'react-native';
 type Props = {
   onSend: (text: string) => Promise<void> | void;
   placeholder?: string;
-  value?: string; // optional controlled value
-  onChangeText?: (text: string) => void; // required if value is provided
+  value?: string;
+  onChangeText?: (text: string) => void;
+  canSend?: (text: string) => boolean;
 };
 
 export default function Composer({
@@ -13,6 +14,7 @@ export default function Composer({
   placeholder = 'Type a message',
   value,
   onChangeText,
+  canSend,
 }: Props) {
   const isControlled = typeof value === 'string' && typeof onChangeText === 'function';
   const [inner, setInner] = useState('');
@@ -20,12 +22,13 @@ export default function Composer({
   const setText = isControlled ? (onChangeText as (t: string) => void) : setInner;
   const [sending, setSending] = useState(false);
 
+  const canSendMessage = canSend ? canSend(text) : text.trim().length > 0;
+
   async function handleSend() {
-    const trimmed = text.trim();
-    if (!trimmed || sending) return;
+    if (!canSendMessage || sending) return;
     setSending(true);
     try {
-      await onSend(trimmed);
+      await onSend(text);
       // In controlled mode, parent updates value; do not clear here.
       if (!isControlled) setInner('');
     } finally {
@@ -44,7 +47,11 @@ export default function Composer({
         autoCapitalize="sentences"
         editable={!sending}
       />
-      <Button title={sending ? 'Sending…' : 'Send'} onPress={handleSend} />
+      <Button
+        title={sending ? 'Sending…' : 'Send'}
+        onPress={handleSend}
+        disabled={sending || !canSendMessage}
+      />
     </View>
   );
 }

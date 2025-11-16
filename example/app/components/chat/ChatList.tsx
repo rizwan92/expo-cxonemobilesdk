@@ -48,6 +48,8 @@ export default function ChatList({
       text = `[quick replies] ${ct.data.title}`;
     } else if (ct && ct.type === 'listPicker') {
       text = `[list] ${ct.data.title}`;
+    } else if (item.attachments?.length) {
+      text = '[attachment]';
     } else {
       text = '[unknown]';
     }
@@ -69,6 +71,7 @@ export default function ChatList({
             status={item.status}
             authorName={!isMe ? name : undefined}
             direction={item.direction as any}
+            attachments={item.attachments ?? []}
           />
         </View>
       </View>

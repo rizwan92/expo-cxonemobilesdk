@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 import React from 'react';
-import { ConnectionProvider } from '../components/ConnectionContext';
+import { ConnectionProvider } from './components/ConnectionContext';
 
 export default function RootLayout() {
   return (

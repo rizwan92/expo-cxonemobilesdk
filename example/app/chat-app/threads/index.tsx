@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react';
 import { SafeAreaView, ScrollView, View, Text, Button, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
-import ThreadsCard from '../../../components/ThreadsCard';
-import { useConnection } from '../../../components/ConnectionContext';
+import ThreadsCard from '../../components/ThreadsCard';
+import { useConnection } from '../../components/ConnectionContext';
 
 export default function ThreadListScreen() {
   const router = useRouter();
