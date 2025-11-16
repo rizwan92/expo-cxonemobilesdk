@@ -30,9 +30,9 @@ export default function MessageBubble({
         {!isMe && !!authorName && <Text style={styles.author}>{authorName}</Text>}
         <View style={[styles.bubble, isMe ? styles.bubbleMe : styles.bubbleThem]}>
           <Text style={[styles.text, isMe ? styles.textMe : styles.textThem]}>{text}</Text>
-          {attachments?.map((attachment) => (
-            <AttachmentPreview key={attachment.url || attachment.friendlyName} attachment={attachment} />
-          ))}
+        {attachments?.map((attachment) => (
+          <AttachmentPreview key={attachment.url || attachment.friendlyName} attachment={attachment} isMe={isMe} />
+        ))}
         </View>
         <View style={[styles.metaRow, isMe ? styles.metaMe : styles.metaThem]}>
           {!!direction && <DirectionIcon direction={direction} />}
@@ -44,7 +44,7 @@ export default function MessageBubble({
   );
 }
 
-function AttachmentPreview({ attachment }: { attachment: Attachment }) {
+function AttachmentPreview({ attachment, isMe }: { attachment: Attachment; isMe: boolean }) {
   if (!attachment.url) return null;
   const isImage = attachment.mimeType?.startsWith('image/');
   const isVideo = attachment.mimeType?.startsWith('video/');
@@ -55,16 +55,21 @@ function AttachmentPreview({ attachment }: { attachment: Attachment }) {
 
   if (isImage) {
     return (
-      <TouchableOpacity style={styles.attachmentImageWrapper} onPress={handleOpen}>
+      <TouchableOpacity
+        style={[styles.attachmentImageWrapper, isMe ? styles.attachmentImageWrapperMe : styles.attachmentImageWrapperThem]}
+        onPress={handleOpen}
+      >
         <Image source={{ uri: attachment.url }} style={styles.attachmentImage} />
-        <Text style={styles.attachmentCaption}>{label}</Text>
+        <Text style={[styles.attachmentCaption, isMe ? styles.attachmentCaptionMe : styles.attachmentCaptionThem]}>
+          {label}
+        </Text>
       </TouchableOpacity>
     );
   }
 
   return (
     <TouchableOpacity style={styles.attachmentChip} onPress={handleOpen}>
-      <Text style={styles.attachmentChipText}>
+      <Text style={[styles.attachmentChipText, isMe ? styles.attachmentChipTextMe : styles.attachmentChipTextThem]}>
         {isVideo ? '▶︎ ' : '📄 '}
         {label}
       </Text>
@@ -87,9 +92,13 @@ const styles = StyleSheet.create({
   metaMe: { justifyContent: 'flex-end' },
   metaThem: { justifyContent: 'flex-start' },
   metaText: { fontSize: 11, color: '#6b7280', marginRight: 6 },
-  attachmentImageWrapper: { marginTop: 8 },
-  attachmentImage: { width: 220, height: 160, borderRadius: 12 },
-  attachmentCaption: { fontSize: 12, color: '#f8fafc', marginTop: 4 },
+  attachmentImageWrapper: { marginTop: 8, borderRadius: 12, overflow: 'hidden' },
+  attachmentImageWrapperMe: { backgroundColor: 'rgba(255,255,255,0.1)' },
+  attachmentImageWrapperThem: { backgroundColor: '#e2e8f0' },
+  attachmentImage: { width: 220, height: 160 },
+  attachmentCaption: { fontSize: 12, marginTop: 4 },
+  attachmentCaptionMe: { color: '#f8fafc' },
+  attachmentCaptionThem: { color: '#111827' },
   attachmentChip: {
     marginTop: 8,
     backgroundColor: 'rgba(255,255,255,0.2)',
@@ -98,4 +107,6 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   attachmentChipText: { color: '#111827' },
+  attachmentChipTextMe: { color: '#f8fafc' },
+  attachmentChipTextThem: { color: '#111827' },
 });

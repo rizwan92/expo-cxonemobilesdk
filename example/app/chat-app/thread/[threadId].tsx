@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
+import { File } from 'expo-file-system';
 // Router helpers for reading the route param (threadId) and navigating back
 import { useLocalSearchParams, useRouter } from 'expo-router';
 // Native module surface + typed helpers for thread operations
@@ -140,23 +140,38 @@ export default function ThreadScreen() {
   // Send handler invoked by the Composer component
   const onSend = useCallback(
     async (text: string) => {
-      // Do nothing for empty payloads or missing thread ids
-      if (!threadId || !text) return;
-    try {
-        // Delegate to the native module and rely on threadUpdated for the echo
-        await Thread.send(threadId, { text });
-        const n = Number(text);
-        if (Number.isFinite(n)) {
+      if (!threadId) return;
+      const trimmed = text.trim();
+      const hasText = trimmed.length > 0;
+      const hasAttachments = pendingAttachments.length > 0;
+      if (!hasText && !hasAttachments) return;
+
+      try {
+        await Thread.send(threadId, {
+          text: hasText ? trimmed : '',
+          attachments: hasAttachments
+            ? pendingAttachments.map((attachment) => ({
+                data: attachment.base64,
+                mimeType: attachment.mimeType,
+                fileName: attachment.name,
+                friendlyName: attachment.name,
+              }))
+            : undefined,
+        });
+        if (hasAttachments) {
+          setPendingAttachments([]);
+        }
+        const n = Number(trimmed);
+        if (hasText && Number.isFinite(n)) {
           setCounterText(String(n + 1));
         }
-        // Bump so FlatList scrolls to the latest message once native updates arrive
         setScrollKey((k) => k + 1);
       } catch (err) {
         console.error('[ChatApp/Thread] onSend failed', err);
         throw err;
       }
     },
-    [threadId],
+    [threadId, pendingAttachments],
   );
 
   // Manual "load older history" action. We only call getDetails when needed.
@@ -205,9 +220,8 @@ export default function ThreadScreen() {
       const mimeType = asset.mimeType ?? (type === 'video' ? 'video/mp4' : 'image/jpeg');
       let base64 = asset.base64;
       if (!base64 && asset.uri) {
-        base64 = await FileSystem.readAsStringAsync(asset.uri, {
-          encoding: FileSystem.EncodingType.Base64,
-        });
+        const file = new File(asset.uri);
+        base64 = await file.base64();
       }
       if (!base64) {
         Alert.alert('Attachment error', 'Unable to read the selected media.');
@@ -230,12 +244,11 @@ export default function ThreadScreen() {
   const handlePickDocument = useCallback(async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({ copyToCacheDirectory: true });
-      if (result.type === 'cancel') return;
-      const asset = result.assets?.[0] ?? result;
-      if (!asset?.uri) return;
-      const base64 = await FileSystem.readAsStringAsync(asset.uri, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
+      if (result.canceled || !result.assets?.length) return;
+      const asset = result.assets[0];
+      if (!asset.uri) return;
+      const file = new File(asset.uri);
+      const base64 = await file.base64();
       addAttachment({
         id: `${Date.now()}-${Math.random()}`,
         name: asset.name ?? 'document',
@@ -319,29 +332,6 @@ export default function ThreadScreen() {
             <Button title="Load earlier" onPress={onLoadEarlier} />
           )}
         </View>
-        <View style={styles.attachmentActions}>
-          <Button title="Add Photo/Video" onPress={handlePickMedia} />
-          <View style={{ height: 8 }} />
-          <Button title="Add Document" onPress={handlePickDocument} />
-        </View>
-        {pendingAttachments.length ? (
-          <View style={styles.pendingAttachments}>
-            {pendingAttachments.map((attachment) => (
-              <View key={attachment.id} style={styles.attachmentChip}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.attachmentName}>{attachment.name}</Text>
-                  <Text style={styles.attachmentMeta}>
-                    {attachment.mimeType}
-                    {attachment.size ? ` • ${(attachment.size / 1024).toFixed(1)} KB` : ''}
-                  </Text>
-                </View>
-                <TouchableOpacity onPress={() => removeAttachment(attachment.id)}>
-                  <Text style={styles.removeAttachment}>Remove</Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        ) : null}
         <View style={{ flex: 1 }}>
           {/* Chat list handles rendering the message bubbles & infinite scroll */}
           <ChatList
@@ -363,6 +353,12 @@ export default function ThreadScreen() {
           value={counterText}
           onChangeText={setCounterText}
           canSend={(text) => pendingAttachments.length > 0 || text.trim().length > 0}
+          attachments={pendingAttachments}
+          onRemoveAttachment={removeAttachment}
+          attachmentActions={[
+            { label: 'Photo/Video', onPress: handlePickMedia },
+            { label: 'Document', onPress: handlePickDocument },
+          ]}
         />
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -417,26 +413,4 @@ const styles = StyleSheet.create({
     backgroundColor: '#f3f4f6',
   },
   typingText: { color: '#6b7280', fontStyle: 'italic' },
-  attachmentActions: {
-    paddingHorizontal: 12,
-    paddingTop: 4,
-    gap: 8,
-  },
-  pendingAttachments: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    gap: 8,
-  },
-  attachmentChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#e0f2fe',
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    gap: 12,
-  },
-  attachmentName: { fontWeight: '600', color: '#0f172a' },
-  attachmentMeta: { color: '#475569', fontSize: 12 },
-  removeAttachment: { color: '#dc2626', fontWeight: '600' },
 });
