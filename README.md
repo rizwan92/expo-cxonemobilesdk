@@ -95,3 +95,4 @@ Contributions are welcome! Please follow the [Expo contributing guide](https://g
 
 - After editing Swift files, rerun `pod install` inside `example/ios` so Xcode sees the new sources.
 - Build errors referencing `CXoneChatSDK` usually mean the Swift Package reference did not resolve. Re-run the config-plugin via `npx expo prebuild -p ios`, then `cd ios && pod install --repo-update`.
+- Android manifest merge failures mentioning `android:fullBackupContent` come from the CXone `chat-sdk-core` AAR also defining that attribute. Add `tools:replace="android:fullBackupContent"` to your app’s `<application>` element (with the `tools` namespace declared) to keep your existing backup rules.
