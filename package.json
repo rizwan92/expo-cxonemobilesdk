@@ -1,6 +1,6 @@
 {
   "name": "expo-cxonemobilesdk",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Mobile SDK lets you integrate CXone Mpower digital chat into your enterprise mobile phone apps.",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -25,7 +25,10 @@
     "expo-cxonemobilesdk",
     "ExpoCxonemobilesdk"
   ],
-  "repository": "https://github.com/rizwan92/expo-cxonemobilesdk",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rizwan92/expo-cxonemobilesdk.git"
+  },
   "bugs": {
     "url": "https://github.com/rizwan92/expo-cxonemobilesdk/issues"
   },
