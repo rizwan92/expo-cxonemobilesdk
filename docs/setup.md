@@ -26,18 +26,7 @@ The module requires Expo Modules infrastructure (already present in Expo project
 
 No additional Maven repositories are needed. `expo-cxonemobilesdk` vendors the CXoneChat Android `.aar` artifacts under `nice-cxone-mobile-sdk-android/`, and Gradle references them automatically through the module’s build.gradle. After installing the package, run `yarn android` (or `npx expo run:android`) to let Expo autolinking pick up the module. If you maintain your own fork, update the vendored AARs in that folder before publishing new releases.
 
-> **Manifest tip:** `chat-sdk-core` defines `android:fullBackupContent` in its manifest. If your app already sets `android:fullBackupContent` (for example, via SecureStore backup rules), Gradle will fail during manifest merge. Add `tools:replace="android:fullBackupContent"` to your `<application>` element to override the SDK value:
->
-> ```xml
-> <manifest xmlns:android="http://schemas.android.com/apk/res/android"
->   xmlns:tools="http://schemas.android.com/tools"
->   ...>
->   <application
->     android:fullBackupContent="@xml/secure_store_backup_rules"
->     tools:replace="android:fullBackupContent"
->     ... />
-> </manifest>
-> ```
+> **Manifest tip:** `chat-sdk-core` defines `android:fullBackupContent` in its manifest. If your app already sets `android:fullBackupContent` (for example, via SecureStore backup rules), Gradle will fail during manifest merge. Add the provided config plugin (`"expo-cxonemobilesdk/plugin-android-backup"`) to your Expo config so it automatically sets `tools:replace="android:fullBackupContent"` on your `<application>` element. If you prefer a manual change, follow the XML snippet in [`docs/config-plugin.md`](config-plugin.md#android-withandroidfullbackupfix).
 
 ## Config plugin (Swift Package injection)
 

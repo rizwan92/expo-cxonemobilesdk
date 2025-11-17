@@ -11,6 +11,6 @@ The CXone Mobile SDK wrapper ships as an Expo module with shared TypeScript bind
 - [Customer & custom fields](customers.md) — identity, OAuth, visitor IDs, and scoped custom fields.
 - [Analytics](analytics.md) — page view + conversion helpers.
 - [Events & listener model](events.md) — every event payload plus guidance on building reactive UIs.
-- [Config plugin (SPM injection)](config-plugin.md) — wire `plugins/addSPMDependenciesToMainTarget.js` into your Expo app.
+- [Config plugins (iOS + Android)](config-plugin.md) — Swift Package injection and Android manifest helpers.
 
 Each file includes JavaScript usage along with the corresponding native surfaces so you can extend the SDK consistently across Swift, Kotlin, and TypeScript. Whenever you add a new native function, remember to update the matching doc section plus the example app to keep everything in sync.

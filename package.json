@@ -61,7 +61,8 @@
     "@expo/config-plugins": "*"
   },
   "exports": {
-    "./plugin-spm": "./plugins/addSPMDependenciesToMainTarget.js"
+    "./plugin-spm": "./plugins/addSPMDependenciesToMainTarget.js",
+    "./plugin-android-backup": "./plugins/withAndroidFullBackupFix.js"
   },
   "peerDependenciesMeta": {
     "@expo/config-plugins": {

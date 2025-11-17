@@ -1,8 +1,12 @@
-# Config Plugin: addSPMDependenciesToMainTarget
+# Config Plugins
 
-`plugins/addSPMDependenciesToMainTarget.js` is the Expo config plugin that injects an `XCRemoteSwiftPackageReference` + `XCSwiftPackageProductDependency` into your iOS project during `expo prebuild`. It ensures Xcode knows about the `CXoneChatSDK` Swift Package so the podspec’s `s.spm_dependency` can link the product without requiring the `cocoapods-spm` Ruby plugin.
+This package includes config plugins for both iOS and Android so consuming apps can avoid manual native edits.
 
-Use this plugin whenever your app (or the included example) needs to resolve the Swift Package while still letting CocoaPods manage the actual linking.
+## iOS: `addSPMDependenciesToMainTarget`
+
+`plugins/addSPMDependenciesToMainTarget.js` injects an `XCRemoteSwiftPackageReference` + `XCSwiftPackageProductDependency` into your iOS project during `expo prebuild`. It ensures Xcode knows about the `CXoneChatSDK` Swift Package so the podspec’s `s.spm_dependency` can link the product without requiring the `cocoapods-spm` Ruby plugin.
+
+Use this plugin whenever your app (or the included example) needs to resolve the Swift Package while letting CocoaPods manage the actual linking.
 
 ## Installation checklist
 
@@ -79,3 +83,22 @@ After `expo prebuild -p ios`:
 4. Run `pod install` to ensure the package product is linked by the Pods target.
 
 If the package does not appear, re-run `npx expo prebuild -p ios --clean` to regenerate the native project and inspect your `plugins` array for typos.
+
+## Android: `withAndroidFullBackupFix`
+
+`plugins/withAndroidFullBackupFix.js` adds the `tools` namespace (if needed) and appends `android:fullBackupContent` to `tools:replace` on your `<application>` element. This avoids manifest merge errors caused by `chat-sdk-core` also defining `android:fullBackupContent`.
+
+Add the plugin to your Expo config:
+
+```jsonc
+{
+  "expo": {
+    "plugins": [
+      ["expo-cxonemobilesdk/plugin-spm", { "version": "3.0.1", "...": "..." }],
+      "expo-cxonemobilesdk/plugin-android-backup"
+    ]
+  }
+}
+```
+
+If you already have custom `tools:replace` values, the plugin preserves them and simply appends `android:fullBackupContent`. You can opt out if you prefer to edit `AndroidManifest.xml` manually (see [`docs/setup.md`](setup.md) for the manual instructions).
