@@ -18,32 +18,7 @@ Expo module that wraps the native NICE CXoneChat SDKs and exposes a unified Type
    npx pod-install
    ```
 
-2. Configure Gradle to resolve the CXone Android artifacts (if you are not relying on the vendored AARs):
-
-   ```gradle
-   allprojects {
-     repositories {
-       maven {
-         name 'github-nice-devone-cxone-mobile'
-         url 'https://maven.pkg.github.com/nice-devone/nice-cxone-mobile-sdk-android'
-         credentials {
-           username = project.findProperty('github.user') ?: System.getenv('GPR_USERNAME')
-           password = project.findProperty('github.key') ?: System.getenv('GPR_TOKEN')
-         }
-       }
-       // other repos…
-     }
-   }
-   ```
-
-   `android/local.properties` should define:
-
-   ```
-   github.user=your_github_username
-   github.key=your_github_token
-   ```
-
-   Any GitHub token with `read:packages` access works for the public SDK.
+2. Android AARs are vendored in the package (`nice-cxone-mobile-sdk-android/`) so no additional Maven repositories or GitHub Packages credentials are required. Gradle picks up the local artifacts automatically when the module is installed.
 
 3. Connect and send a message:
 
@@ -70,6 +45,7 @@ All documentation now lives in [`docs/`](docs/README.md). Start with:
 - [`docs/customers.md`](docs/customers.md) — identity, OAuth, visitor IDs, and custom fields.
 - [`docs/analytics.md`](docs/analytics.md) — analytics helpers and usage patterns.
 - [`docs/events.md`](docs/events.md) — every native event payload and guidelines for listener-first UIs.
+- [`docs/config-plugin.md`](docs/config-plugin.md) — how to wire the Swift Package config plugin into your app config.
 
 Each file spells out the JS helper, native counterpart, and relevant example-app wiring.
 
@@ -88,6 +64,14 @@ yarn ios
 ```
 
 Shared UI and hooks live in `example/app/components/*` so Router screens stay lightweight. Message rendering is event-driven—no optimistic/pending states in JS.
+
+The example expects these environment variables inside `example/.env` (copied from `.env.example`):
+
+```
+EXPO_PUBLIC_CHAT_ENV=EU1
+EXPO_PUBLIC_CHAT_BRAND_ID=1086
+EXPO_PUBLIC_CHAT_CHANNEL_ID=chat_15bf234b-d6a8-4ce0-8b90-e8cf3c6f3748
+```
 
 ## Platform dissimilarities
 

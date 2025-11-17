@@ -24,32 +24,7 @@ The module requires Expo Modules infrastructure (already present in Expo project
 
 ## Android requirements
 
-1. Add the NICE GitHub Packages Maven repo to your app’s `android/build.gradle`:
-
-   ```gradle
-   allprojects {
-     repositories {
-       maven {
-         name 'github-nice-devone-cxone-mobile'
-         url 'https://maven.pkg.github.com/nice-devone/nice-cxone-mobile-sdk-android'
-         credentials {
-           username = project.findProperty('github.user') ?: System.getenv('GPR_USERNAME')
-           password = project.findProperty('github.key') ?: System.getenv('GPR_TOKEN')
-         }
-       }
-       // …
-     }
-   }
-   ```
-
-2. Store the credentials in `android/local.properties`:
-
-   ```
-   github.user=your_github_username
-   github.key=your_github_token
-   ```
-
-Any GitHub token with `read:packages` access works for the public packages. The module ships vendored AARs as a fallback, but keeping the Maven source configured matches the upstream releases more closely.
+No additional Maven repositories are needed. `expo-cxonemobilesdk` vendors the CXoneChat Android `.aar` artifacts under `nice-cxone-mobile-sdk-android/`, and Gradle references them automatically through the module’s build.gradle. After installing the package, run `yarn android` (or `npx expo run:android`) to let Expo autolinking pick up the module. If you maintain your own fork, update the vendored AARs in that folder before publishing new releases.
 
 ## Config plugin (Swift Package injection)
 
@@ -77,6 +52,8 @@ Consumers can opt into the published plugin entry point:
 
 Keep CocoaPods and SPM linking in sync: either let the podspec handle product linking (recommended) or remove `s.spm_dependency` when the app owns the package reference.
 
+See [`docs/config-plugin.md`](config-plugin.md) for a deeper walkthrough, option reference, and verification steps.
+
 ## Example environment variables
 
 Copy the template and set your CXone credentials:
@@ -86,7 +63,7 @@ cp example/.env.example example/.env
 # edit the values
 EXPO_PUBLIC_CHAT_ENV=EU1
 EXPO_PUBLIC_CHAT_BRAND_ID=1086
-EXPO_PUBLIC_CHAT_CHANNEL_ID=chat_xxx
+EXPO_PUBLIC_CHAT_CHANNEL_ID=chat_15bf234b-d6a8-4ce0-8b90-e8cf3c6f3748
 ```
 
 `example/app/config/chat.ts` reads these values via Expo public env variables and passes them to `Connection.prepareAndConnect`.
