@@ -15,8 +15,8 @@ The module requires Expo Modules infrastructure (already present in Expo project
 ## iOS requirements
 
 1. After installing the package, run `npx pod-install` (or `npx expo run:ios`, which installs pods implicitly).
-2. The podspec (`ios/ExpoCxonemobilesdk.podspec`) links the vendored `CXoneChatSDK.xcframework` and can optionally resolve the Swift Package version declared via `s.spm_dependency`. Minimum iOS is **15.1**.
-3. If CocoaPods on your machine cannot resolve the Swift Package, either upgrade CocoaPods or continue using the vendored XCFramework by keeping `s.vendored_frameworks` in the podspec.
+2. The podspec (`ios/ExpoCxonemobilesdk.podspec`) declares the CXoneChatSDK via `spm_dependency`, which requires CocoaPods **1.11+**. Minimum iOS is **15.1**.
+3. If CocoaPods cannot resolve the Swift Package, upgrade CocoaPods (recommended) so `spm_dependency` is supported.
 4. When developing inside the example app, run `yarn` inside `example/`, then:
    - `npx expo prebuild -p ios` to run config plugins and regenerate Xcode projects.
    - `cd example/ios && pod install --repo-update`.

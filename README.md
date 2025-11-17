@@ -82,11 +82,6 @@ EXPO_PUBLIC_CHAT_CHANNEL_ID=chat_15bf234b-d6a8-4ce0-8b90-e8cf3c6f3748
 
 Document new differences here (and update the relevant doc file + TypeScript types) whenever the native SDKs diverge.
 
-## Packaging notes
-
-- iOS vendors `ios/Frameworks/CXoneChatSDK.xcframework` via `ios/ExpoCxonemobilesdk.podspec`. When new binaries are produced from the [maintained fork](https://github.com/rizwan92/nice-cxone-mobile-sdk-ios), copy them into that folder.
-- The repo ships a config-plugin (`plugins/addSPMDependenciesToMainTarget.js`) registered in the example app to ensure the app target links the `CXoneChatSDK` Swift Package during `expo prebuild`.
-
 ## Contributing
 
 Contributions are welcome! Please follow the [Expo contributing guide](https://github.com/expo/expo#contributing) and keep the docs/ folder updated when you add native/TS APIs.
@@ -99,5 +94,4 @@ Contributions are welcome! Please follow the [Expo contributing guide](https://g
 ## Troubleshooting
 
 - After editing Swift files, rerun `pod install` inside `example/ios` so Xcode sees the new sources.
-- Build errors referencing `CXoneChatSDK` usually mean the vendored framework is missing or the Swift Package did not link. Re-run the config-plugin via `npx expo prebuild -p ios` or ensure the framework exists under `ios/Frameworks/`.
-- If Gradle cannot resolve the Android SDK, double-check the GitHub Packages credentials in `local.properties` and confirm the repository entry lives under every `repositories` block your project uses.
+- Build errors referencing `CXoneChatSDK` usually mean the Swift Package reference did not resolve. Re-run the config-plugin via `npx expo prebuild -p ios`, then `cd ios && pod install --repo-update`.
