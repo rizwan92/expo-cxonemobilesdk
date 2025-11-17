@@ -22,15 +22,14 @@ const ConnectionContext = createContext<ConnectionContextValue | undefined>(unde
 
 export function ConnectionProvider({ children }: PropsWithChildren) {
   const chatUpdated = useEvent(ExpoCxonemobilesdk, Connection.EVENTS.CHAT_UPDATED);
+  console.log('ConnectionProvider rendered, chatUpdated=', chatUpdated);
   const [chatState, setChatState] = useState<ChatState>(Connection.getChatState());
   const [chatMode, setChatMode] = useState<ChatMode>(Connection.getChatMode());
 
   const refresh = useCallback(() => {
     const state = Connection.getChatState();
     setChatState(state);
-    if (state === 'connected' || state === 'ready') {
-      setChatMode(Connection.getChatMode());
-    }
+    setChatMode(Connection.getChatMode());
   }, []);
 
   useEffect(() => {
@@ -40,10 +39,10 @@ export function ConnectionProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     if (!chatUpdated?.state) return;
     setChatState(chatUpdated.state);
-    if (chatUpdated.state === 'connected' || chatUpdated.state === 'ready') {
-      setChatMode(Connection.getChatMode());
+    if (chatUpdated.mode) {
+      setChatMode(chatUpdated.mode);
     }
-  }, [chatUpdated?.state]);
+  }, [chatUpdated?.mode, chatUpdated?.state]);
 
   const value = useMemo<ConnectionContextValue>(() => {
     const connected = chatState === 'connected' || chatState === 'ready';

@@ -14,20 +14,6 @@ public class ExpoCxonemobilesdkModule: Module {
         }
     }
 
-    /// Blocks until `predicate` returns true or the timeout elapses.
-    func waitUntil(_ timeoutMs: Int = 7000, _ predicate: @escaping () -> Bool) async throws {
-        let start = Date()
-        while !predicate() {
-            try await Task.sleep(nanoseconds: 200_000_000)  // 200ms
-            if Date().timeIntervalSince(start) * 1000.0 > Double(timeoutMs) {
-                throw NSError(
-                    domain: "ExpoCxonemobilesdk", code: -10,
-                    userInfo: [NSLocalizedDescriptionKey: "Timeout while waiting for state"])
-                    as Error
-            }
-        }
-    }
-
     // Each module class must implement the definition function. The definition consists of components
     // that describes the module's functionality and behavior.
     // See https://docs.expo.dev/modules/module-api for more details about available components.
@@ -57,30 +43,38 @@ public class ExpoCxonemobilesdkModule: Module {
         // --------------------------------------------------------------------
         Function("disconnect") { ConnectionBridge.disconnect() }
 
-        AsyncFunction("prepareAndConnect") {
-            (env: String, brandId: Int, channelId: String) async throws in
+        AsyncFunction("prepareAndConnect") { (env: String, brandId: Int, channelId: String) async throws in
             self.registerDelegateIfNeeded()
-            try await self.preflightChannel(env: env, brandId: brandId, channelId: channelId)
-            try await self.loopUntilConnected(env: env, brandId: brandId, channelId: channelId)
-        }
-
-        AsyncFunction("prepareAndConnectWithURLs") {
-            (chatURL: String, socketURL: String, brandId: Int, channelId: String) async throws in
-            self.registerDelegateIfNeeded()
-            try await self.preflightChannel(chatURL: chatURL, brandId: brandId, channelId: channelId)
             do {
-                try await ConnectionBridge.prepare(
-                    chatURL: chatURL, socketURL: socketURL, brandId: brandId, channelId: channelId)
+                try await ConnectionBridge.prepare(env: env, brandId: brandId, channelId: channelId)
+                self.emitChatSnapshot()
             } catch {
-                self.emitConnectionError(
-                    phase: "prepare", message: String(describing: error))
+                self.emitConnectionError(phase: "prepare", message: String(describing: error))
                 throw error
             }
             do {
                 try await ConnectionBridge.connect()
             } catch {
-                self.emitConnectionError(
-                    phase: "connect", message: String(describing: error))
+                self.emitConnectionError(phase: "connect", message: String(describing: error))
+                throw error
+            }
+        }
+
+        AsyncFunction("prepareAndConnectWithURLs") {
+            (chatURL: String, socketURL: String, brandId: Int, channelId: String) async throws in
+            self.registerDelegateIfNeeded()
+            do {
+                try await ConnectionBridge.prepare(
+                    chatURL: chatURL, socketURL: socketURL, brandId: brandId, channelId: channelId)
+                self.emitChatSnapshot()
+            } catch {
+                self.emitConnectionError(phase: "prepare", message: String(describing: error))
+                throw error
+            }
+            do {
+                try await ConnectionBridge.connect()
+            } catch {
+                self.emitConnectionError(phase: "connect", message: String(describing: error))
                 throw error
             }
         }
