@@ -29,7 +29,7 @@ Pod::Spec.new do |s|
   # Requires CocoaPods that support spm_dependency in podspec (1.11+).
   spm_dependency(s,
     url: 'https://github.com/nice-devone/nice-cxone-mobile-sdk-ios',
-    requirement: {kind: 'upToNextMajorVersion', minimumVersion: '3.0.1'},
+    requirement: {kind: 'upToNextMajorVersion', minimumVersion: '3.1.1'},
     products: ['CXoneChatSDK']
   )  
 

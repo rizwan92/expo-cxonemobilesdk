@@ -28,7 +28,7 @@ Add the published entry point (`expo-cxonemobilesdk/plugin-spm`) to your `plugin
       [
         "expo-cxonemobilesdk/plugin-spm",
         {
-          "version": "3.0.1",
+          "version": "3.1.1",
           "repositoryUrl": "https://github.com/nice-devone/nice-cxone-mobile-sdk-ios.git",
           "repoName": "nice-cxone-mobile-sdk-ios",
           "productName": "CXoneChatSDK"
@@ -45,7 +45,7 @@ If you need to reference the plugin file directly (e.g., when working inside thi
 [
   "./node_modules/expo-cxonemobilesdk/plugins/addSPMDependenciesToMainTarget.js",
   {
-    "version": "3.0.1",
+    "version": "3.1.1",
     "repositoryUrl": "https://github.com/nice-devone/nice-cxone-mobile-sdk-ios.git",
     "repoName": "nice-cxone-mobile-sdk-ios",
     "productName": "CXoneChatSDK"
@@ -64,7 +64,7 @@ If you need to reference the plugin file directly (e.g., when working inside thi
 
 The plugin reuses existing package references when possible, so you can safely run it multiple times without creating duplicate entries.
 
-> **Important:** the version provided here must match the `spm_dependency` declared in `ios/ExpoCxonemobilesdk.podspec` (currently `3.0.1`). Supplying a lower version (e.g., `1.0.0`) causes Xcode to fail resolving package dependencies because it sees conflicting ranges for `nice-cxone-mobile-sdk-ios`.
+> **Important:** the version provided here must match the `spm_dependency` declared in `ios/ExpoCxonemobilesdk.podspec` (currently `3.1.1`). Supplying a lower version causes Xcode to fail resolving package dependencies because it sees conflicting ranges for `nice-cxone-mobile-sdk-ios`.
 
 ## How it works
 
@@ -94,7 +94,7 @@ Add the plugin to your Expo config:
 {
   "expo": {
     "plugins": [
-      ["expo-cxonemobilesdk/plugin-spm", { "version": "3.0.1", "...": "..." }],
+      ["expo-cxonemobilesdk/plugin-spm", { "version": "3.1.1", "...": "..." }],
       "expo-cxonemobilesdk/plugin-android-backup"
     ]
   }
