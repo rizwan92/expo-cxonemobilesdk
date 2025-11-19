@@ -41,8 +41,8 @@ Consumers can opt into the published plugin entry point:
       [
         "expo-cxonemobilesdk/plugin-spm",
         {
-          "version": "3.1.1",
-          "repositoryUrl": "https://github.com/nice-devone/nice-cxone-mobile-sdk-ios.git",
+          "version": "3.1.1-rz1",
+          "repositoryUrl": "https://github.com/rizwan92/nice-cxone-mobile-sdk-ios.git",
           "repoName": "nice-cxone-mobile-sdk-ios",
           "productName": "CXoneChatSDK"
         }
@@ -54,7 +54,7 @@ Consumers can opt into the published plugin entry point:
 
 Keep CocoaPods and SPM linking in sync: either let the podspec handle product linking (recommended) or remove `s.spm_dependency` when the app owns the package reference.
 
-> **Version mismatch warning:** the podspec currently declares `CXoneChatSDK` via `spm_dependency` at `3.1.1`. Use the same `version` in your plugin config (as shown above) or Xcode will fail with “Failed to resolve dependencies … depends on 'nice-cxone-mobile-sdk-ios' 1.x and 3.x”.
+> **Version mismatch warning:** the podspec currently declares `CXoneChatSDK` via `spm_dependency` at `3.1.1-rz1`. Use the same `version` in your plugin config (as shown above) or Xcode will fail with “Failed to resolve dependencies … depends on 'nice-cxone-mobile-sdk-ios' 1.x and 3.x”.
 
 See [`docs/config-plugin.md`](config-plugin.md) for a deeper walkthrough, option reference, and verification steps.
 

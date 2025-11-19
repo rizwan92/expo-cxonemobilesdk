@@ -28,10 +28,10 @@ Pod::Spec.new do |s|
   # Swift package for the pod target and make the module available at compile time.
   # Requires CocoaPods that support spm_dependency in podspec (1.11+).
   spm_dependency(s,
-    url: 'https://github.com/nice-devone/nice-cxone-mobile-sdk-ios',
-    requirement: {kind: 'upToNextMajorVersion', minimumVersion: '3.1.1'},
+    url: 'https://github.com/rizwan92/nice-cxone-mobile-sdk-ios',
+    requirement: { kind: 'exactVersion', version: '3.1.1-rz1' },
     products: ['CXoneChatSDK']
-  )  
+  )
 
   # Privacy manifest is embedded within the framework slices during build to avoid duplicate copy
   s.source_files = "**/*.{h,m,mm,swift,hpp,cpp}"
