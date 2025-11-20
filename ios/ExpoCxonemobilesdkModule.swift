@@ -21,6 +21,17 @@ public class ExpoCxonemobilesdkModule: Module {
         // Module identity ----------------------------------------------------
         Name("ExpoCxonemobilesdk")
 
+        OnCreate {
+            self.registerDelegateIfNeeded()
+        }
+
+        OnDestroy {
+            if self.delegateRegistered {
+                CXoneChat.shared.remove(delegate: self)
+                self.delegateRegistered = false
+            }
+        }
+
         // Event registry -----------------------------------------------------
         Events(
             "chatUpdated",
