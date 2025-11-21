@@ -1,6 +1,6 @@
 {
   "name": "expo-cxonemobilesdk",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Mobile SDK lets you integrate CXone Mpower digital chat into your enterprise mobile phone apps.",
   "main": "build/index.js",
   "types": "build/index.d.ts",
@@ -50,11 +50,14 @@
     "expo-module.config.json"
   ],
   "dependencies": {},
+  "devDependencies": {
+    "expo-module-scripts": "^5.0.7",
+    "prettier": "^3.3.3"
+  },
   "peerDependencies": {
     "expo": "*",
     "react": "*",
-    "react-native": "*",
-    "@expo/config-plugins": "*"
+    "react-native": "*"
   },
   "exports": {
     "./plugin-spm": "./plugins/addSPMDependenciesToMainTarget.js",
