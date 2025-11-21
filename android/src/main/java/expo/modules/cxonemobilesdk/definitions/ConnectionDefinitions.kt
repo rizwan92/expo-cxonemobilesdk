@@ -23,9 +23,8 @@ internal fun ModuleDefinitionBuilder.addConnectionDefinitions(owner: ExpoCxonemo
     CXoneManager.disconnect()
   }
 
-  // Combined convenience: preflight (best-effort) + prepare + connect
-  AsyncFunction("prepareAndConnect") Coroutine { env: String, brandId: Int, channelId: String ->
-    Log.i(tag, "Connection.prepareAndConnect env=$env brandId=$brandId channelId=$channelId")
+  AsyncFunction("prepare") Coroutine { env: String, brandId: Int, channelId: String ->
+    Log.i(tag, "Connection.prepare env=$env brandId=$brandId channelId=$channelId")
     val environment = runCatching { CXoneEnvironment.valueOf(env.uppercase(Locale.ROOT)).value }
       .getOrElse { throw IllegalArgumentException("Unsupported CXone environment '$env'") }
     val cfg = SocketFactoryConfiguration(environment, brandId.toLong(), channelId)
@@ -34,8 +33,6 @@ internal fun ModuleDefinitionBuilder.addConnectionDefinitions(owner: ExpoCxonemo
     runCatching { JSONBridge.fetchChannelConfiguration(ctx, environment, brandId.toLong(), channelId) }
       .onFailure { owner.emitConnectionError("preflight", it.message ?: "Failed to fetch channel configuration") }
     CXoneManager.prepareAwait()
-    CXoneManager.connectAwait()
-    // Emit a snapshot so callers always get an update even if already connected
     owner.emitChatSnapshot()
   }
 
@@ -46,6 +43,11 @@ internal fun ModuleDefinitionBuilder.addConnectionDefinitions(owner: ExpoCxonemo
     val ctx = requireNotNull(owner.appContext.reactContext) { "No React context" }
     CXoneManager.initialize(ctx.applicationContext, cfg, owner)
     CXoneManager.prepareAwait()
+    owner.emitChatSnapshot()
+  }
+
+  AsyncFunction("connect") Coroutine {
+    Log.i(tag, "Connection.connect")
     CXoneManager.connectAwait()
     owner.emitChatSnapshot()
   }
@@ -77,5 +79,4 @@ internal fun ModuleDefinitionBuilder.addConnectionDefinitions(owner: ExpoCxonemo
     JSONBridge.fetchChannelConfiguration(ctx, environment, brandId.toLong(), channelId)
   }
 
-  // Removed combined convenience to keep API minimal (prepare + connect only)
 }

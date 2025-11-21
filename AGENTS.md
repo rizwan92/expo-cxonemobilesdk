@@ -8,7 +8,7 @@ across Swift/Kotlin, TypeScript, podspecs/Gradle, and the example app.
 
 - Native module (iOS)
   - `ios/ExpoCxonemobilesdkModule.swift`
-    - Exposes JS-callable methods: `prepareAndConnect`, `prepareAndConnectWithURLs`, `disconnect`.
+    - Exposes JS-callable methods: `prepare`, `prepareWithURLs`, `connect`, `disconnect`.
     - Uses `CXoneChat.shared.connection` APIs.
     - Logs with `NSLog("[ExpoCxonemobilesdk] …")` for traceability.
     - Emits events: `chatUpdated`, `threadsUpdated`, `threadUpdated`, `agentTyping`,
@@ -18,7 +18,7 @@ across Swift/Kotlin, TypeScript, podspecs/Gradle, and the example app.
 - Native module (Android)
   - `android/src/main/java/expo/modules/cxonemobilesdk/*`
     - Definitions split by feature under `definitions/` (connection, threads, custom fields, analytics).
-    - Exposes `prepareAndConnect` (and URL variant), `disconnect`, utilities, and thread operations.
+    - Exposes `prepare`, `prepareWithURLs`, `connect`, `disconnect`, utilities, and thread operations.
     - Bridges SDK state and events to JS, mirroring iOS.
 - iOS packaging
   - `ios/ExpoCxonemobilesdk.podspec`
@@ -44,14 +44,14 @@ across Swift/Kotlin, TypeScript, podspecs/Gradle, and the example app.
 - TypeScript bindings
   - `src/ExpoCxonemobilesdkModule.ts`
     - JSI binding via `requireNativeModule("ExpoCxonemobilesdk")`.
-    - Declares the TS signatures for the native functions (combined `prepareAndConnect`).
+    - Declares the TS signatures for the native functions (prepare/connect surface).
   - `src/ExpoCxonemobilesdk.types.ts`
     - Module event/type definitions (listener-first surface).
   - `src/index.ts`
     - Re-exports the TS module and types.
 - Example App
   - `example/App.tsx`
-    - Demonstrates calling `prepareAndConnect`, `disconnect` with console logs and event-driven UI.
+    - Demonstrates calling `prepare` / `connect`, `disconnect` with console logs and event-driven UI.
   - `example/app/components/*`
     - Shared React context and cards live here so Expo Router screens under `example/app/*` stay lightweight. Add new reusable UI to this folder instead of inside the router tree.
   - Message rendering should stay purely event-driven: do not add optimistic/pending messages in JS. Let native `threadUpdated` events (with full history) drive the UI and only call `Thread.getDetails`/`Thread.loadMore` when the user explicitly refreshes.

@@ -1,8 +1,8 @@
 // Reads credentials from Expo public environment variables.
 // Create `example/.env` and define:
-//   EXPO_PUBLIC_CHAT_ENV=EU1
-//   EXPO_PUBLIC_CHAT_BRAND_ID=1086
-//   EXPO_PUBLIC_CHAT_CHANNEL_ID=chat_xxx
+//   EXPO_PUBLIC_CHAT_ENV=YOUR_ENV_CODE
+//   EXPO_PUBLIC_CHAT_BRAND_ID=YOUR_BRAND_ID
+//   EXPO_PUBLIC_CHAT_CHANNEL_ID=YOUR_CHANNEL_ID
 
 function getEnv(name: string): string {
   // Expo inlines EXPO_PUBLIC_* variables at build time

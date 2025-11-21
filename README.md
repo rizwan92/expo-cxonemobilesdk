@@ -4,7 +4,7 @@ Expo module that wraps the native NICE CXoneChat SDKs and exposes a unified Type
 
 ## Highlights
 
-- Combined `Connection.prepareAndConnect` entry point with listener-first state management (`chatUpdated`, `connectionError`, etc.).
+- Explicit `Connection.prepare` + `Connection.connect` flow with listener-first state management (`chatUpdated`, `connectionError`, etc.).
 - Full multithread surface (`Threads.*` + `Thread.*`) including attachments, pre-chat surveys, and typing indicators.
 - Customer identity, OAuth, visitor IDs, and custom fields scoped either to the visitor or individual threads.
 - Analytics helpers (`viewPage`, `conversion`, …) so you can capture chat funnel metrics directly from React Native.
@@ -25,7 +25,8 @@ Expo module that wraps the native NICE CXoneChat SDKs and exposes a unified Type
    ```ts
    import { Connection, Threads, Thread, Customer, Analytics } from 'expo-cxonemobilesdk';
 
-   await Connection.prepareAndConnect('NA1', 1234, 'chat_channel');
+   await Connection.prepare('NA1', 1234, 'chat_channel');
+   await Connection.connect();
    const mode = Connection.getChatMode();
 
    const created = await Threads.create();
@@ -40,7 +41,7 @@ Refer to [`docs/setup.md`](docs/setup.md) for full installation details, optiona
 All documentation now lives in [`docs/`](docs/README.md). Start with:
 
 - [`docs/overview.md`](docs/overview.md) — architecture, design principles, and DTO strategy.
-- [`docs/connection.md`](docs/connection.md) — combined connection API, configuration helpers, and logging.
+- [`docs/connection.md`](docs/connection.md) — prepare/connect lifecycle, configuration helpers, and logging.
 - [`docs/threads.md`](docs/threads.md) — multithread operations, pagination, and attachments.
 - [`docs/customers.md`](docs/customers.md) — identity, OAuth, visitor IDs, and custom fields.
 - [`docs/analytics.md`](docs/analytics.md) — analytics helpers and usage patterns.
@@ -68,9 +69,9 @@ Shared UI and hooks live in `example/app/components/*` so Router screens stay li
 The example expects these environment variables inside `example/.env` (copied from `.env.example`):
 
 ```
-EXPO_PUBLIC_CHAT_ENV=EU1
-EXPO_PUBLIC_CHAT_BRAND_ID=1086
-EXPO_PUBLIC_CHAT_CHANNEL_ID=chat_15bf234b-d6a8-4ce0-8b90-e8cf3c6f3748
+EXPO_PUBLIC_CHAT_ENV=YOUR_ENV_CODE   # e.g. EU1
+EXPO_PUBLIC_CHAT_BRAND_ID=YOUR_BRAND_ID
+EXPO_PUBLIC_CHAT_CHANNEL_ID=YOUR_CHANNEL_ID   # e.g. chat_xxx
 ```
 
 ## Platform dissimilarities

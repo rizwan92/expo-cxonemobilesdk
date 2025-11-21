@@ -11,15 +11,14 @@ import type {
 import { ExpoCxonemobilesdkModuleEvents } from './ExpoCxonemobilesdk.types';
 
 declare class ExpoCxonemobilesdkModule extends NativeModule<ExpoCxonemobilesdkModuleEvents> {
-  // Combined connection entry (Android & iOS)
-  prepareAndConnect(env: string, brandId: number, channelId: string): Promise<void>;
-  // Optional URL-based combined variant (iOS)
-  prepareAndConnectWithURLs?(
+  prepare(env: string, brandId: number, channelId: string): Promise<void>;
+  prepareWithURLs?(
     chatURL: string,
     socketURL: string,
     brandId: number,
     channelId: string,
   ): Promise<void>;
+  connect(): Promise<void>;
   disconnect(): void;
   getChatMode(): ChatMode;
   getChatState(): ChatState;

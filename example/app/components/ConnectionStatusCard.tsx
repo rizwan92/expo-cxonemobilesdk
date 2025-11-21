@@ -1,22 +1,15 @@
 import React, { useMemo } from 'react';
 import { View, Text, Button, StyleSheet } from 'react-native';
-import type { ChatMode, ChatState } from 'expo-cxonemobilesdk';
+import { useConnection } from './ConnectionContext';
 
 type Props = {
-  chatState: ChatState;
-  chatMode: ChatMode;
-  connected: boolean;
   lastError?: string | null;
   onRefresh?: () => void;
 };
 
-export default function ConnectionStatusCard({
-  chatState,
-  chatMode,
-  connected,
-  lastError,
-  onRefresh,
-}: Props) {
+export default function ConnectionStatusCard({ lastError, onRefresh }: Props) {
+  const { chatState, chatMode, connected, refresh } = useConnection();
+  const handleRefresh = onRefresh ?? refresh;
   const headerStatus = useMemo(
     () => `${chatState} ${connected ? '• Online' : '• Offline'} • Mode: ${chatMode}`,
     [chatState, chatMode, connected],
@@ -34,7 +27,7 @@ export default function ConnectionStatusCard({
           </Text>
         )}
       </View>
-      {onRefresh ? <Button title="Refresh" onPress={onRefresh} /> : null}
+      {handleRefresh ? <Button title="Refresh" onPress={handleRefresh} /> : null}
     </View>
   );
 }

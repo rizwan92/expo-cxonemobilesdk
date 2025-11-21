@@ -20,7 +20,7 @@ const authorizationChanged = useEvent(ExpoCxonemobilesdk, Customer.EVENTS.AUTHOR
 | --- | --- | --- |
 | `chatUpdated` | `ChatUpdatedEventPayload` (`{ state, mode }`) | Fires on every CXone state/mode transition. Drive UI connection indicators from this payload. |
 | `connectionError` | `ConnectionErrorEventPayload` (`{ phase, message }`) | `phase` is one of `preflight`, `prepare`, `connect`, `runtime`. Surface errors in the UI and inspect device logs for details. |
-| `unexpectedDisconnect` | `void` | Emitted when the SDK disconnects outside of `Connection.disconnect()`. Expect to call `prepareAndConnect` again. |
+| `unexpectedDisconnect` | `void` | Emitted when the SDK disconnects outside of `Connection.disconnect()`. Expect to call `Connection.connect()` again (after running `prepare` if the app restarted). |
 | `tokenRefreshFailed` | `void` | Auth token refresh failed. Prompt the user to reauthenticate. |
 | `customEventMessage` | `{ base64: string }` | Raw custom-event payloads surfaced by CXone. Decode + handle in JS as needed. |
 | `proactivePopupAction` | `{ actionId, action }` | Emitted when a proactive action arrives. `action` is typed via `ProactivePopupActionEventPayload`. |

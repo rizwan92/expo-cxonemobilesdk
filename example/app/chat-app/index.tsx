@@ -12,7 +12,7 @@ import ConnectionStatusCard from '../components/ConnectionStatusCard';
 
 export default function ChatAppHome() {
   const router = useRouter();
-  const { chatState, chatMode, connected, refresh } = useConnection();
+  const { connected, refresh } = useConnection();
   // threadsUpdated handled inside ThreadsCard
   const errorEvent = useEvent(ExpoCxonemobilesdk, Connection.EVENTS.ERROR);
   const connectionError = useEvent(ExpoCxonemobilesdk, Connection.EVENTS.CONNECTION_ERROR);
@@ -23,8 +23,9 @@ export default function ChatAppHome() {
     let cancelled = false;
     (async () => {
       try {
-        await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
+        await Connection.prepare(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
         if (cancelled) return;
+        await Connection.connect();
       } catch (e) {
         console.error('[ChatAppHome] prepare/connect failed', e);
         setLastError(String((e as any)?.message ?? e));
@@ -52,9 +53,6 @@ export default function ChatAppHome() {
     <SafeAreaView style={styles.container}>
       <ScrollView>
         <ConnectionStatusCard
-          chatState={chatState}
-          chatMode={chatMode}
-          connected={connected}
           lastError={lastError}
           onRefresh={() => {
             setLastError(null);

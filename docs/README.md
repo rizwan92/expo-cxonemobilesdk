@@ -6,7 +6,7 @@ The CXone Mobile SDK wrapper ships as an Expo module with shared TypeScript bind
 
 - [Overview & architecture](overview.md) — layout, design principles, and platform notes.
 - [Setup](setup.md) — install instructions, config-plugins, and example env wiring.
-- [Connection API](connection.md) — combined `prepareAndConnect`, configuration helpers, logging, and triggers.
+- [Connection API](connection.md) — prepare/connect lifecycle, configuration helpers, logging, and triggers.
 - [Threads & messaging](threads.md) — multithread helpers, per-thread operations, and attachment flows.
 - [Customer & custom fields](customers.md) — identity, OAuth, visitor IDs, and scoped custom fields.
 - [Analytics](analytics.md) — page view + conversion helpers.
