@@ -3,6 +3,10 @@ import { SafeAreaView, ScrollView, View, Text, TextInput, Button, StyleSheet } f
 import ExpoCxonemobilesdk, { Connection, Threads, Thread, Customer, Analytics } from 'expo-cxonemobilesdk';
 import { useEvent } from 'expo';
 
+const initialEnv = process.env.EXPO_PUBLIC_CHAT_ENV ?? '';
+const initialBrandId = process.env.EXPO_PUBLIC_CHAT_BRAND_ID ?? '';
+const initialChannelId = process.env.EXPO_PUBLIC_CHAT_CHANNEL_ID ?? '';
+
 export default function ChatScreen() {
   const TAG = '[ChatScreen]';
   const chatUpdated = useEvent(ExpoCxonemobilesdk, Connection.EVENTS.CHAT_UPDATED);
@@ -16,9 +20,9 @@ export default function ChatScreen() {
   const customerFieldsSet = useEvent(ExpoCxonemobilesdk, Customer.EVENTS.CUSTOM_FIELDS_SET);
   const [chatState, setChatState] = useState<string>('initial');
   const connected = chatState === 'connected' || chatState === 'ready';
-  const [env, setEnv] = useState('EU1');
-  const [brandId, setBrandId] = useState('1086');
-  const [channelId, setChannelId] = useState('chat_15bf234b-d6a8-4ce0-8b90-e8cf3c6f3748');
+  const [env, setEnv] = useState(initialEnv);
+  const [brandId, setBrandId] = useState(initialBrandId);
+  const [channelId, setChannelId] = useState(initialChannelId);
   const [triggerId, setTriggerId] = useState('00000000-0000-0000-0000-000000000001');
 
   // Threads state
@@ -136,10 +140,18 @@ export default function ChatScreen() {
             <TextInput style={styles.input} value={channelId} onChangeText={setChannelId} />
           </Row>
           <Button
-            title="Prepare & Connect"
+            title="Prepare"
             onPress={async () => {
-              console.log(TAG, 'prepareAndConnect');
-              await Connection.prepareAndConnect(env, Number(brandId), channelId);
+              console.log(TAG, 'prepare');
+              await Connection.prepare(env, Number(brandId), channelId);
+            }}
+          />
+          <View style={styles.spacer} />
+          <Button
+            title="Connect"
+            onPress={async () => {
+              console.log(TAG, 'connect');
+              await Connection.connect();
             }}
           />
           <View style={styles.spacer} />

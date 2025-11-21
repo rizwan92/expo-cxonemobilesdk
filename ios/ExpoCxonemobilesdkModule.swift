@@ -43,7 +43,7 @@ public class ExpoCxonemobilesdkModule: Module {
         // --------------------------------------------------------------------
         Function("disconnect") { ConnectionBridge.disconnect() }
 
-        AsyncFunction("prepareAndConnect") { (env: String, brandId: Int, channelId: String) async throws in
+        AsyncFunction("prepare") { (env: String, brandId: Int, channelId: String) async throws in
             self.registerDelegateIfNeeded()
             do {
                 try await ConnectionBridge.prepare(env: env, brandId: brandId, channelId: channelId)
@@ -52,15 +52,9 @@ public class ExpoCxonemobilesdkModule: Module {
                 self.emitConnectionError(phase: "prepare", message: String(describing: error))
                 throw error
             }
-            do {
-                try await ConnectionBridge.connect()
-            } catch {
-                self.emitConnectionError(phase: "connect", message: String(describing: error))
-                throw error
-            }
         }
 
-        AsyncFunction("prepareAndConnectWithURLs") {
+        AsyncFunction("prepareWithURLs") {
             (chatURL: String, socketURL: String, brandId: Int, channelId: String) async throws in
             self.registerDelegateIfNeeded()
             do {
@@ -71,6 +65,10 @@ public class ExpoCxonemobilesdkModule: Module {
                 self.emitConnectionError(phase: "prepare", message: String(describing: error))
                 throw error
             }
+        }
+
+        AsyncFunction("connect") { () async throws in
+            self.registerDelegateIfNeeded()
             do {
                 try await ConnectionBridge.connect()
             } catch {

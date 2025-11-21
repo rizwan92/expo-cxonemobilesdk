@@ -2,23 +2,24 @@
 
 `src/api/connection.ts` exports the shared entry points for configuring, preparing, and monitoring CXoneChat sessions. All calls log to the Metro console with the `[CXone/Connection]` tag for traceability.
 
-## Combined prepare + connect
+## Prepare + connect
 
 ```ts
 import { Connection } from 'expo-cxonemobilesdk';
 
-await Connection.prepareAndConnect(env, brandId, channelId);
+await Connection.prepare(env, brandId, channelId);
+await Connection.connect();
 ```
 
 - `env` is the CXone environment code (`NA1`, `EU1`, etc.). It is uppercased on the native side before hitting the SDK.
 - `brandId` is numeric; pass the exact ID from CXone.
 - `channelId` is the public chat channel identifier.
 
-The native modules run a best-effort preflight, prepare the SDK, and connect the websocket in sequence. The Promise resolves once the SDK reports success. Use `chatUpdated` + `connectionError` events to surface runtime state transitions and failures.
+`prepare` initializes the SDK, runs the CXone preflight, and leaves the chat in the `.prepared` state. Call `connect` once you are ready to open the websocket (for example, after resolving identity or customer fields). Use `chatUpdated` + `connectionError` events to surface runtime state transitions and failures.
 
-### URL-based variant (iOS only)
+### URL-based prepare (iOS only)
 
-`prepareAndConnectWithURLs(chatURL, socketURL, brandId, channelId)` lets you bypass environment lookups by supplying the REST and websocket URLs directly. The helper guards the call at runtime and throws on platforms that do not support it.
+`prepareWithURLs(chatURL, socketURL, brandId, channelId)` lets you bypass environment lookups by supplying the REST and websocket URLs directly. Call `Connection.connect()` afterward to open the socket. The helper guards the call at runtime and throws on platforms that do not support it.
 
 ## Connection state helpers
 

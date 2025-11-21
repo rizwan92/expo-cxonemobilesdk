@@ -13,25 +13,28 @@ export const EVENTS = {
   PROACTIVE_POPUP: 'proactivePopupAction' as const,
 };
 
-// Unified entrypoint: preflight (best-effort) + prepare + connect
-export async function prepareAndConnect(env: string, brandId: number, channelId: string) {
-  console.log(TAG, 'prepareAndConnect', { env, brandId, channelId });
-  await (Native as any).prepareAndConnect(env, brandId, channelId);
+export async function prepare(env: string, brandId: number, channelId: string) {
+  console.log(TAG, 'prepare', { env, brandId, channelId });
+  await (Native as any).prepare(env, brandId, channelId);
 }
 
-// Optional URL-based combined variant (when native exposes it)
-export async function prepareAndConnectWithURLs(
+export async function prepareWithURLs(
   chatURL: string,
   socketURL: string,
   brandId: number,
   channelId: string,
 ) {
-  console.log(TAG, 'prepareAndConnectWithURLs', { chatURL, socketURL, brandId, channelId });
-  const fn = (Native as any).prepareAndConnectWithURLs;
+  console.log(TAG, 'prepareWithURLs', { chatURL, socketURL, brandId, channelId });
+  const fn = (Native as any).prepareWithURLs;
   if (typeof fn !== 'function') {
-    throw new Error('prepareAndConnectWithURLs is not supported on this platform');
+    throw new Error('prepareWithURLs is not supported on this platform');
   }
   await fn(chatURL, socketURL, brandId, channelId);
+}
+
+export async function connect() {
+  console.log(TAG, 'connect');
+  await (Native as any).connect();
 }
 
 export function disconnect() {

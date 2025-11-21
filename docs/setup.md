@@ -65,12 +65,12 @@ Copy the template and set your CXone credentials:
 ```bash
 cp example/.env.example example/.env
 # edit the values
-EXPO_PUBLIC_CHAT_ENV=EU1
-EXPO_PUBLIC_CHAT_BRAND_ID=1086
-EXPO_PUBLIC_CHAT_CHANNEL_ID=chat_15bf234b-d6a8-4ce0-8b90-e8cf3c6f3748
+EXPO_PUBLIC_CHAT_ENV=YOUR_ENV_CODE   # e.g. EU1
+EXPO_PUBLIC_CHAT_BRAND_ID=YOUR_BRAND_ID
+EXPO_PUBLIC_CHAT_CHANNEL_ID=YOUR_CHANNEL_ID   # e.g. chat_xxx
 ```
 
-`example/app/config/chat.ts` reads these values via Expo public env variables and passes them to `Connection.prepareAndConnect`.
+`example/app/config/chat.ts` reads these values via Expo public env variables and passes them to `Connection.prepare` (followed by `Connection.connect`).
 
 ## Local development workflow
 

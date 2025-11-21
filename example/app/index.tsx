@@ -16,17 +16,12 @@ export default function Home() {
   const [disconnecting, setDisconnecting] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { chatState, chatMode, connected, refresh } = useConnection();
+  const { connected, refresh } = useConnection();
 
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
-        <ConnectionStatusCard
-          chatState={chatState}
-          chatMode={chatMode}
-          connected={connected}
-          onRefresh={refresh}
-        />
+        <ConnectionStatusCard />
         <View style={styles.card}>
           <Text style={styles.title}>expo-cxonemobilesdk</Text>
           <Text style={styles.subtitle}>Authenticate, connect, then open the chat UI</Text>
@@ -98,7 +93,8 @@ export default function Home() {
                   setError(null);
                   setConnecting(true);
                   try {
-                    await Connection.prepareAndConnect(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
+                    await Connection.prepare(CHAT_ENV, CHAT_BRAND_ID, CHAT_CHANNEL_ID);
+                    await Connection.connect();
                     refresh();
                   } catch (e) {
                     console.error('[Home] quick connect failed', e);

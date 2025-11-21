@@ -18,4 +18,4 @@ await Analytics.conversion('purchase', 99.99);
 - `chatWindowOpen` — track when the chat UI is presented.
 - `conversion(type, value)` — log custom conversion events (e.g., purchases). `value` is numeric; express currency conversions in your backend before sending if you need multiple currencies.
 
-All helpers return `Promise<void>` and propagate native errors so you can surface failures in development. The CXone SDK queues analytics against the active connection; run them after `Connection.prepareAndConnect` succeeds.
+All helpers return `Promise<void>` and propagate native errors so you can surface failures in development. The CXone SDK queues analytics against the active connection; run them after `Connection.prepare`/`Connection.connect` completes.
