@@ -68,5 +68,5 @@
       "optional": false
     }
   },
-  "packageManager": "pnpm@9.9.0"
+  "packageManager": "yarn@1.22.22"
 }
