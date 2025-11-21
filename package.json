@@ -67,6 +67,5 @@
     "@expo/config-plugins": {
       "optional": false
     }
-  },
-  "packageManager": "yarn@1.22.22"
+  }
 }
