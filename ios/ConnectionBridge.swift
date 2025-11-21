@@ -21,7 +21,11 @@ enum ConnectionBridge {
             "[ExpoCxonemobilesdk] Connection.prepareWithURLs chatURL=\(chatURL) socketURL=\(socketURL) brandId=\(brandId) channelId=\(channelId)"
         )
         try await CXoneChat.shared.connection.prepare(
-            chatURL: chatURL, socketURL: socketURL, brandId: brandId, channelId: channelId)
+            chatURL: chatURL,
+            socketURL: socketURL,
+            loggerURL: "",
+            brandId: brandId,
+            channelId: channelId)
     }
 
     static func connect() async throws {
